@@ -19,6 +19,18 @@ public partial class App : Application
             MessageBox.Show($"Error inesperado: {ex.Exception.Message}\n\nRegistro: {LogDir}", "AUREVIX Installer");
             ex.Handled = true;
         };
-        new MainWindow().Show();
+        var w = new MainWindow();
+        w.Show();
+        var idx = Array.FindIndex(e.Args, a => a.Equals("--render-screenshots", StringComparison.OrdinalIgnoreCase));
+        if (idx >= 0 && idx + 1 < e.Args.Length)
+        {
+            var dir = e.Args[idx + 1];
+            Dispatcher.InvokeAsync(async () =>
+            {
+                try { await w.RenderScreenshotsAsync(dir); }
+                catch (Exception ex) { File.WriteAllText(Path.Combine(dir, "error-installer.txt"), ex.ToString()); }
+                Shutdown();
+            });
+        }
     }
 }
