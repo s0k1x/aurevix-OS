@@ -341,9 +341,9 @@ public sealed class MainWindow : Window
         using (var ctx = dv.RenderOpen())
         {
             ctx.DrawRectangle(Background, null, new Rect(0, 0, w, h));
-            ctx.DrawRectangle(new VisualBrush(el), null, new Rect(0, 0, w, h));
         }
         rtb.Render(dv);
+        rtb.Render(el);
         var enc = new System.Windows.Media.Imaging.PngBitmapEncoder();
         enc.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(rtb));
         using var fs = File.Create(path);
