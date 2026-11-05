@@ -120,7 +120,7 @@ jobs:
 
           # 1) Manifiesto y firma en Storage (lo leen los clientes ya instalados)
           foreach ($f in 'manifest.json', 'manifest.json.sig') {
-            Invoke-RestMethod -Method Post -Headers $h -ContentType 'application/octet-stream' `
+            Invoke-RestMethod -Method Post -UserAgent 'aurevix-release-ci' -Headers $h -ContentType 'application/octet-stream' `
               -InFile "out\manifest\$f" -Uri "$env:SUPABASE_URL/storage/v1/object/releases/manifests/$ch/$f" | Out-Null
           }
 
@@ -137,7 +137,7 @@ jobs:
             isobuilder_sha256 = (Get-FileHash $zip.FullName -Algorithm SHA256).Hash.ToLower()
           }
           $h2 = @{ apikey = $env:SERVICE_KEY; Prefer = 'resolution=merge-duplicates' }
-          Invoke-RestMethod -Method Post -Headers $h2 -ContentType 'application/json; charset=utf-8' `
+          Invoke-RestMethod -Method Post -UserAgent 'aurevix-release-ci' -Headers $h2 -ContentType 'application/json; charset=utf-8' `
             -Uri "$env:SUPABASE_URL/rest/v1/releases?on_conflict=channel,version" `
             -Body ([Text.Encoding]::UTF8.GetBytes(($row | ConvertTo-Json -Depth 5))) | Out-Null
           Write-Host "Versión $v publicada en el canal $ch."
