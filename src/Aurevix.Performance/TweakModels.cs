@@ -2,15 +2,19 @@ namespace Aurevix.Performance;
 
 public enum RiskLevel { Low, Medium, High }
 
+/// <summary>Categorías del catálogo, en el orden en que se muestran.</summary>
 public enum TweakCategory
 {
-    Startup,        // Inicio y aplicaciones en segundo plano
-    Power,          // Energía y planes de rendimiento
+    Modes,          // Modos de juego AUREVIX (combinaciones listas)
+    PowerPlans,     // Planes de energía AUREVIX
+    Power,          // Energía y CPU
     Gaming,         // Juegos y latencia
-    Graphics,       // GPU
-    Storage,        // Almacenamiento y limpieza segura
+    Input,          // Ratón, teclado y USB
+    Graphics,       // GPU y pantalla
     Network,        // Red y conectividad
-    Interface,      // Interfaz y efectos visuales
+    Startup,        // Servicios y segundo plano
+    Storage,        // Almacenamiento
+    Interface,      // Interfaz y Explorador
     Privacy,        // Privacidad y telemetría (dentro de las opciones legales)
     Maintenance,    // Mantenimiento y actualizaciones
     Security        // Opciones de seguridad que Microsoft permite relajar para juegos (solo opt-in)
@@ -38,6 +42,10 @@ public sealed class RegistryAction
     public RegistryValueKind Kind { get; set; } = RegistryValueKind.DWord;
     /// <summary>Valor recomendado como texto. DWord admite negativos para valores ≥ 0x80000000 (p. ej. -1 = 0xFFFFFFFF).</summary>
     public string Value { get; set; } = "";
+    /// <summary>Con comodines («*» en cualquier segmento de la clave), aplicar solo donde el valor ya existe (p. ej. EnableUlps de AMD).</summary>
+    public bool OnlyIfExists { get; set; }
+    /// <summary>Si el valor no existía, al deshacer se elimina esta clave completa (debe contener a Key).</summary>
+    public string? RevertDeleteKey { get; set; }
 
     public TweakScope Scope => Hive == RegistryHive.CurrentUser ? TweakScope.User : TweakScope.Machine;
 }
@@ -65,10 +73,16 @@ public sealed class TweakRequirements
     public double? MinRamGb { get; set; }
     public bool RequiresSsd { get; set; }
     public bool DesktopOnly { get; set; }
+    /// <summary>Solo con GPU de este fabricante: "AMD", "NVIDIA" o "Intel".</summary>
+    public string? GpuVendor { get; set; }
+    /// <summary>Solo con CPU de este fabricante: "AMD" o "Intel".</summary>
+    public string? CpuVendor { get; set; }
+    /// <summary>Mínimo de hilos (procesadores lógicos).</summary>
+    public int? MinThreads { get; set; }
 }
 
 /// <summary>Datos del equipo usados para decidir qué ajustes son compatibles.</summary>
-public sealed record SystemProfile(double RamGb, bool HasSsd, bool IsLaptop, string? GpuVendor)
+public sealed record SystemProfile(double RamGb, bool HasSsd, bool IsLaptop, string? GpuVendor, string? CpuVendor = null, int Threads = 8)
 {
     public static readonly SystemProfile Unknown = new(16, true, false, null);
 }

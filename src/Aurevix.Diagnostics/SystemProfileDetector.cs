@@ -10,7 +10,15 @@ public static class SystemProfileDetector
 {
     public static SystemProfile Detect()
     {
-        double ram = 16; bool ssd = true, laptop = false; string? gpu = null;
+        double ram = 16; bool ssd = true, laptop = false; string? gpu = null, cpu = null;
+        var threads = Environment.ProcessorCount;
+        try
+        {
+            using var p = new ManagementObjectSearcher("SELECT Manufacturer FROM Win32_Processor");
+            var m = string.Join(" ", p.Get().Cast<ManagementBaseObject>().Select(o => o["Manufacturer"]?.ToString()));
+            cpu = m.Contains("AMD", StringComparison.OrdinalIgnoreCase) ? "AMD" : m.Contains("Intel", StringComparison.OrdinalIgnoreCase) ? "Intel" : null;
+        }
+        catch { }
         try
         {
             using var cs = new ManagementObjectSearcher("SELECT TotalPhysicalMemory, PCSystemType FROM Win32_ComputerSystem");
@@ -43,6 +51,6 @@ public static class SystemProfileDetector
                 : names.Contains("Intel", StringComparison.OrdinalIgnoreCase) ? "Intel" : null;
         }
         catch { }
-        return new SystemProfile(Math.Round(ram, 1), ssd, laptop, gpu);
+        return new SystemProfile(Math.Round(ram, 1), ssd, laptop, gpu, cpu, threads);
     }
 }

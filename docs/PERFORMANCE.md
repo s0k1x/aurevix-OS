@@ -84,7 +84,7 @@ Los ajustes con requisitos (sobremesa, SSD, RAM) se omiten solos si no encajan c
 | Mitigaciones Spectre/Meltdown desactivadas | Seguridad. |
 | «Liberar el 20 % de ancho de banda reservado» | Mito: la propia Microsoft lo desmiente. Se incluye como ajuste personalizado explicado, sin prometer nada. |
 | Modificar la imagen de Windows (tiny11 y similares) | Rompe actualizaciones y licencias; no da FPS medibles. |
-| Copiar funciones de WinterOS | No hay documentación ni fuentes verificables que auditar. |
+| Copiar ajustes opacos de otras distribuciones | Solo se incluyen ajustes documentados y reversibles que AUREVIX puede auditar. |
 
 ## Fuentes consultadas
 

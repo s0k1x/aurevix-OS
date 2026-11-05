@@ -6,6 +6,7 @@ using Aurevix.ControlCenter.Services;
 using Aurevix.Core;
 using Aurevix.Core.Benchmark;
 using Aurevix.Core.Logging;
+using Aurevix.Performance;
 
 namespace Aurevix.ControlCenter.Views.Pages;
 
@@ -42,7 +43,7 @@ public sealed class BenchmarkPage : UserControl
             Ui.Muted("1. Abre el juego y llega a una escena repetible (un benchmark interno o el mismo recorrido).  " +
                      "2. Elige el juego aquí y pulsa Iniciar: tendrás 5 segundos para volver al juego.  " +
                      "3. Repite tras aplicar un nivel de optimización y compara."),
-            Ui.Muted("Se mide con PresentMon de Intel (código abierto). Windows pedirá permiso de administrador para leer los eventos de fotogramas.")));
+            Ui.Muted("Se mide con PresentMon de Intel (código abierto), ejecutado por AUREVIX Core Service: sin avisos de permisos.")));
 
         var refresh = Ui.Button("Actualizar lista", RefreshProcesses);
         body.Children.Add(Ui.Card(Ui.H2("Nueva medición"),
@@ -85,13 +86,21 @@ public sealed class BenchmarkPage : UserControl
         {
             for (var i = 5; i > 0; i--) { _status.Text = $"Vuelve al juego… la medición empieza en {i} s"; await Task.Delay(1000); }
             _status.Text = $"Midiendo {exe} durante {seconds} s…";
-            var args = $"--process_name {exe} --output_file \"{csv}\" --timed {seconds} --terminate_after_timed --v1_metrics --no_console_stats --stop_existing_session";
-            using var p = Process.Start(new ProcessStartInfo(PresentMon, args) { UseShellExecute = true, Verb = "runas", WindowStyle = ProcessWindowStyle.Hidden })!;
-            await p.WaitForExitAsync();
-            if (!File.Exists(csv)) throw new InvalidOperationException("PresentMon no generó datos. ¿Estaba el juego en marcha y en primer plano?");
+            // Primero con AUREVIX Core Service (sin aviso de permisos); si no está, PresentMon con UAC.
+            var svc = await CoreServiceClient.SendAsync(new CoreRequest { Op = "benchmark", Value = exe, Seconds = seconds, Label = label }, TimeSpan.FromSeconds(seconds + 90));
+            BenchmarkResult? r = null;
+            if (svc.Ok && svc.Data is { } data) r = System.Text.Json.JsonSerializer.Deserialize<BenchmarkResult>(data, JsonDefaults.Options);
+            else if (await CoreServiceClient.IsAvailableAsync()) throw new InvalidOperationException(svc.Error ?? "El servicio no pudo medir.");
+            if (r is null)
+            {
+                var args = $"--process_name {exe} --output_file \"{csv}\" --timed {seconds} --terminate_after_timed --v1_metrics --no_console_stats --stop_existing_session";
+                using var p = Process.Start(new ProcessStartInfo(PresentMon, args) { UseShellExecute = true, Verb = "runas", WindowStyle = ProcessWindowStyle.Hidden })!;
+                await p.WaitForExitAsync();
+                if (!File.Exists(csv)) throw new InvalidOperationException("PresentMon no generó datos. ¿Estaba el juego en marcha y en primer plano?");
 
-            var frames = BenchmarkStats.ParsePresentMonCsv(File.ReadLines(csv), exe);
-            var r = BenchmarkStats.Compute(frames, exe, label);
+                var frames = BenchmarkStats.ParsePresentMonCsv(File.ReadLines(csv), exe);
+                r = BenchmarkStats.Compute(frames, exe, label);
+            }
             var h = JsonStore.LoadOrDefault<BenchmarkHistory>(HistoryFile);
             h.Results.Add(r);
             JsonStore.Save(HistoryFile, h);

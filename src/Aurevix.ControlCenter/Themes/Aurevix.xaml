@@ -64,7 +64,7 @@
     </Style>
 
     <Style x:Key="Card" TargetType="Border">
-        <Setter Property="Background" Value="{StaticResource Surface}" />
+        <Setter Property="Background" Value="#E60E0E11" />
         <Setter Property="BorderBrush" Value="{StaticResource BorderBrushAx}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius" Value="16" />
@@ -153,13 +153,18 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
-                    <Border x:Name="Bd" CornerRadius="10" Padding="12,9" Background="Transparent">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="{TemplateBinding Tag}" FontFamily="{StaticResource IconFont}" FontSize="15"
-                                       Width="28" Foreground="{TemplateBinding Foreground}" VerticalAlignment="Center" />
-                            <ContentPresenter VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Border>
+                    <Grid>
+                        <Border x:Name="Bd" CornerRadius="10" Padding="12,8" Background="Transparent">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock x:Name="Ico" Text="{TemplateBinding Tag}" FontFamily="{StaticResource IconFont}" FontSize="15"
+                                           Width="28" Foreground="{TemplateBinding Foreground}" VerticalAlignment="Center" />
+                                <ContentPresenter VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Border>
+                        <!-- Indicador verde lima de la sección activa -->
+                        <Border x:Name="Bar" Width="3" Height="16" CornerRadius="2" HorizontalAlignment="Left" Margin="-1,0,0,0"
+                                Background="{StaticResource Accent}" Opacity="0" />
+                    </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter Property="Foreground" Value="{StaticResource Text}" />
@@ -170,6 +175,8 @@
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="Bd" Property="Background" Value="{StaticResource SurfaceAlt}" />
                             <Setter Property="Foreground" Value="{StaticResource Text}" />
+                            <Setter TargetName="Ico" Property="Foreground" Value="{StaticResource Accent}" />
+                            <Setter TargetName="Bar" Property="Opacity" Value="1" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

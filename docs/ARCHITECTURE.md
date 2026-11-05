@@ -44,7 +44,7 @@ La lógica con reglas importantes (firma, rollout, análisis de diagnóstico, mo
 
 - La interfaz se ejecuta siempre `asInvoker` (nunca como administrador).
 - Los ajustes del catálogo actual son solo `HKCU`, por lo que no necesitan elevación.
-- Las acciones que sí requieren permisos (punto de restauración, instalar una actualización) piden **UAC puntualmente**.
+- Las acciones de sistema (ajustes, punto de restauración, Firewall, Benchmark, instalar una actualización) las hace **AUREVIX Core Service sin UAC** (ver ADR 0009). Solo las exclusiones de Defender siguen pidiendo UAC, a propósito.
 - El servicio local con privilegios mínimos (Hito 4) **no está implementado**; cuando exista, será el único con permisos elevados y expondrá una API local autenticada.
 
 ## Flujo de instalación
@@ -71,7 +71,7 @@ sequenceDiagram
 2. GitHub Actions compila, prueba, crea el instalador, firma el manifiesto y publica en GitHub Releases y Supabase.
 3. El cliente consulta `manifests/{canal}/manifest.json` (al iniciar sesión + cada 4 h), verifica firma, canal, caducidad y secuencia.
 4. Si hay versión nueva y el equipo entra en el despliegue gradual, aparece la **ventana de actualización**.
-5. Al aceptar: descarga, verifica SHA-256 y tamaño, guarda el historial (para rollback) y lanza el instalador con **argumentos fijos**. Windows pide UAC.
+5. Al aceptar: descarga, verifica SHA-256 y tamaño, guarda el historial (para rollback) y lanza el instalador con **argumentos fijos**. Lo hace el Core Service, que vuelve a comprobar el manifiesto firmado por su cuenta (el cliente solo dice «instala»); si el servicio no está, se usa UAC.
 
 Detalle del formato en [UPDATE_MANIFEST.md](UPDATE_MANIFEST.md).
 

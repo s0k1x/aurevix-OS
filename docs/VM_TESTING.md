@@ -17,7 +17,7 @@
    - [ ] Se instala en `C:\Program Files\AUREVIX` y crea accesos en Inicio y escritorio.
    - [ ] Se abre el **asistente de primer inicio** (6 pasos).
    - [ ] El diagnóstico detecta CPU, GPU, RAM, discos y red. Las temperaturas aparecen como *No disponible*.
-   - [ ] "Crear punto de restauración" pide UAC y funciona (Protección del sistema activada).
+   - [ ] "Crear punto de restauración" funciona **sin** aviso de UAC (Protección del sistema activada).
    - [ ] Aplicar el perfil *Gaming* y luego *Eficiencia* cambia los valores; *Deshacer perfil* los restaura.
    - [ ] Icono en la bandeja; cerrar la ventana no cierra la app; "Salir" sí.
    - [ ] Tras reiniciar sesión la app arranca en la bandeja.
@@ -41,7 +41,7 @@
 4. Comprueba:
    - [ ] Aparece la **ventana de actualización** con las novedades.
    - [ ] *Más tarde* la cierra; *Omitir esta versión* no vuelve a avisar de esa versión.
-   - [ ] *Actualizar ahora* descarga, verifica, pide UAC e instala; la app se reabre en la bandeja con la versión nueva.
+   - [ ] *Actualizar ahora* descarga, verifica e instala **sin UAC**; la app se reabre sola en la sesión del usuario con la versión nueva.
    - [ ] Con la red cortada durante la descarga, la versión instalada sigue funcionando.
    - [ ] *Actualizaciones → Reinstalar versión anterior* reinstala la 0.1.0.
 

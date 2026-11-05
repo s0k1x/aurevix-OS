@@ -17,6 +17,12 @@ public class FakeRegistry : IRegistryAccess
     public void DeleteValue(RegistryHive h, string k, string n) => Values.Remove(K(h, k, n));
     public readonly Dictionary<string, List<string>> SubKeys = new();
     public IReadOnlyList<string> ListSubKeys(RegistryHive h, string k) => SubKeys.GetValueOrDefault($"{h}\\{k}") ?? [];
+    public readonly List<string> DeletedKeys = [];
+    public void DeleteKey(RegistryHive h, string k)
+    {
+        DeletedKeys.Add(k);
+        foreach (var key in Values.Keys.Where(x => x.StartsWith($"{h}\\{k}\\")).ToList()) Values.Remove(key);
+    }
 }
 
 public class FakePower(params Guid[] plans) : IPowerPlanAccess, IPowerSettingAccess
@@ -253,5 +259,70 @@ public class WildcardTests : IDisposable
         Assert.Equal(TweakState.Applied, e.GetStatus(t).State);
         e.Revert(r.Backup!);
         Assert.Empty(reg.Values);
+    }
+}
+
+public class CatalogMappingTests : IDisposable
+{
+    private readonly string _dir = Path.Combine(Path.GetTempPath(), "aurevix-wo-" + Guid.NewGuid().ToString("N"));
+    public void Dispose() { try { Directory.Delete(_dir, true); } catch { } }
+    private static TweakDefinition T(string id) => TweakEngine.LoadCatalog().Single(x => x.Id == id);
+
+    [Fact]
+    public void UsbPowerSavingOnlyTouchesDevicesThatHaveTheValue()
+    {
+        var reg = new FakeRegistry();
+        const string usb = @"SYSTEM\CurrentControlSet\Enum\USB";
+        reg.SubKeys[$@"LocalMachine\{usb}"] = ["VID_1", "VID_2"];
+        reg.SubKeys[$@"LocalMachine\{usb}\VID_1"] = ["A"];
+        reg.SubKeys[$@"LocalMachine\{usb}\VID_2"] = ["B"];
+        reg.Values[$@"LocalMachine\{usb}\VID_1\A\Device Parameters\EnhancedPowerManagementEnabled"] = "1";
+        var e = new TweakEngine(new TweakContext { Registry = reg, BackupDirectory = _dir, Scope = TweakScope.Machine });
+        var r = e.Apply([T("input.usb-power-saving.off")], "usb");
+        Assert.True(r.Success, string.Join(" ", r.Messages));
+        Assert.Equal("0", reg.GetValue(RegistryHive.LocalMachine, $@"{usb}\VID_1\A\Device Parameters", "EnhancedPowerManagementEnabled"));
+        Assert.Null(reg.GetValue(RegistryHive.LocalMachine, $@"{usb}\VID_2\B\Device Parameters", "EnhancedPowerManagementEnabled"));
+        e.Revert(r.Backup!);
+        Assert.Equal("1", reg.GetValue(RegistryHive.LocalMachine, $@"{usb}\VID_1\A\Device Parameters", "EnhancedPowerManagementEnabled"));
+    }
+
+    [Fact]
+    public void ClassicContextMenuRevertDeletesTheWholeKey()
+    {
+        var reg = new FakeRegistry();
+        var e = new TweakEngine(new TweakContext { Registry = reg, BackupDirectory = _dir, Scope = TweakScope.User });
+        var r = e.Apply([T("interface.context-menu.classic")], "menu");
+        Assert.True(r.Success, string.Join(" ", r.Messages));
+        e.Revert(r.Backup!);
+        Assert.Contains(@"Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}", reg.DeletedKeys);
+        Assert.Empty(reg.Values);
+    }
+
+    [Fact]
+    public void AmdOnlyTweakIsRefusedOnOtherGpus()
+    {
+        var e = new TweakEngine(new TweakContext { Registry = new FakeRegistry(), BackupDirectory = _dir, System = new SystemProfile(16, true, false, "NVIDIA") });
+        Assert.NotNull(e.CompatibilityProblem(T("graphics.amd-ulps.off")));
+    }
+}
+
+public class AurevixModesTests
+{
+    [Fact]
+    public void ModesAndPlansUseOnlyAurevixNamingAndStayOutOfAutomaticLevels()
+    {
+        var catalog = TweakEngine.LoadCatalog();
+        var modes = catalog.Where(t => t.Category is TweakCategory.Modes or TweakCategory.PowerPlans).ToList();
+        Assert.True(modes.Count >= 10);
+        foreach (var id in new[] { "mode.smooth", "mode.aim", "mode.online", "mode.highend", "mode.lowend", "plan.desktop", "plan.laptop" })
+            Assert.Contains(modes, t => t.Id == id);
+        // Los modos se eligen a mano: no entran en los niveles automáticos.
+        Assert.All(catalog.Where(t => t.Category == TweakCategory.Modes), t => Assert.Empty(t.Levels));
+        string[] foreign = ["winter", "wos.", "pows", "wisp", "rhyno", "khora", "cyte", "oraxia", "octavia", "hydroid", "yareli", "nokko", "voruna", "saryn", "dante"];
+        foreach (var t in catalog)
+        {
+            var text = string.Join(" ", t.Id, t.Title, t.Description, t.ExpectedEffect, t.PossibleImpact).ToLowerInvariant();
+            Assert.DoesNotContain(foreign, f => text.Contains(f));
+        }
     }
 }

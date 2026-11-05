@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using Aurevix.ControlCenter.Services;
 using Aurevix.Core.Logging;
+using Aurevix.Performance;
 using Aurevix.Update;
 
 namespace Aurevix.ControlCenter.Views;
@@ -42,7 +43,7 @@ public sealed class UpdateWindow : Window
         sp.Children.Add(Ui.Card(Ui.H2(release.Title), notes));
         if (release.RequiresRestart)
             sp.Children.Add(Ui.Muted("⚠ Esta actualización requiere reiniciar el equipo. Se te pedirá confirmación antes."));
-        sp.Children.Add(Ui.Muted("El paquete se verifica (firma del manifiesto y hash SHA-256) antes de instalarse. Windows pedirá permiso (UAC)."));
+        sp.Children.Add(Ui.Muted("El paquete se verifica (firma del manifiesto y hash SHA-256) antes de instalarse. Se instala sola, sin avisos de permisos, y AUREVIX se vuelve a abrir al terminar."));
         sp.Children.Add(_bar);
         sp.Children.Add(_state);
         sp.Children.Add(_buttons);
@@ -65,15 +66,29 @@ public sealed class UpdateWindow : Window
         _cts = new CancellationTokenSource();
         try
         {
-            var progress = new Progress<double>(p => { _bar.Value = p * 100; _state.Text = $"Descargando… {p:P0}"; });
-            var installer = await AppServices.Updates.DownloadAsync(_release, progress, _cts.Token);
-            _state.Text = "Paquete verificado. Iniciando instalación…";
             if (_release.RequiresRestart &&
                 MessageBox.Show("La actualización necesitará reiniciar el equipo al terminar. ¿Continuar?", "AUREVIX Update", MessageBoxButton.YesNo) != MessageBoxResult.Yes)
             {
                 _buttons.IsEnabled = true;
+                _bar.Visibility = Visibility.Collapsed;
                 return;
             }
+
+            // Como parte del sistema, AUREVIX Core Service descarga, verifica la firma y el SHA-256 e instala: sin avisos de UAC.
+            if (await CoreServiceClient.IsAvailableAsync())
+            {
+                _bar.IsIndeterminate = true;
+                _state.Text = "Descargando y verificando la actualización…";
+                var r = await CoreServiceClient.SendAsync(new CoreRequest { Op = "update-install", Value = AppServices.Settings.UpdateChannel, Label = UpdateService.InstallId }, TimeSpan.FromMinutes(30));
+                if (!r.Ok) throw new InvalidOperationException(r.Error);
+                AurevixLog.Info($"Actualización {_release.Version} en manos de AUREVIX Core Service");
+                _state.Text = "Instalando… AUREVIX se cerrará y volverá a abrirse solo.";
+                return;
+            }
+
+            var progress = new Progress<double>(p => { _bar.Value = p * 100; _state.Text = $"Descargando… {p:P0}"; });
+            var installer = await AppServices.Updates.DownloadAsync(_release, progress, _cts.Token);
+            _state.Text = "Paquete verificado. Iniciando instalación…";
             AppServices.Updates.LaunchInstaller(installer, _release);
             Close();
         }
@@ -88,6 +103,7 @@ public sealed class UpdateWindow : Window
             AurevixLog.Error("Fallo al actualizar", ex);
             _state.Text = $"No se pudo actualizar: {ex.Message} Tu versión actual sigue intacta.";
             _buttons.IsEnabled = true;
+            _bar.IsIndeterminate = false;
         }
     }
 }

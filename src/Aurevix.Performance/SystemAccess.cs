@@ -13,6 +13,7 @@ public interface IRegistryAccess
     void DeleteValue(RegistryHive hive, string key, string name);
     /// <summary>Subclaves directas (para acciones con comodín «\\*», p. ej. cada interfaz de red).</summary>
     IReadOnlyList<string> ListSubKeys(RegistryHive hive, string key);
+    void DeleteKey(RegistryHive hive, string key);
 }
 
 public interface IPowerPlanAccess
@@ -91,6 +92,12 @@ public sealed class WindowsRegistryAccess : IRegistryAccess
         var (root, k) = Resolve(hive, key);
         using var sub = root.OpenSubKey(k, writable: true);
         sub?.DeleteValue(name, throwOnMissingValue: false);
+    }
+
+    public void DeleteKey(RegistryHive hive, string key)
+    {
+        var (root, k) = Resolve(hive, key);
+        root.DeleteSubKeyTree(k, throwOnMissingSubKey: false);
     }
 
     public IReadOnlyList<string> ListSubKeys(RegistryHive hive, string key)

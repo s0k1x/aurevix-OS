@@ -54,6 +54,19 @@ public partial class App : Application
         Views.Ui.ReduceMotion = AppServices.Settings.ReduceMotion;
 
         // Modo capturas (solo lo usa el workflow de GitHub Actions).
+        var deskIdx = Array.FindIndex(e.Args, a => a.Equals("--render-desktop", StringComparison.OrdinalIgnoreCase));
+        if (deskIdx >= 0 && deskIdx + 1 < e.Args.Length)
+        {
+            var ddir = e.Args[deskIdx + 1];
+            Dispatcher.InvokeAsync(async () =>
+            {
+                try { await Screenshotter.RenderDesktopAsync(ddir); }
+                catch (Exception ex) { Directory.CreateDirectory(ddir); File.WriteAllText(System.IO.Path.Combine(ddir, "error-desktop.txt"), ex.ToString()); }
+                Shutdown();
+            });
+            return;
+        }
+
         var shotIdx = Array.FindIndex(e.Args, a => a.Equals("--render-screenshots", StringComparison.OrdinalIgnoreCase));
         if (shotIdx >= 0 && shotIdx + 1 < e.Args.Length)
         {

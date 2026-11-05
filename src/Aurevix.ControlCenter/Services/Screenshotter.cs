@@ -21,13 +21,13 @@ public static class Screenshotter
 
         var main = new MainWindow { Left = 0, Top = 0, ShowActivated = false };
         main.Show();
-        string[] pages = ["home", "diagnostics", "performance", "gameboost", "benchmark", "network", "profiles",
-                          "optimization", "cleanup", "appearance", "updates", "recovery", "settings"];
+        string[] pages = ["home", "diagnostics", "optimization", "gameboost", "benchmark", "network", "performance", "profiles",
+                          "appearance", "cleanup", "tools", "apps", "updates", "recovery", "settings"];
         var i = 1;
         foreach (var p in pages)
         {
             main.Navigate(p);
-            await Task.Delay(p is "optimization" or "network" or "cleanup" or "diagnostics" ? 6000 : 2500);
+            await Task.Delay(p is "optimization" or "network" or "cleanup" or "diagnostics" or "tools" ? 6000 : 2500);
             Save(main, Path.Combine(outDir, $"cc-{i++:00}-{p}.png"));
         }
         // Página larga: también la parte inferior de Optimización.
@@ -54,6 +54,70 @@ public static class Screenshotter
         await Task.Delay(1000);
         Save(rp, Path.Combine(outDir, "cc-22-reinicio.png"));
         rp.Close();
+    }
+
+    // ------------------------------------------------------------------ Escritorio real (antes / después del Estilo AUREVIX)
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern void keybd_event(byte vk, byte scan, uint flags, UIntPtr extra);
+
+    private static void CaptureScreen(string path)
+    {
+        var b = System.Windows.Forms.Screen.PrimaryScreen!.Bounds;
+        using var bmp = new System.Drawing.Bitmap(b.Width, b.Height);
+        using (var g = System.Drawing.Graphics.FromImage(bmp)) g.CopyFromScreen(b.Location, System.Drawing.Point.Empty, b.Size);
+        bmp.Save(path, System.Drawing.Imaging.ImageFormat.Png);
+    }
+
+    private static void Open(string target) =>
+        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(target) { UseShellExecute = true });
+
+    private static void Kill(string name)
+    {
+        foreach (var p in System.Diagnostics.Process.GetProcessesByName(name)) { try { p.Kill(); } catch { } finally { p.Dispose(); } }
+    }
+
+    private static void StartMenu()
+    {
+        keybd_event(0x5B, 0, 0, UIntPtr.Zero); // tecla Windows
+        keybd_event(0x5B, 0, 2, UIntPtr.Zero);
+    }
+
+    /// <summary>Captura el escritorio de Windows antes y después de aplicar el Estilo AUREVIX (solo en máquinas de pruebas).</summary>
+    public static async Task RenderDesktopAsync(string outDir)
+    {
+        Directory.CreateDirectory(outDir);
+        await Task.Delay(3000);
+        CaptureScreen(Path.Combine(outDir, "win-01-antes-escritorio.png"));
+        StartMenu(); await Task.Delay(2500);
+        CaptureScreen(Path.Combine(outDir, "win-02-antes-inicio.png"));
+        StartMenu(); await Task.Delay(1000);
+
+        await AurevixStyle.ApplyAsync(includeLockScreen: false);
+        await Task.Delay(6000);
+        Kill("SystemSettings");
+        AurevixStyle.RestartExplorer();
+        await Task.Delay(9000);
+        CaptureScreen(Path.Combine(outDir, "win-03-despues-escritorio.png"));
+        StartMenu(); await Task.Delay(2500);
+        CaptureScreen(Path.Combine(outDir, "win-04-despues-inicio.png"));
+        StartMenu(); await Task.Delay(1000);
+
+        Open("shell:MyComputerFolder"); await Task.Delay(5000);
+        CaptureScreen(Path.Combine(outDir, "win-05-despues-explorador.png"));
+        Kill("explorer"); await Task.Delay(2000);
+        if (System.Diagnostics.Process.GetProcessesByName("explorer").Length == 0) Open("explorer.exe");
+        await Task.Delay(5000);
+
+        Open("ms-settings:personalization"); await Task.Delay(7000);
+        CaptureScreen(Path.Combine(outDir, "win-06-despues-configuracion.png"));
+        Kill("SystemSettings");
+
+        var main = new MainWindow { Left = 80, Top = 60 };
+        main.Show(); main.Activate();
+        await Task.Delay(3000);
+        CaptureScreen(Path.Combine(outDir, "win-07-control-center-en-escritorio.png"));
+        main.Close();
     }
 
     public static void Save(Window w, string path)

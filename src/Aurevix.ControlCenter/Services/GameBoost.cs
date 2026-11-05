@@ -22,7 +22,49 @@ public sealed class GameBoostSettings
     public List<string> CloseOnStart { get; set; } = [];
     public bool SwitchPowerPlan { get; set; } = true;
     public bool TrimMemory { get; set; } = true;
+    /// <summary>Vaciar la memoria en espera al empezar a jugar (como ISLC), mediante AUREVIX Core Service.</summary>
+    public bool PurgeStandby { get; set; } = true;
+    /// <summary>Temporizador del sistema a 0,5 ms mientras juegas (con «Resolución de temporizador global» afecta a todo el sistema).</summary>
+    public bool TimerResolution { get; set; } = true;
+    /// <summary>Las apps de fondo solo usan la segunda mitad de los núcleos; la primera queda libre para el juego.</summary>
+    public bool ReserveCores { get; set; }
+    /// <summary>Apps de streaming/grabación: nunca se apartan y suben a prioridad «por encima de lo normal».</summary>
+    public List<string> Streaming { get; set; } = ["obs64.exe", "obs32.exe", "Streamlabs OBS.exe", "Medal.exe"];
+    /// <summary>Ruta completa de cada juego (para los ajustes por juego de Windows).</summary>
+    public Dictionary<string, string> GamePaths { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 }
+
+/// <summary>
+/// Ajustes por juego con las opciones oficiales de Windows (los mismos que en Configuración > Pantalla > Gráficos
+/// y en Propiedades > Compatibilidad). Se activan y desactivan por separado.
+/// </summary>
+public static class PerGameTweaks
+{
+    private const string GpuKey = @"Software\Microsoft\DirectX\UserGpuPreferences";
+    private const string CompatKey = @"Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers";
+
+    public static bool HighPerfGpu(string path) =>
+        (Microsoft.Win32.Registry.CurrentUser.OpenSubKey(GpuKey)?.GetValue(path) as string)?.Contains("GpuPreference=2") == true;
+
+    public static void SetHighPerfGpu(string path, bool on)
+    {
+        using var k = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(GpuKey, true);
+        if (on) k.SetValue(path, "GpuPreference=2;"); else k.DeleteValue(path, false);
+    }
+
+    public static bool NoFso(string path) =>
+        (Microsoft.Win32.Registry.CurrentUser.OpenSubKey(CompatKey)?.GetValue(path) as string)?.Contains("DISABLEDXMAXIMIZEDWINDOWEDMODE") == true;
+
+    public static void SetNoFso(string path, bool on)
+    {
+        using var k = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(CompatKey, true);
+        var cur = (k.GetValue(path) as string ?? "").Replace("~", "").Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .Where(f => f != "DISABLEDXMAXIMIZEDWINDOWEDMODE").ToList();
+        if (on) cur.Add("DISABLEDXMAXIMIZEDWINDOWEDMODE");
+        if (cur.Count == 0) k.DeleteValue(path, false); else k.SetValue(path, "~ " + string.Join(' ', cur));
+    }
+}
+
 
 /// <summary>
 /// AUREVIX Game Boost: al detectar un juego de la lista, prioriza el juego y aparta lo demás. Todo se restaura al cerrarlo.
@@ -37,6 +79,8 @@ public static class GameBoost
 
     private static System.Threading.Timer? _timer;
     private static readonly Dictionary<int, ProcessPriorityClass> Lowered = new();
+    private static readonly Dictionary<int, IntPtr> Affinity = new();
+    private static bool _timerSet;
     private static Guid? _previousPlan;
     private static int _busy;
 
@@ -80,7 +124,7 @@ public static class GameBoost
             try { p.PriorityClass = ProcessPriorityClass.High; } catch { }
 
         var me = Environment.ProcessId;
-        foreach (var name in Settings.Background)
+        foreach (var name in Settings.Background.Except(Settings.Streaming, StringComparer.OrdinalIgnoreCase))
             foreach (var p in Process.GetProcessesByName(Path.GetFileNameWithoutExtension(name)))
             {
                 try
@@ -89,10 +133,23 @@ public static class GameBoost
                     Lowered[p.Id] = p.PriorityClass;
                     p.PriorityClass = ProcessPriorityClass.Idle;
                     if (Settings.TrimMemory) EmptyWorkingSet(p.Handle);
+                    if (Settings.ReserveCores && BackgroundMask() is { } mask) { Affinity[p.Id] = p.ProcessorAffinity; p.ProcessorAffinity = mask; }
                 }
                 catch { }
                 finally { p.Dispose(); }
             }
+
+        foreach (var name in Settings.Streaming)
+            foreach (var p in Process.GetProcessesByName(Path.GetFileNameWithoutExtension(name)))
+            {
+                try { Lowered[p.Id] = p.PriorityClass; p.PriorityClass = ProcessPriorityClass.AboveNormal; } catch { }
+                finally { p.Dispose(); }
+            }
+
+        if (Settings.TimerResolution && NtSetTimerResolution(5000, true, out _) == 0) _timerSet = true;
+
+        if (Settings.PurgeStandby)
+            _ = CoreServiceClient.SendAsync(new CoreRequest { Op = "maintenance", Action = "purge-standby" });
 
         foreach (var name in Settings.CloseOnStart)
             foreach (var p in Process.GetProcessesByName(Path.GetFileNameWithoutExtension(name)))
@@ -123,6 +180,12 @@ public static class GameBoost
             try { using var p = Process.GetProcessById(pid); p.PriorityClass = prio; } catch { }
         }
         Lowered.Clear();
+        foreach (var (pid, mask) in Affinity)
+        {
+            try { using var p = Process.GetProcessById(pid); p.ProcessorAffinity = mask; } catch { }
+        }
+        Affinity.Clear();
+        if (_timerSet) { NtSetTimerResolution(5000, false, out _); _timerSet = false; }
         if (_previousPlan is { } plan)
         {
             try { new PowercfgPowerPlanAccess().SetActivePlan(plan); } catch { }
@@ -135,4 +198,17 @@ public static class GameBoost
 
     [DllImport("psapi.dll")]
     private static extern bool EmptyWorkingSet(IntPtr hProcess);
+
+    [DllImport("ntdll.dll")]
+    private static extern int NtSetTimerResolution(uint desired, bool set, out uint current);
+
+    /// <summary>Máscara con la segunda mitad de los núcleos lógicos (solo con 8 o más; en equipos pequeños no se toca).</summary>
+    private static IntPtr? BackgroundMask()
+    {
+        var n = Math.Min(Environment.ProcessorCount, 64);
+        if (n < 8) return null;
+        ulong mask = 0;
+        for (var i = n / 2; i < n; i++) mask |= 1UL << i;
+        return (IntPtr)(long)mask;
+    }
 }

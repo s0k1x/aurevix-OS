@@ -114,7 +114,7 @@ public sealed class FirstRunWindow : Window
     private void RestorePoint() => Show(4, "Protección",
         Ui.H1("Crear un punto de restauración"),
         Ui.Card(Ui.Text("Antes de aplicar cambios conviene crear un punto de restauración de Windows."),
-            Ui.Muted("Windows pedirá permiso de administrador. Si Protección del sistema está desactivada, no se podrá crear; " +
+            Ui.Muted("AUREVIX lo crea por ti, sin avisos de permisos. Si Protección del sistema está desactivada, no se podrá crear; " +
                      "AUREVIX guarda igualmente una copia de cada valor que cambie.")),
         Ui.Row(
             Ui.Button("Crear punto y continuar", async () =>

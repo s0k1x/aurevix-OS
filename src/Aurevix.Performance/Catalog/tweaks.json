@@ -51,7 +51,7 @@
   },
   {
     "id": "gaming.mouse-acceleration.off",
-    "category": "gaming",
+    "category": "input",
     "levels": [
       "performance",
       "maximum"
@@ -508,7 +508,7 @@
   },
   {
     "id": "system.sysmain.off",
-    "category": "storage",
+    "category": "startup",
     "levels": [
       "maximum"
     ],
@@ -1043,6 +1043,1129 @@
         "hive": "localMachine",
         "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\Psched",
         "name": "NonBestEffortLimit",
+        "kind": "dword",
+        "value": "0"
+      }
+    ]
+  },
+  {
+    "id": "power.cpu-max.95",
+    "category": "power",
+    "levels": [],
+    "title": "Modo Gold: CPU hasta el 95 % (más frío)",
+    "description": "Limita el estado máximo del procesador al 95 %. Desactiva el turbo más agresivo, que es el que más calor genera.",
+    "expectedEffect": "Temperaturas y ruido bastante menores con una pérdida de rendimiento pequeña. Útil en portátiles y mini PC.",
+    "possibleImpact": "Algo menos de rendimiento máximo en tareas de CPU.",
+    "power": [
+      {
+        "subgroup": "54533251-82be-4824-96c1-47b60b740d00",
+        "setting": "bc5038f7-23e0-4960-96da-33abaf5935ec",
+        "ac": 95,
+        "dc": 95
+      }
+    ]
+  },
+  {
+    "id": "power.cpu-max.60",
+    "category": "power",
+    "levels": [],
+    "risk": "medium",
+    "title": "Modo Iron: CPU hasta el 60 % (refrigeración mala)",
+    "description": "Limita el procesador al 60 % de su velocidad máxima.",
+    "expectedEffect": "Evita el sobrecalentamiento en equipos con mala refrigeración.",
+    "possibleImpact": "Rendimiento claramente menor. Solo para emergencias térmicas.",
+    "power": [
+      {
+        "subgroup": "54533251-82be-4824-96c1-47b60b740d00",
+        "setting": "bc5038f7-23e0-4960-96da-33abaf5935ec",
+        "ac": 60,
+        "dc": 60
+      }
+    ]
+  },
+  {
+    "id": "system.svchost-grouping",
+    "category": "startup",
+    "levels": [],
+    "risk": "medium",
+    "requiresRestart": true,
+    "requires": {
+      "minRamGb": 8
+    },
+    "title": "Agrupar servicios en menos procesos svchost",
+    "description": "Hace que Windows agrupe sus servicios en menos procesos (SvcHostSplitThresholdInKB), como en equipos con poca RAM.",
+    "expectedEffect": "Muchos menos procesos en el Administrador de tareas y algo menos de RAM usada.",
+    "possibleImpact": "Menos aislamiento: si un servicio falla puede arrastrar a otros del mismo grupo. Más procesos no significa más lento: el efecto en FPS es mínimo.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Control",
+        "name": "SvcHostSplitThresholdInKB",
+        "kind": "dword",
+        "value": "-1"
+      }
+    ]
+  },
+  {
+    "id": "system.wsearch.off",
+    "category": "startup",
+    "levels": [],
+    "risk": "medium",
+    "requiresRestart": true,
+    "title": "Desactivar la indexación de búsqueda (WSearch)",
+    "description": "Desactiva el servicio que indexa tus archivos para la búsqueda.",
+    "expectedEffect": "Sin indexación en segundo plano: menos disco y CPU, sobre todo en HDD.",
+    "possibleImpact": "La búsqueda de Inicio y del Explorador será más lenta e incompleta; afecta a Outlook y al Historial de archivos.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Services\\WSearch",
+        "name": "Start",
+        "kind": "dword",
+        "value": "4"
+      }
+    ]
+  },
+  {
+    "id": "system.maps-broker.off",
+    "category": "startup",
+    "levels": [],
+    "requiresRestart": true,
+    "title": "Desactivar el administrador de mapas descargados",
+    "description": "Desactiva MapsBroker, que solo usa la app Mapas.",
+    "expectedEffect": "Un servicio menos en segundo plano.",
+    "possibleImpact": "La app Mapas no podrá descargar mapas sin conexión.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Services\\MapsBroker",
+        "name": "Start",
+        "kind": "dword",
+        "value": "4"
+      }
+    ]
+  },
+  {
+    "id": "system.print-spooler.off",
+    "category": "startup",
+    "levels": [],
+    "requiresRestart": true,
+    "title": "Desactivar la cola de impresión (sin impresora)",
+    "description": "Desactiva el servicio Spooler. Si no tienes impresora, además reduce la superficie de ataque (vulnerabilidades tipo PrintNightmare).",
+    "expectedEffect": "Un servicio menos y algo más de seguridad.",
+    "possibleImpact": "No podrás imprimir ni usar «Imprimir a PDF» hasta reactivarlo.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Services\\Spooler",
+        "name": "Start",
+        "kind": "dword",
+        "value": "4"
+      }
+    ]
+  },
+  {
+    "id": "interface.logon-image.off",
+    "category": "interface",
+    "levels": [],
+    "title": "Inicio de sesión con fondo liso",
+    "description": "Muestra un color liso en lugar de la imagen en la pantalla de inicio de sesión (directiva oficial).",
+    "expectedEffect": "Pantalla de inicio de sesión más limpia y algo más rápida en equipos modestos.",
+    "possibleImpact": "No verás la imagen de fondo al iniciar sesión.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\System",
+        "name": "DisableLogonBackgroundImage",
+        "kind": "dword",
+        "value": "1"
+      }
+    ]
+  },
+  {
+    "id": "interface.visualfx.performance",
+    "category": "interface",
+    "levels": [],
+    "requiresSignOut": true,
+    "title": "Efectos visuales: ajustar para el mejor rendimiento",
+    "description": "Equivale a Propiedades del sistema > Rendimiento > «Ajustar para obtener el mejor rendimiento».",
+    "expectedEffect": "Menos animaciones y efectos: respuesta inmediata en equipos modestos.",
+    "possibleImpact": "Windows se ve más básico (sin sombras ni animaciones). Contrario al Estilo AUREVIX.",
+    "registry": [
+      {
+        "hive": "currentUser",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VisualEffects",
+        "name": "VisualFXSetting",
+        "kind": "dword",
+        "value": "2"
+      }
+    ]
+  },
+  {
+    "id": "gaming.gamebar.off",
+    "category": "gaming",
+    "levels": [],
+    "title": "Desactivar Xbox Game Bar (Win+G)",
+    "description": "Desactiva la superposición de la Game Bar.",
+    "expectedEffect": "Un overlay menos al jugar.",
+    "possibleImpact": "No podrás usar Win+G para capturas, widgets ni el chat de Xbox.",
+    "registry": [
+      {
+        "hive": "currentUser",
+        "key": "Software\\Microsoft\\GameBar",
+        "name": "UseNexusForGameBarEnabled",
+        "kind": "dword",
+        "value": "0"
+      },
+      {
+        "hive": "currentUser",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR",
+        "name": "AppCaptureEnabled",
+        "kind": "dword",
+        "value": "0"
+      }
+    ]
+  },
+  {
+    "id": "graphics.mpo.off",
+    "category": "graphics",
+    "levels": [],
+    "risk": "medium",
+    "requiresRestart": true,
+    "title": "Desactivar Multiplane Overlay (MPO)",
+    "description": "Desactiva MPO en el compositor de Windows (OverlayTestMode = 5), la solución que documenta NVIDIA para parpadeos y tirones en algunos equipos.",
+    "expectedEffect": "Corrige parpadeos, pantallazos negros o microtirones en navegadores y juegos en ventana en equipos afectados.",
+    "possibleImpact": "Si no tienes esos problemas, puede subir un poco el consumo de GPU. Deshazlo si no notas mejora.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SOFTWARE\\Microsoft\\Windows\\Dwm",
+        "name": "OverlayTestMode",
+        "kind": "dword",
+        "value": "5"
+      }
+    ]
+  },
+  {
+    "id": "graphics.amd-ulps.off",
+    "category": "graphics",
+    "levels": [],
+    "risk": "medium",
+    "requiresRestart": true,
+    "requires": {
+      "gpuVendor": "AMD"
+    },
+    "title": "Desactivar ULPS de AMD",
+    "description": "Desactiva el estado de ultra bajo consumo (ULPS) del driver de AMD.",
+    "expectedEffect": "Puede corregir arranques lentos o pantalla negra al iniciar y caídas de rendimiento en algunas gráficas AMD.",
+    "possibleImpact": "Algo más de consumo en reposo. Si no tienes esos problemas, déjalo como está.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\*",
+        "name": "EnableUlps",
+        "kind": "dword",
+        "value": "0",
+        "onlyIfExists": true
+      }
+    ]
+  },
+  {
+    "id": "input.usb-power-saving.off",
+    "category": "input",
+    "levels": [
+      "maximum"
+    ],
+    "risk": "medium",
+    "requiresRestart": true,
+    "title": "Sin ahorro de energía en dispositivos USB",
+    "description": "Desactiva la administración de energía mejorada en cada dispositivo USB conectado (ratón, teclado, auriculares…).",
+    "expectedEffect": "Ratón y teclado sin microcortes ni retrasos al «despertar».",
+    "possibleImpact": "Algo más de consumo, sobre todo en portátiles.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Enum\\USB\\*\\*\\Device Parameters",
+        "name": "EnhancedPowerManagementEnabled",
+        "kind": "dword",
+        "value": "0",
+        "onlyIfExists": true
+      },
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Enum\\USB\\*\\*\\Device Parameters",
+        "name": "AllowIdleIrpInD3",
+        "kind": "dword",
+        "value": "0",
+        "onlyIfExists": true
+      }
+    ]
+  },
+  {
+    "id": "input.queue-size",
+    "category": "input",
+    "levels": [],
+    "risk": "medium",
+    "requiresRestart": true,
+    "title": "Búfer de ratón y teclado más corto",
+    "description": "Reduce de 100 a 50 el tamaño de la cola de datos del ratón y del teclado (MouseDataQueueSize, KeyboardDataQueueSize).",
+    "expectedEffect": "Posible reducción mínima de latencia de entrada. El efecto real es difícil de medir.",
+    "possibleImpact": "Con valores demasiado bajos se pueden perder pulsaciones; 50 es un valor conservador.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Services\\mouclass\\Parameters",
+        "name": "MouseDataQueueSize",
+        "kind": "dword",
+        "value": "50"
+      },
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Services\\kbdclass\\Parameters",
+        "name": "KeyboardDataQueueSize",
+        "kind": "dword",
+        "value": "50"
+      }
+    ]
+  },
+  {
+    "id": "maintenance.wu-drivers.off",
+    "category": "maintenance",
+    "levels": [],
+    "title": "Windows Update no instala drivers",
+    "description": "Directiva oficial: Windows Update deja de instalar controladores automáticamente (las actualizaciones de seguridad siguen llegando).",
+    "expectedEffect": "Evita que Windows sustituya tu driver de GPU o de audio por uno más antiguo o genérico.",
+    "possibleImpact": "Tendrás que actualizar los drivers tú (desde la web del fabricante).",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate",
+        "name": "ExcludeWUDriversInQualityUpdate",
+        "kind": "dword",
+        "value": "1"
+      }
+    ]
+  },
+  {
+    "id": "interface.context-menu.classic",
+    "category": "interface",
+    "levels": [],
+    "requiresSignOut": true,
+    "minWindowsBuild": 22000,
+    "title": "Menú contextual clásico (estilo Windows 10)",
+    "description": "El clic derecho muestra directamente el menú completo, sin «Mostrar más opciones».",
+    "expectedEffect": "Un clic menos para acceder a todas las opciones.",
+    "possibleImpact": "Aspecto menos moderno. Se aplica al reiniciar el Explorador.",
+    "registry": [
+      {
+        "hive": "currentUser",
+        "key": "Software\\Classes\\CLSID\\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\\InprocServer32",
+        "name": "",
+        "kind": "string",
+        "value": "",
+        "revertDeleteKey": "Software\\Classes\\CLSID\\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}"
+      }
+    ]
+  },
+  {
+    "id": "plan.desktop",
+    "category": "powerPlans",
+    "requires": {
+      "desktopOnly": true
+    },
+    "powerPlan": "8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c",
+    "title": "Plan AUREVIX · Sobremesa",
+    "description": "Plan de alto rendimiento para sobremesa (Intel y AMD): CPU entre el 5 y el 100 %, turbo agresivo, preferencia de energía al máximo rendimiento, todos los núcleos disponibles y sin ahorro en USB, PCIe ni disco.",
+    "expectedEffect": "Máximo rendimiento sostenido cuando juegas; en reposo la CPU sigue bajando al 5 %.",
+    "possibleImpact": "Más consumo y temperatura bajo carga.",
+    "power": [
+      {
+        "subgroup": "54533251-82be-4824-96c1-47b60b740d00",
+        "setting": "893dee8e-2bef-41e0-89c6-b55d0929964c",
+        "ac": 5
+      },
+      {
+        "subgroup": "54533251-82be-4824-96c1-47b60b740d00",
+        "setting": "bc5038f7-23e0-4960-96da-33abaf5935ec",
+        "ac": 100
+      },
+      {
+        "subgroup": "54533251-82be-4824-96c1-47b60b740d00",
+        "setting": "0cc5b647-c1df-4637-891a-dec35c318583",
+        "ac": 100
+      },
+      {
+        "subgroup": "54533251-82be-4824-96c1-47b60b740d00",
+        "setting": "be337238-0d82-4146-a960-4f3749d470c7",
+        "ac": 2
+      },
+      {
+        "subgroup": "54533251-82be-4824-96c1-47b60b740d00",
+        "setting": "36687f9e-e3a5-4dbf-b1dc-15eb381c6863",
+        "ac": 0
+      },
+      {
+        "subgroup": "2a737441-1930-4402-8d77-b2bebba308a3",
+        "setting": "48e6b7a6-50f5-4782-a5d4-53bb8f07e226",
+        "ac": 0
+      },
+      {
+        "subgroup": "501a4d13-42af-4429-9fd1-a8218c268e20",
+        "setting": "ee12f906-d277-404b-b6da-e5fa1a576df5",
+        "ac": 0
+      },
+      {
+        "subgroup": "0012ee47-9041-4b5d-9b77-535fba8b1442",
+        "setting": "6738e2c4-e8a5-4a42-b16a-e040e769756e",
+        "ac": 0
+      }
+    ]
+  },
+  {
+    "id": "plan.desktop-cool",
+    "category": "powerPlans",
+    "requires": {
+      "desktopOnly": true
+    },
+    "powerPlan": "381b4222-f694-41f0-9685-ff5bb260df2e",
+    "title": "Plan AUREVIX · Sobremesa fresco",
+    "description": "Versión reducida para sobremesas con problemas de temperatura: CPU hasta el 95 %, turbo normal y preferencia de energía equilibrada.",
+    "expectedEffect": "Rendimiento estable con menos temperatura y ruido.",
+    "possibleImpact": "Algo menos de rendimiento máximo.",
+    "power": [
+      {
+        "subgroup": "54533251-82be-4824-96c1-47b60b740d00",
+        "setting": "893dee8e-2bef-41e0-89c6-b55d0929964c",
+        "ac": 5
+      },
+      {
+        "subgroup": "54533251-82be-4824-96c1-47b60b740d00",
+        "setting": "bc5038f7-23e0-4960-96da-33abaf5935ec",
+        "ac": 95
+      },
+      {
+        "subgroup": "54533251-82be-4824-96c1-47b60b740d00",
+        "setting": "be337238-0d82-4146-a960-4f3749d470c7",
+        "ac": 1
+      },
+      {
+        "subgroup": "54533251-82be-4824-96c1-47b60b740d00",
+        "setting": "36687f9e-e3a5-4dbf-b1dc-15eb381c6863",
+        "ac": 33
+      }
+    ]
+  },
+  {
+    "id": "plan.ryzen-dualccd",
+    "category": "powerPlans",
+    "requires": {
+      "cpuVendor": "AMD",
+      "minThreads": 16
+    },
+    "powerPlan": "381b4222-f694-41f0-9685-ff5bb260df2e",
+    "title": "Plan AUREVIX · Ryzen de doble CCD",
+    "description": "Para Ryzen con dos CCD (7900X, 7950X, 9950X3D…). Usa el plan Equilibrado que recomienda AMD, para que el driver de chipset reparta la carga entre CCD (y aparque el CCD sin 3D V-Cache en los X3D), con turbo agresivo y preferencia de energía al máximo.",
+    "expectedEffect": "Mejor reparto entre CCD y menos latencia entre núcleos en juegos.",
+    "possibleImpact": "Necesita el driver de chipset de AMD actualizado.",
+    "power": [
+      {
+        "subgroup": "54533251-82be-4824-96c1-47b60b740d00",
+        "setting": "893dee8e-2bef-41e0-89c6-b55d0929964c",
+        "ac": 5
+      },
+      {
+        "subgroup": "54533251-82be-4824-96c1-47b60b740d00",
+        "setting": "bc5038f7-23e0-4960-96da-33abaf5935ec",
+        "ac": 100
+      },
+      {
+        "subgroup": "54533251-82be-4824-96c1-47b60b740d00",
+        "setting": "be337238-0d82-4146-a960-4f3749d470c7",
+        "ac": 2
+      },
+      {
+        "subgroup": "54533251-82be-4824-96c1-47b60b740d00",
+        "setting": "36687f9e-e3a5-4dbf-b1dc-15eb381c6863",
+        "ac": 0
+      }
+    ]
+  },
+  {
+    "id": "plan.ryzen-dualccd-allcores",
+    "category": "powerPlans",
+    "requires": {
+      "cpuVendor": "AMD",
+      "minThreads": 16,
+      "desktopOnly": true
+    },
+    "powerPlan": "381b4222-f694-41f0-9685-ff5bb260df2e",
+    "risk": "medium",
+    "title": "Plan AUREVIX · Ryzen de doble CCD, todos los núcleos",
+    "description": "Como Base pero con todos los núcleos de ambos CCD siempre activos (sin aparcamiento).",
+    "expectedEffect": "Mejor en juegos que usan muchos hilos.",
+    "possibleImpact": "En Ryzen X3D puede EMPEORAR: impide aparcar el CCD sin caché. Pruébalo con Benchmark.",
+    "power": [
+      {
+        "subgroup": "54533251-82be-4824-96c1-47b60b740d00",
+        "setting": "893dee8e-2bef-41e0-89c6-b55d0929964c",
+        "ac": 5
+      },
+      {
+        "subgroup": "54533251-82be-4824-96c1-47b60b740d00",
+        "setting": "bc5038f7-23e0-4960-96da-33abaf5935ec",
+        "ac": 100
+      },
+      {
+        "subgroup": "54533251-82be-4824-96c1-47b60b740d00",
+        "setting": "0cc5b647-c1df-4637-891a-dec35c318583",
+        "ac": 100
+      },
+      {
+        "subgroup": "54533251-82be-4824-96c1-47b60b740d00",
+        "setting": "be337238-0d82-4146-a960-4f3749d470c7",
+        "ac": 2
+      },
+      {
+        "subgroup": "54533251-82be-4824-96c1-47b60b740d00",
+        "setting": "36687f9e-e3a5-4dbf-b1dc-15eb381c6863",
+        "ac": 0
+      }
+    ]
+  },
+  {
+    "id": "plan.laptop",
+    "category": "powerPlans",
+    "powerPlan": "381b4222-f694-41f0-9685-ff5bb260df2e",
+    "title": "Plan AUREVIX · Portátil",
+    "description": "Con corriente: CPU al 100 %, turbo agresivo y preferencia de rendimiento. Con batería no se cambia nada.",
+    "expectedEffect": "Rendimiento de sobremesa cuando está enchufado sin gastar batería de más.",
+    "possibleImpact": "Más temperatura enchufado.",
+    "power": [
+      {
+        "subgroup": "54533251-82be-4824-96c1-47b60b740d00",
+        "setting": "893dee8e-2bef-41e0-89c6-b55d0929964c",
+        "ac": 5
+      },
+      {
+        "subgroup": "54533251-82be-4824-96c1-47b60b740d00",
+        "setting": "bc5038f7-23e0-4960-96da-33abaf5935ec",
+        "ac": 100
+      },
+      {
+        "subgroup": "54533251-82be-4824-96c1-47b60b740d00",
+        "setting": "be337238-0d82-4146-a960-4f3749d470c7",
+        "ac": 2
+      },
+      {
+        "subgroup": "54533251-82be-4824-96c1-47b60b740d00",
+        "setting": "36687f9e-e3a5-4dbf-b1dc-15eb381c6863",
+        "ac": 10
+      },
+      {
+        "subgroup": "501a4d13-42af-4429-9fd1-a8218c268e20",
+        "setting": "ee12f906-d277-404b-b6da-e5fa1a576df5",
+        "ac": 0
+      }
+    ]
+  },
+  {
+    "id": "plan.laptop-battery",
+    "category": "powerPlans",
+    "powerPlan": "381b4222-f694-41f0-9685-ff5bb260df2e",
+    "title": "Plan AUREVIX · Portátil batería y silencio",
+    "description": "Prioriza batería y temperatura: CPU hasta el 90 % enchufado y 80 % con batería.",
+    "expectedEffect": "Más batería y menos calor y ruido.",
+    "possibleImpact": "Menos rendimiento máximo.",
+    "power": [
+      {
+        "subgroup": "54533251-82be-4824-96c1-47b60b740d00",
+        "setting": "bc5038f7-23e0-4960-96da-33abaf5935ec",
+        "ac": 90,
+        "dc": 80
+      },
+      {
+        "subgroup": "54533251-82be-4824-96c1-47b60b740d00",
+        "setting": "be337238-0d82-4146-a960-4f3749d470c7",
+        "ac": 1,
+        "dc": 1
+      },
+      {
+        "subgroup": "54533251-82be-4824-96c1-47b60b740d00",
+        "setting": "36687f9e-e3a5-4dbf-b1dc-15eb381c6863",
+        "ac": 50,
+        "dc": 70
+      }
+    ]
+  },
+  {
+    "id": "plan.show-all-plans",
+    "category": "powerPlans",
+    "requiresRestart": true,
+    "risk": "medium",
+    "title": "Mostrar todos los planes de energía (Modern Standby)",
+    "description": "En equipos con Modern Standby (S0) Windows solo muestra el plan Equilibrado y vuelve a él solo. Este fix (PlatformAoAcOverride = 0) desactiva Modern Standby para poder elegir otros planes.",
+    "expectedEffect": "Podrás usar los Planes AUREVIX y Máximo rendimiento y Windows no los cambiará al reiniciar.",
+    "possibleImpact": "La suspensión pasa a ser la clásica (S3) si el equipo la admite; si no la admite, puede no poder suspender. Aplícalo solo si tienes el problema.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\Power",
+        "name": "PlatformAoAcOverride",
+        "kind": "dword",
+        "value": "0"
+      }
+    ]
+  },
+  {
+    "id": "cpu.tuning.amd",
+    "category": "power",
+    "requires": {
+      "cpuVendor": "AMD"
+    },
+    "title": "Ajuste de CPU para AMD Ryzen",
+    "description": "Ajusta el plan activo para Ryzen: turbo agresivo y preferencia de energía (EPP) al máximo rendimiento, que es lo que controla el CPPC de AMD.",
+    "expectedEffect": "La CPU sube de frecuencia antes: menos tirones en juegos que dependen de la CPU.",
+    "possibleImpact": "Algo más de consumo.",
+    "power": [
+      {
+        "subgroup": "54533251-82be-4824-96c1-47b60b740d00",
+        "setting": "be337238-0d82-4146-a960-4f3749d470c7",
+        "ac": 2
+      },
+      {
+        "subgroup": "54533251-82be-4824-96c1-47b60b740d00",
+        "setting": "36687f9e-e3a5-4dbf-b1dc-15eb381c6863",
+        "ac": 0
+      }
+    ]
+  },
+  {
+    "id": "cpu.tuning.intel",
+    "category": "power",
+    "requires": {
+      "cpuVendor": "Intel"
+    },
+    "title": "Ajuste de CPU para Intel",
+    "description": "Ajusta el plan activo para Intel: turbo «eficiente agresivo» y preferencia de energía (EPP) al máximo rendimiento para Speed Shift.",
+    "expectedEffect": "Respuesta más rápida de la CPU.",
+    "possibleImpact": "Algo más de consumo.",
+    "power": [
+      {
+        "subgroup": "54533251-82be-4824-96c1-47b60b740d00",
+        "setting": "be337238-0d82-4146-a960-4f3749d470c7",
+        "ac": 4
+      },
+      {
+        "subgroup": "54533251-82be-4824-96c1-47b60b740d00",
+        "setting": "36687f9e-e3a5-4dbf-b1dc-15eb381c6863",
+        "ac": 0
+      }
+    ]
+  },
+  {
+    "id": "services.light",
+    "category": "startup",
+    "requiresRestart": true,
+    "title": "Servicios de fondo: ligero",
+    "description": "Desactiva DiagTrack (telemetría) y WSearch (indexación) y mantiene SysMain, que evita tirones en juegos de mundo abierto.",
+    "expectedEffect": "Menos consumo de disco y CPU en segundo plano.",
+    "possibleImpact": "Búsqueda más lenta; el Historial de archivos necesita WSearch.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Services\\DiagTrack",
+        "name": "Start",
+        "kind": "dword",
+        "value": "4"
+      },
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Services\\WSearch",
+        "name": "Start",
+        "kind": "dword",
+        "value": "4"
+      }
+    ]
+  },
+  {
+    "id": "services.ultralight",
+    "category": "startup",
+    "requiresRestart": true,
+    "risk": "medium",
+    "title": "Servicios de fondo: ultraligero (HDD)",
+    "description": "Como v1 y además desactiva SysMain (recomendado si Windows está en un HDD que se satura).",
+    "expectedEffect": "Mucho menos uso de disco en HDD.",
+    "possibleImpact": "Algunos juegos de mundo abierto pueden tener más tirones sin SysMain.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Services\\DiagTrack",
+        "name": "Start",
+        "kind": "dword",
+        "value": "4"
+      },
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Services\\WSearch",
+        "name": "Start",
+        "kind": "dword",
+        "value": "4"
+      },
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Services\\SysMain",
+        "name": "Start",
+        "kind": "dword",
+        "value": "4"
+      }
+    ]
+  },
+  {
+    "id": "mode.smooth",
+    "category": "modes",
+    "requiresRestart": true,
+    "title": "Modo Fluidez",
+    "description": "Combina estos ajustes: Prioridad de juegos en MMCSS, menos CPU reservada para segundo plano y sin grabación en segundo plano.",
+    "expectedEffect": "Más fluidez y menos tirones en juegos.",
+    "possibleImpact": "Las tareas en segundo plano van algo más lentas mientras juegas.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games",
+        "name": "GPU Priority",
+        "kind": "dword",
+        "value": "8"
+      },
+      {
+        "hive": "localMachine",
+        "key": "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games",
+        "name": "Priority",
+        "kind": "dword",
+        "value": "6"
+      },
+      {
+        "hive": "localMachine",
+        "key": "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games",
+        "name": "Scheduling Category",
+        "kind": "string",
+        "value": "High"
+      },
+      {
+        "hive": "localMachine",
+        "key": "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile",
+        "name": "SystemResponsiveness",
+        "kind": "dword",
+        "value": "10"
+      },
+      {
+        "hive": "currentUser",
+        "key": "System\\GameConfigStore",
+        "name": "GameDVR_Enabled",
+        "kind": "dword",
+        "value": "0"
+      }
+    ]
+  },
+  {
+    "id": "mode.aim",
+    "category": "modes",
+    "requiresSignOut": true,
+    "risk": "medium",
+    "title": "Modo Puntería (shooters)",
+    "description": "Combina estos ajustes: Cadena de entrada para shooters: ratón sin aceleración (1:1), búfer de ratón más corto y USB sin ahorro de energía.",
+    "expectedEffect": "Apuntado más consistente y directo.",
+    "possibleImpact": "El cursor del escritorio puede sentirse distinto; ajusta la sensibilidad.",
+    "registry": [
+      {
+        "hive": "currentUser",
+        "key": "Control Panel\\Mouse",
+        "name": "MouseSpeed",
+        "kind": "string",
+        "value": "0"
+      },
+      {
+        "hive": "currentUser",
+        "key": "Control Panel\\Mouse",
+        "name": "MouseThreshold1",
+        "kind": "string",
+        "value": "0"
+      },
+      {
+        "hive": "currentUser",
+        "key": "Control Panel\\Mouse",
+        "name": "MouseThreshold2",
+        "kind": "string",
+        "value": "0"
+      },
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Services\\mouclass\\Parameters",
+        "name": "MouseDataQueueSize",
+        "kind": "dword",
+        "value": "50"
+      },
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Enum\\USB\\*\\*\\Device Parameters",
+        "name": "EnhancedPowerManagementEnabled",
+        "kind": "dword",
+        "value": "0",
+        "onlyIfExists": true
+      }
+    ]
+  },
+  {
+    "id": "mode.online",
+    "category": "modes",
+    "requiresRestart": true,
+    "title": "Modo Respuesta Online",
+    "description": "Combina estos ajustes: Respuesta de red en juegos online: sin retraso de Nagle en TCP, sin limitación de red multimedia y actualizaciones sin compartir P2P.",
+    "expectedEffect": "Tiempo de respuesta online más estable.",
+    "possibleImpact": "Ninguno relevante. En juegos que usan UDP el efecto de Nagle es nulo.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces\\*",
+        "name": "TcpAckFrequency",
+        "kind": "dword",
+        "value": "1"
+      },
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces\\*",
+        "name": "TCPNoDelay",
+        "kind": "dword",
+        "value": "1"
+      },
+      {
+        "hive": "localMachine",
+        "key": "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile",
+        "name": "NetworkThrottlingIndex",
+        "kind": "dword",
+        "value": "-1"
+      },
+      {
+        "hive": "localMachine",
+        "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\DeliveryOptimization",
+        "name": "DODownloadMode",
+        "kind": "dword",
+        "value": "0"
+      }
+    ]
+  },
+  {
+    "id": "mode.highend",
+    "category": "modes",
+    "requiresRestart": true,
+    "title": "Modo Fluidez · equipos potentes",
+    "description": "Combina estos ajustes: Fluidez en equipos potentes: prioridad al primer plano (Win32PrioritySeparation 0x26) y temporizador global de alta resolución.",
+    "expectedEffect": "Tiempos de fotograma más regulares.",
+    "possibleImpact": "Algo más de consumo mientras juegas.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\PriorityControl",
+        "name": "Win32PrioritySeparation",
+        "kind": "dword",
+        "value": "38"
+      },
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\Session Manager\\kernel",
+        "name": "GlobalTimerResolutionRequests",
+        "kind": "dword",
+        "value": "1"
+      }
+    ]
+  },
+  {
+    "id": "mode.lowend",
+    "category": "modes",
+    "requiresSignOut": true,
+    "title": "Modo Fluidez · equipos modestos",
+    "description": "Combina estos ajustes: Fluidez en equipos modestos: efectos visuales al mínimo, sin transparencias y sin apps de la Store en segundo plano.",
+    "expectedEffect": "Más recursos libres para el juego en equipos con poca CPU/GPU.",
+    "possibleImpact": "Windows se ve más básico.",
+    "registry": [
+      {
+        "hive": "currentUser",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VisualEffects",
+        "name": "VisualFXSetting",
+        "kind": "dword",
+        "value": "2"
+      },
+      {
+        "hive": "currentUser",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
+        "name": "EnableTransparency",
+        "kind": "dword",
+        "value": "0"
+      },
+      {
+        "hive": "currentUser",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\BackgroundAccessApplications",
+        "name": "GlobalUserDisabled",
+        "kind": "dword",
+        "value": "1"
+      }
+    ]
+  },
+  {
+    "id": "scheduler.competitive",
+    "category": "gaming",
+    "requiresRestart": true,
+    "title": "Programador: competitivo (0x2A)",
+    "description": "Win32PrioritySeparation = 0x2A: intervalos cortos y fijos con prioridad 3:1 al primer plano.",
+    "expectedEffect": "Respuesta muy directa en juegos competitivos.",
+    "possibleImpact": "Grabar o hacer streaming en el mismo PC puede ir peor. Usa solo un ajuste de programador a la vez.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\PriorityControl",
+        "name": "Win32PrioritySeparation",
+        "kind": "dword",
+        "value": "42"
+      }
+    ]
+  },
+  {
+    "id": "scheduler.streaming",
+    "category": "gaming",
+    "requiresRestart": true,
+    "title": "Programador: jugar y grabar (0x28)",
+    "description": "Win32PrioritySeparation = 0x28: intervalos cortos y fijos sin aumento al primer plano (reparto parejo).",
+    "expectedEffect": "Útil si juegas y grabas a la vez.",
+    "possibleImpact": "Menos prioridad al juego que v1/v3.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\PriorityControl",
+        "name": "Win32PrioritySeparation",
+        "kind": "dword",
+        "value": "40"
+      }
+    ]
+  },
+  {
+    "id": "scheduler.balanced",
+    "category": "gaming",
+    "requiresRestart": true,
+    "title": "Programador: equilibrado (0x26)",
+    "description": "Win32PrioritySeparation = 0x26: intervalos cortos y variables con prioridad 3:1 al primer plano. Es el valor del nivel Rendimiento.",
+    "expectedEffect": "Más prioridad al juego con buen equilibrio.",
+    "possibleImpact": "Las tareas de fondo van algo más lentas.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\PriorityControl",
+        "name": "Win32PrioritySeparation",
+        "kind": "dword",
+        "value": "38"
+      }
+    ]
+  },
+  {
+    "id": "scheduler.long",
+    "category": "gaming",
+    "requiresRestart": true,
+    "title": "Programador: intervalos largos (0x16)",
+    "description": "Win32PrioritySeparation = 0x16: intervalos largos y variables con prioridad 3:1 (similar a Windows Server).",
+    "expectedEffect": "Menos cambios de contexto; puede ir mejor en CPUs con pocos núcleos.",
+    "possibleImpact": "Puede notarse menos «directo» que v1/v3.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\PriorityControl",
+        "name": "Win32PrioritySeparation",
+        "kind": "dword",
+        "value": "22"
+      }
+    ]
+  },
+  {
+    "id": "input.usb-all",
+    "category": "input",
+    "requiresRestart": true,
+    "risk": "medium",
+    "title": "USB sin ahorro de energía: todos los dispositivos",
+    "description": "Desactiva el ahorro de energía en todos los dispositivos, concentradores y controladores USB.",
+    "expectedEffect": "Ratón más suave y sin microcortes.",
+    "possibleImpact": "Algo más de consumo.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Enum\\USB\\*\\*\\Device Parameters",
+        "name": "EnhancedPowerManagementEnabled",
+        "kind": "dword",
+        "value": "0",
+        "onlyIfExists": true
+      },
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Enum\\USB\\*\\*\\Device Parameters",
+        "name": "AllowIdleIrpInD3",
+        "kind": "dword",
+        "value": "0",
+        "onlyIfExists": true
+      }
+    ]
+  },
+  {
+    "id": "input.usb-hid",
+    "category": "input",
+    "requiresRestart": true,
+    "title": "USB sin ahorro de energía: solo ratón y teclado",
+    "description": "Desactiva la suspensión selectiva solo en los dispositivos de entrada (HID): ratón y teclado.",
+    "expectedEffect": "Evita caídas de FPS y retrasos al mover el ratón tras un rato quieto.",
+    "possibleImpact": "Consumo mínimamente mayor.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Enum\\HID\\*\\*\\Device Parameters",
+        "name": "SelectiveSuspendEnabled",
+        "kind": "dword",
+        "value": "0",
+        "onlyIfExists": true
+      }
+    ]
+  },
+  {
+    "id": "graphics.hybrid-max",
+    "category": "graphics",
+    "title": "Gráfica integrada o híbrida al máximo rendimiento",
+    "description": "En el plan activo, pone la gráfica conmutable/integrada en «Maximizar rendimiento» (opción oficial de Opciones de energía).",
+    "expectedEffect": "Menos caídas de FPS en portátiles con gráfica integrada o híbrida.",
+    "possibleImpact": "Más consumo. Si tu equipo no tiene esta opción, se indicará como no aplicable.",
+    "power": [
+      {
+        "subgroup": "e276e160-7cb0-43c6-b20b-73f5dce39954",
+        "setting": "a1662ab2-9d34-4e53-ba8b-2639b9e20857",
+        "ac": 3
+      }
+    ]
+  },
+  {
+    "id": "services.devices-on-demand",
+    "category": "startup",
+    "requiresRestart": true,
+    "title": "Servicios de dispositivos bajo demanda",
+    "description": "Pone en inicio manual los servicios DeviceAssociationService y SSDPSRV: siguen funcionando cuando algo los necesita (Bluetooth, dispositivos de red), pero no se quedan activos de fondo.",
+    "expectedEffect": "Menos actividad en segundo plano que puede causar tirones.",
+    "possibleImpact": "El primer emparejamiento o la detección de dispositivos en red puede tardar un segundo más.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Services\\DeviceAssociationService",
+        "name": "Start",
+        "kind": "dword",
+        "value": "3"
+      },
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Services\\SSDPSRV",
+        "name": "Start",
+        "kind": "dword",
+        "value": "3"
+      }
+    ]
+  },
+  {
+    "id": "audio.priority",
+    "category": "gaming",
+    "requires": {
+      "minThreads": 6
+    },
+    "requiresRestart": true,
+    "title": "Audio con prioridad",
+    "description": "Da prioridad alta de CPU y E/S a las tareas de audio de Windows en MMCSS (perfiles Audio y Pro Audio).",
+    "expectedEffect": "Menos chasquidos y cortes de audio mientras juegas o retransmites.",
+    "possibleImpact": "Ninguno relevante.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Audio",
+        "name": "Scheduling Category",
+        "kind": "string",
+        "value": "High"
+      },
+      {
+        "hive": "localMachine",
+        "key": "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Audio",
+        "name": "SFIO Priority",
+        "kind": "string",
+        "value": "High"
+      },
+      {
+        "hive": "localMachine",
+        "key": "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Pro Audio",
+        "name": "Scheduling Category",
+        "kind": "string",
+        "value": "High"
+      },
+      {
+        "hive": "localMachine",
+        "key": "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Pro Audio",
+        "name": "SFIO Priority",
+        "kind": "string",
+        "value": "High"
+      }
+    ]
+  },
+  {
+    "id": "gaming.fth-off",
+    "category": "gaming",
+    "requiresRestart": true,
+    "title": "Sin «modo seguro» tras cuelgues de juegos",
+    "description": "Si un juego se cierra por error, Windows le aplica mitigaciones de memoria (Fault Tolerant Heap) que lo ralentizan en adelante. Esto lo desactiva.",
+    "expectedEffect": "Un juego que se cerró una vez no queda más lento para siempre.",
+    "possibleImpact": "Programas inestables podrían cerrarse más a menudo.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SOFTWARE\\Microsoft\\FTH",
+        "name": "Enabled",
+        "kind": "dword",
+        "value": "0"
+      }
+    ]
+  },
+  {
+    "id": "services.bluetooth-off",
+    "category": "startup",
+    "requiresRestart": true,
+    "title": "Desactivar Bluetooth (si no lo usas)",
+    "description": "Desactiva los servicios de Bluetooth.",
+    "expectedEffect": "Dos servicios menos en segundo plano.",
+    "possibleImpact": "Ni auriculares, ni mandos, ni ratones Bluetooth funcionarán hasta reactivarlo.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Services\\bthserv",
+        "name": "Start",
+        "kind": "dword",
+        "value": "4"
+      },
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Services\\BTAGService",
+        "name": "Start",
+        "kind": "dword",
+        "value": "4"
+      }
+    ]
+  },
+  {
+    "id": "gaming.game-mode.off",
+    "category": "gaming",
+    "title": "Desactivar el Modo de juego",
+    "description": "En Windows 11 actual el Modo de juego suele ayudar, por eso AUREVIX lo deja activado en sus niveles. Desactívalo solo si Benchmark muestra que tu equipo va mejor sin él.",
+    "expectedEffect": "Depende del juego y del equipo.",
+    "possibleImpact": "Windows Update podría instalar o reiniciar mientras juegas.",
+    "registry": [
+      {
+        "hive": "currentUser",
+        "key": "Software\\Microsoft\\GameBar",
+        "name": "AutoGameModeEnabled",
         "kind": "dword",
         "value": "0"
       }

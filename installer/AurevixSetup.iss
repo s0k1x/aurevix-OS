@@ -93,7 +93,8 @@ end;
 
 function IsAurevixUpdate: Boolean;
 begin
-  Result := WizardSilent and (Pos('/AUREVIXUPDATE', UpperCase(GetCmdTail)) > 0);
+  // Si la actualización la lanza AUREVIX Core Service, es el servicio nuevo quien abre la app en la sesión del usuario.
+  Result := WizardSilent and (Pos('/AUREVIXUPDATE', UpperCase(GetCmdTail)) > 0) and (Pos('/AUREVIXSERVICE', UpperCase(GetCmdTail)) = 0);
 end;
 
 function InitializeSetup: Boolean;

@@ -45,6 +45,26 @@ public sealed class NetworkPage : UserControl
             Ui.Row(Ui.Muted("Ejecutable:  "), _qosExe, Ui.Button("Añadir", () => _ = QosAsync("qos-add", _qosExe.Text.Trim()))),
             _qosList));
 
+        body.Children.Add(Ui.Card(Ui.Eyebrow("ADAPTADOR DE RED"), Ui.H2("Optimizar la tarjeta de red"),
+            Ui.Muted("Desactiva en tus adaptadores físicos el ahorro de energía (EEE, Green Ethernet, «permitir que el equipo apague este dispositivo»), " +
+                     "la moderación de interrupciones y el offload de envío grande. Menos picos de ping a cambio de algo más de CPU. " +
+                     "Se guardan los valores originales. La red se corta unos segundos al aplicarlo."),
+            Ui.Row(Ui.Button("Optimizar adaptadores", () => _ = NicAsync("nic-optimize"), primary: true), Ui.Button("Restaurar originales", () => _ = NicAsync("nic-restore")))));
+
+        _mtuResult = Ui.Muted("");
+        body.Children.Add(Ui.Card(Ui.H2("MTU óptimo"),
+            Ui.Muted("Busca el tamaño de paquete más grande que tu conexión admite sin fragmentar. Lo normal es 1500; con PPPoE (algunas fibras y ADSL) suele ser 1492."),
+            Ui.Row(Ui.Button("Detectar MTU", () => _ = DetectMtuAsync(), primary: true), Ui.Button("Restablecer 1500", () => _ = ServiceAsync(new CoreRequest { Op = "mtu-set", Action = "1500" }))),
+            _mtuResult));
+
+        body.Children.Add(Ui.Card(Ui.H2("Bufferbloat"),
+            Ui.Muted("El bufferbloat (ping que se dispara al descargar) depende sobre todo del router. Haz el test: si sacas menos de A, activa SQM/QoS en tu router."),
+            Ui.Row(Ui.Button("Abrir test de bufferbloat", () => SystemTools.Start("https://www.waveform.com/tools/bufferbloat")))));
+
+        body.Children.Add(Ui.Card(Ui.H2("Bloquear internet a una aplicación"),
+            Ui.Muted("Crea una regla en el Firewall de Windows que impide que el programa elegido se conecte a internet. Lo hace AUREVIX Core Service, sin avisos de permisos."),
+            Ui.Row(Ui.Button("Elegir programa…", () => _ = FirewallAsync(block: true)), Ui.Button("Quitar bloqueos de AUREVIX", () => _ = FirewallAsync(block: false)))));
+
         var tools = Ui.Wrap(
             Ui.Button("Vaciar caché DNS", () => _ = ServiceAsync(new CoreRequest { Op = "maintenance", Action = "flush-dns" })),
             Ui.Button("Restablecer TCP óptimo", () => _ = ServiceAsync(new CoreRequest { Op = "maintenance", Action = "tcp-defaults" })),
@@ -62,6 +82,51 @@ public sealed class NetworkPage : UserControl
 
         Content = root;
         Loaded += async (_, _) => await RefreshQosAsync();
+    }
+
+    private TextBlock _mtuResult = new();
+
+    private static async Task NicAsync(string op)
+    {
+        if (MessageBox.Show(op == "nic-optimize" ? "¿Optimizar los adaptadores de red? La conexión se cortará unos segundos." : "¿Restaurar la configuración original de los adaptadores?",
+                "Red", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
+        await ServiceAsync(new CoreRequest { Op = op });
+    }
+
+    private async Task DetectMtuAsync()
+    {
+        _mtuResult.Text = "Probando tamaños de paquete…";
+        using var ping = new Ping();
+        int lo = 1200, hi = 1472, best = 0; // carga útil: MTU = carga + 28
+        while (lo <= hi)
+        {
+            var mid = (lo + hi) / 2;
+            PingReply? r = null;
+            try { r = await ping.SendPingAsync("1.1.1.1", 1500, new byte[mid], new PingOptions(64, dontFragment: true)); } catch { }
+            if (r?.Status == IPStatus.Success) { best = mid; lo = mid + 1; } else hi = mid - 1;
+        }
+        if (best == 0) { _mtuResult.Text = "No se pudo determinar (sin respuesta a ping)."; return; }
+        var mtu = best + 28;
+        _mtuResult.Text = mtu >= 1500 ? "Tu MTU óptimo es 1500: no hace falta cambiar nada." : $"Tu MTU óptimo es {mtu}.";
+        if (mtu < 1500 && MessageBox.Show($"Tu conexión admite como máximo {mtu} bytes. ¿Ajustar el MTU a {mtu}?", "MTU", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+            await ServiceAsync(new CoreRequest { Op = "mtu-set", Action = mtu.ToString() });
+    }
+
+    /// <summary>
+    /// Bloqueo de programas en el Firewall a través de AUREVIX Core Service (sin UAC). El servicio solo acepta
+    /// .exe fuera de Windows y de Defender, y solo toca las reglas del grupo AUREVIX.
+    /// </summary>
+    private static async Task FirewallAsync(bool block)
+    {
+        CoreResponse r;
+        if (block)
+        {
+            var dlg = new Microsoft.Win32.OpenFileDialog { Filter = "Programas|*.exe", Title = "Programa al que bloquear internet" };
+            if (dlg.ShowDialog() != true) return;
+            r = await CoreServiceClient.SendAsync(new CoreRequest { Op = "firewall-block", Value = dlg.FileName });
+        }
+        else r = await CoreServiceClient.SendAsync(new CoreRequest { Op = "firewall-unblock-all" });
+        MessageBox.Show(r.Ok ? string.Join("\n", r.Messages) : r.Error ?? "No se pudo cambiar el Firewall.", "Red");
     }
 
     private static TextBox Box(string text, double width) => new()

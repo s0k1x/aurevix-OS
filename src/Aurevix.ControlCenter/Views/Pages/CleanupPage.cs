@@ -60,6 +60,11 @@ public sealed class CleanupPage : UserControl
             Ui.Muted("Desactivar no desinstala nada: el programa simplemente no se abre al iniciar sesión (igual que en el Administrador de tareas)."),
             _startup, Ui.Row(Ui.Button("Abrir el Administrador de tareas", () => SystemTools.Start("taskmgr.exe")))));
 
+        body.Children.Add(Ui.Card(Ui.Eyebrow("ONEDRIVE"), Ui.H2("Desinstalar OneDrive"),
+            Ui.Muted("Si no usas OneDrive, puedes desinstalarlo con su propio desinstalador oficial. Tus archivos ya sincronizados se quedan en tu PC. " +
+                     "Se puede volver a instalar desde microsoft.com/onedrive."),
+            Ui.Row(Ui.Button("Desinstalar OneDrive", UninstallOneDrive), Ui.Button("Descargar OneDrive", () => SystemTools.Start("https://www.microsoft.com/es-es/microsoft-365/onedrive/download")))));
+
         body.Children.Add(Ui.Card(Ui.Eyebrow("ARCHIVOS TEMPORALES"), Ui.H2("Vaciar archivos temporales"),
             Ui.Muted("Borra la carpeta temporal de tu usuario. Los archivos en uso se omiten."),
             Ui.Row(Ui.Button("Vaciar temporales", CleanTemp), Ui.Button("Abrir Sensor de almacenamiento", () => SystemTools.Start("ms-settings:storagesense")))));
@@ -159,6 +164,22 @@ public sealed class CleanupPage : UserControl
         if (!enabled) BitConverter.GetBytes(DateTime.UtcNow.ToFileTimeUtc()).CopyTo(data, 4);
         k.SetValue(name, data, RegistryValueKind.Binary);
         AurevixLog.Info($"Inicio: {name} → {(enabled ? "activado" : "desactivado")}");
+    }
+
+    private static void UninstallOneDrive()
+    {
+        if (MessageBox.Show("¿Desinstalar OneDrive? Tus archivos locales no se borran.", "Limpieza", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
+        var candidates = new[]
+        {
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "System32", "OneDriveSetup.exe"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "SysWOW64", "OneDriveSetup.exe"),
+        };
+        var setup = candidates.FirstOrDefault(File.Exists)
+            ?? Directory.EnumerateFiles(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Microsoft\OneDrive"), "OneDriveSetup.exe", SearchOption.AllDirectories).FirstOrDefault();
+        if (setup is null) { MessageBox.Show("OneDrive no está instalado.", "Limpieza"); return; }
+        foreach (var p in Process.GetProcessesByName("OneDrive")) { try { p.Kill(); } catch { } finally { p.Dispose(); } }
+        Process.Start(new ProcessStartInfo(setup, "/uninstall") { UseShellExecute = true });
+        AurevixLog.Info("OneDrive: desinstalación iniciada.");
     }
 
     // ------------------------------------------------------------------ Temporales

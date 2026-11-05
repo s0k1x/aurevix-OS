@@ -8,22 +8,6 @@ using Aurevix.Update;
 namespace Aurevix.ControlCenter.Services;
 
 /// <summary>
-/// Configuración del servidor. El manifiesto vive en Supabase Storage (público, solo lectura).
-/// Se puede sobrescribir con %ProgramData%\Aurevix\update.json — la firma sigue siendo obligatoria.
-/// </summary>
-public sealed class UpdateEndpointConfig
-{
-    public string ManifestBaseUrl { get; set; } = "https://zttqiphwurnferzlubzy.supabase.co/storage/v1/object/public/releases/manifests";
-    public List<string> AllowedPackageHosts { get; set; } = ["zttqiphwurnferzlubzy.supabase.co", "github.com", "objects.githubusercontent.com"];
-
-    public static UpdateEndpointConfig Load()
-    {
-        var path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Aurevix", "update.json");
-        return File.Exists(path) ? JsonStore.LoadOrDefault<UpdateEndpointConfig>(path) : new UpdateEndpointConfig();
-    }
-}
-
-/// <summary>
 /// Comprueba actualizaciones periódicamente (solo conexiones salientes) y avisa a la UI.
 /// La instalación siempre requiere consentimiento del usuario.
 /// </summary>
@@ -110,7 +94,7 @@ public sealed class UpdateService
 
     /// <summary>
     /// Ejecuta el instalador verificado con argumentos FIJOS (nunca procedentes del servidor).
-    /// Windows pedirá confirmación de UAC. El instalador cierra y reinicia el Control Center.
+    /// Solo se usa si AUREVIX Core Service no está disponible (pide UAC). El instalador cierra y reinicia el Control Center.
     /// </summary>
     public void LaunchInstaller(string installerPath, ReleaseInfo release)
     {
