@@ -9,8 +9,17 @@ namespace Aurevix.ControlCenter.Services;
 /// <summary>Contenedor sencillo de servicios compartidos por toda la aplicación.</summary>
 public static class AppServices
 {
-    public static SemVersion CurrentVersion { get; } =
-        SemVersion.TryParse(typeof(AppServices).Assembly.GetName().Version is { } v ? $"{v.Major}.{v.Minor}.{v.Build}" : null, out var s) ? s! : new SemVersion(0, 1, 0);
+    /// <summary>Versión desde InformationalVersion (admite prerelease, p. ej. 0.2.0-beta.1; se ignora el +commit).</summary>
+    public static SemVersion CurrentVersion { get; } = ReadVersion();
+
+    private static SemVersion ReadVersion()
+    {
+        var asm = typeof(AppServices).Assembly;
+        var info = (System.Reflection.AssemblyInformationalVersionAttribute?)Attribute.GetCustomAttribute(asm, typeof(System.Reflection.AssemblyInformationalVersionAttribute));
+        if (SemVersion.TryParse(info?.InformationalVersion, out var v)) return v!;
+        var av = asm.GetName().Version;
+        return av is null ? new SemVersion(0, 1, 0) : new SemVersion(av.Major, av.Minor, av.Build);
+    }
 
     public static AurevixSettings Settings { get; private set; } = new();
     public static AurevixState State { get; private set; } = new();

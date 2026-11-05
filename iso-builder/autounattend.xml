@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  AUREVIX OS — autounattend.xml (mínimo y transparente)
+
+  Qué configura:
+    - Idioma del instalador y del sistema ({{UI_LANGUAGE}}).
+    - Como respaldo, instala AUREVIX en el primer inicio de sesión si SetupComplete.cmd no lo hizo.
+
+  Qué NO configura (lo eliges tú durante la instalación de Windows):
+    - Disco y particiones. Windows Setup te pregunta dónde instalar: AUREVIX nunca formatea por su cuenta.
+    - Clave de producto, activación y aceptación de la licencia de Microsoft.
+    - Cuenta de usuario, privacidad ni requisitos de hardware.
+-->
+<unattend xmlns="urn:schemas-microsoft-com:unattend">
+  <settings pass="windowsPE">
+    <component name="Microsoft-Windows-International-Core-WinPE" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+      <SetupUILanguage>
+        <UILanguage>{{UI_LANGUAGE}}</UILanguage>
+      </SetupUILanguage>
+      <InputLocale>{{UI_LANGUAGE}}</InputLocale>
+      <SystemLocale>{{UI_LANGUAGE}}</SystemLocale>
+      <UILanguage>{{UI_LANGUAGE}}</UILanguage>
+      <UserLocale>{{UI_LANGUAGE}}</UserLocale>
+    </component>
+  </settings>
+  <settings pass="oobeSystem">
+    <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+      <FirstLogonCommands>
+        <SynchronousCommand wcm:action="add" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+          <Order>1</Order>
+          <Description>AUREVIX: instalar Control Center si no se instaló al final de Windows Setup</Description>
+          <CommandLine>cmd /c if not exist "%ProgramFiles%\AUREVIX\AurevixControlCenter.exe" if exist "%SystemDrive%\AUREVIX\AurevixSetup.exe" "%SystemDrive%\AUREVIX\AurevixSetup.exe" /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /TASKS=desktopicon</CommandLine>
+        </SynchronousCommand>
+        <SynchronousCommand wcm:action="add" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+          <Order>2</Order>
+          <Description>AUREVIX: abrir el asistente de primer inicio</Description>
+          <CommandLine>cmd /c if exist "%ProgramFiles%\AUREVIX\AurevixControlCenter.exe" start "" "%ProgramFiles%\AUREVIX\AurevixControlCenter.exe" --first-run</CommandLine>
+        </SynchronousCommand>
+      </FirstLogonCommands>
+    </component>
+  </settings>
+</unattend>

@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main, 'claude/**']
+  pull_request:
+
+jobs:
+  test:
+    name: Pruebas (Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - run: dotnet test tests/Aurevix.Tests --configuration Release
+
+  build-windows:
+    name: Compilar Control Center (Windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Compilar Control Center y sus dependencias
+        run: dotnet build src/Aurevix.ControlCenter --configuration Release
+      - name: Publicar Control Center
+        run: dotnet publish src/Aurevix.ControlCenter -c Release -r win-x64 --self-contained -o out/app
+      - uses: actions/upload-artifact@v4
+        with:
+          name: control-center-win-x64
+          path: out/app
+          retention-days: 7
