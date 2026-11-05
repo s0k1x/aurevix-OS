@@ -9,9 +9,16 @@ name: Release
 #   AUREVIX_SIGNING_KEY          clave privada PEM de firma de manifiestos (aurevix-2026-01.private.pem)
 #   SUPABASE_SERVICE_ROLE_KEY    clave secreta (sb_secret_...) del proyecto Aurevix OS
 
+# También se puede lanzar a mano: Actions > Release > Run workflow > versión (p. ej. 0.1.0).
+
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Versión a publicar (p. ej. 0.1.0 o 0.2.0-beta.1)'
+        required: true
 
 permissions:
   contents: write
@@ -34,10 +41,11 @@ jobs:
         id: meta
         shell: pwsh
         run: |
-          $tag = '${{ github.ref_name }}'
+          $tag = if ('${{ github.event_name }}' -eq 'workflow_dispatch') { 'v' + '${{ inputs.version }}'.TrimStart('v') } else { '${{ github.ref_name }}' }
           $version = $tag.TrimStart('v')
           if ($version -notmatch '^\d+\.\d+\.\d+(-[0-9A-Za-z.]+)?$') { throw "Etiqueta no válida: $tag" }
           $channel = if ($version -match '-beta') { 'beta' } elseif ($version -match '-dev') { 'developer' } else { 'stable' }
+          "tag=$tag" >> $env:GITHUB_OUTPUT
           "version=$version" >> $env:GITHUB_OUTPUT
           "channel=$channel" >> $env:GITHUB_OUTPUT
           "sequence=$([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())" >> $env:GITHUB_OUTPUT
@@ -73,7 +81,7 @@ jobs:
         run: |
           $v = '${{ steps.meta.outputs.version }}'
           $ch = '${{ steps.meta.outputs.channel }}'
-          $url = "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/AurevixSetup-$v.exe"
+          $url = "https://github.com/${{ github.repository }}/releases/download/${{ steps.meta.outputs.tag }}/AurevixSetup-$v.exe"
           New-Item -ItemType Directory -Force out\manifest | Out-Null
           dotnet run --project tools/Aurevix.ReleaseTool -c Release -- manifest `
             --channel $ch --version $v --sequence ${{ steps.meta.outputs.sequence }} `
@@ -90,6 +98,8 @@ jobs:
       - name: Crear GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.meta.outputs.tag }}
+          target_commitish: ${{ github.sha }}
           name: AUREVIX OS ${{ steps.meta.outputs.version }}
           body_path: RELEASE_NOTES.md
           prerelease: ${{ steps.meta.outputs.channel != 'stable' }}
@@ -104,7 +114,7 @@ jobs:
         run: |
           $v = '${{ steps.meta.outputs.version }}'
           $ch = '${{ steps.meta.outputs.channel }}'
-          $base = "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}"
+          $base = "https://github.com/${{ github.repository }}/releases/download/${{ steps.meta.outputs.tag }}"
           # Claves nuevas de Supabase (sb_secret_...): van solo en la cabecera apikey.
           $h = @{ apikey = $env:SERVICE_KEY; 'x-upsert' = 'true' }
 
