@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using Aurevix.ControlCenter.Services;
+using Aurevix.Performance;
 
 namespace Aurevix.ControlCenter.Views.Pages;
 
@@ -24,30 +25,97 @@ public sealed class GameBoostPage : UserControl
             Check("Cambiar el plan de energía mientras juegas", s.SwitchPowerPlan, v => s.SwitchPowerPlan = v),
             Check("Liberar memoria de las apps de fondo", s.TrimMemory, v => s.TrimMemory = v)));
 
-        // Juegos
+        // Juegos y ajustes por juego
         var games = new StackPanel();
-        foreach (var exe in s.Games.ToList())
-        {
-            var row = Ui.Columns(Ui.Text(exe), Ui.Button("Quitar", () => { s.Games.Remove(exe); GameBoost.Save(); Build(); }));
-            row.Margin = new Thickness(0, 4, 0, 4);
-            games.Children.Add(row);
-        }
+        foreach (var exe in s.Games.ToList()) games.Children.Add(GameRow(exe));
         if (s.Games.Count == 0) games.Children.Add(Ui.Muted("Abre un juego y añádelo desde la lista de abajo."));
         var running = new ComboBox { MinWidth = 320, Margin = new Thickness(0, 0, 10, 0), ItemsSource = RunningApps() };
         if (running.Items.Count > 0) running.SelectedIndex = 0;
-        body.Children.Add(Ui.Card(Ui.H2("Tus juegos"), games,
+        body.Children.Add(Ui.Card(Ui.H2("Tus juegos"),
+            Ui.Muted("Además de Game Boost, cada juego puede tener sus propios ajustes de Windows (los mismos de Configuración > Pantalla > Gráficos y de Compatibilidad)."),
+            games,
             Ui.Row(running, Ui.Button("Añadir juego", () =>
             {
                 if (running.SelectedItem is not string sel) return;
                 var exe = sel.Split(" — ")[0];
                 if (!s.Games.Contains(exe, StringComparer.OrdinalIgnoreCase)) s.Games.Add(exe);
+                var path = ProcessPath(exe);
+                if (path is not null) s.GamePaths[exe] = path;
                 GameBoost.Save(); Build();
             }, primary: true), Ui.Button("Actualizar", Build))));
+
+        body.Children.Add(Ui.Card(Ui.H2("Al empezar a jugar"),
+            Check("Vaciar la memoria en espera (como ISLC)", s.PurgeStandby, v => s.PurgeStandby = v),
+            Ui.Muted("Requiere AUREVIX Core Service. Útil si notas tirones en juegos de mundo abierto con poca RAM libre.")));
+        body.Children.Add(ListCard("Apps de streaming y grabación", "Nunca se apartan: suben a prioridad «por encima de lo normal» mientras juegas (OBS, Streamlabs…).", s.Streaming));
 
         body.Children.Add(ListCard("Apps de fondo que se apartan", "Bajan a prioridad mínima mientras juegas; no se cierran.", s.Background));
         body.Children.Add(ListCard("Apps que se cierran al empezar a jugar", "Vacío por defecto. Se cierran de forma amable (como al pulsar la X): si tienen algo sin guardar, te lo preguntarán.", s.CloseOnStart));
 
         Content = root;
+    }
+
+    private UIElement GameRow(string exe)
+    {
+        var s = GameBoost.Settings;
+        var path = s.GamePaths.GetValueOrDefault(exe);
+        var opts = new WrapPanel { Margin = new Thickness(0, 6, 0, 0) };
+        if (path is not null)
+        {
+            opts.Children.Add(Toggle("GPU de alto rendimiento", PerGameTweaks.HighPerfGpu(path), v => PerGameTweaks.SetHighPerfGpu(path, v)));
+            opts.Children.Add(Toggle("Sin optimizaciones de pantalla completa", PerGameTweaks.NoFso(path), v => PerGameTweaks.SetNoFso(path, v)));
+        }
+        opts.Children.Add(Toggle("Prioridad alta siempre", false, v =>
+            _ = CoreServiceClient.SendAsync(new CoreRequest { Op = v ? "game-priority-set" : "game-priority-remove", Action = exe })));
+        if (path is not null)
+            opts.Children.Add(Toggle("Excluir de Defender (reduce seguridad)", false, v => DefenderExclusion(System.IO.Path.GetDirectoryName(path)!, v)));
+
+        var head = Ui.Columns(new StackPanel { Children = { Ui.Text(exe, 14, FontWeights.SemiBold), Ui.Muted(path ?? "Ruta desconocida: vuelve a añadirlo con el juego abierto para los ajustes de Windows.") } },
+            Ui.Button("Quitar", () =>
+            {
+                s.Games.Remove(exe);
+                if (path is not null) { PerGameTweaks.SetHighPerfGpu(path, false); PerGameTweaks.SetNoFso(path, false); }
+                _ = CoreServiceClient.SendAsync(new CoreRequest { Op = "game-priority-remove", Action = exe });
+                s.GamePaths.Remove(exe);
+                GameBoost.Save(); Build();
+            }));
+        var sp = new StackPanel { Margin = new Thickness(0, 8, 0, 12) };
+        sp.Children.Add(head);
+        sp.Children.Add(opts);
+        return sp;
+    }
+
+    private static CheckBox Toggle(string text, bool value, Action<bool> set)
+    {
+        var cb = new CheckBox { Content = text, IsChecked = value, Margin = new Thickness(0, 4, 18, 4) };
+        cb.Checked += (_, _) => set(true);
+        cb.Unchecked += (_, _) => set(false);
+        return cb;
+    }
+
+    /// <summary>Exclusión de Defender con PowerShell elevado (UAC): el usuario lo autoriza siempre explícitamente.</summary>
+    private static void DefenderExclusion(string folder, bool add)
+    {
+        if (add && MessageBox.Show($"Defender dejará de analizar en tiempo real esta carpeta:\n\n{folder}\n\nSolo hazlo con juegos de tiendas oficiales (Steam, Epic…). " +
+                "Un archivo malicioso dentro de esa carpeta no se detectaría. ¿Continuar?", "Reduce la seguridad", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+        var f = folder.Replace("'", "''");
+        var script = add ? $"Add-MpPreference -ExclusionPath '{f}'" : $"Remove-MpPreference -ExclusionPath '{f}'";
+        try
+        {
+            var enc = Convert.ToBase64String(System.Text.Encoding.Unicode.GetBytes(script));
+            using var p = Process.Start(new ProcessStartInfo("powershell.exe", $"-NoProfile -WindowStyle Hidden -EncodedCommand {enc}") { UseShellExecute = true, Verb = "runas" })!;
+            p.WaitForExit(30000);
+        }
+        catch (System.ComponentModel.Win32Exception) { }
+    }
+
+    private static string? ProcessPath(string exe)
+    {
+        foreach (var p in Process.GetProcessesByName(System.IO.Path.GetFileNameWithoutExtension(exe)))
+        {
+            try { return p.MainModule?.FileName; } catch { } finally { p.Dispose(); }
+        }
+        return null;
     }
 
     private Border ListCard(string title, string text, List<string> list)

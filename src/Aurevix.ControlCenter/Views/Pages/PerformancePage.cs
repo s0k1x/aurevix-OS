@@ -19,7 +19,7 @@ public sealed class PerformancePage : UserControl, IDisposable
 
     public PerformancePage()
     {
-        var (root, body) = Ui.Page("Rendimiento", "Datos en tiempo real obtenidos de APIs oficiales de Windows. Se actualiza cada 1,5 s.");
+        var (root, body) = Ui.Page("Monitor", "Datos en tiempo real obtenidos de APIs oficiales de Windows. Se actualiza cada 1,5 s.");
         body.Children.Add(Ui.Wrap(
             Ui.Metric("Procesador", out _cpu, out _cpuD),
             Ui.Metric("Memoria", out _ram, out _ramD),

@@ -48,6 +48,11 @@ public static class AurevixStyle
         },
         new()
         {
+            Id = "style.chat", Title = "Sin icono de Chat/Teams en la barra de tareas", Category = TweakCategory.Interface,
+            Registry = [Dw(Advanced, "TaskbarMn", 0)]
+        },
+        new()
+        {
             // Windows protege este valor en algunas versiones: si no se puede cambiar, se omite sin afectar al resto.
             Id = "style.widgets", Title = "Ocultar widgets de la barra de tareas", Category = TweakCategory.Interface,
             Registry = [Dw(Advanced, "TaskbarDa", 0)]

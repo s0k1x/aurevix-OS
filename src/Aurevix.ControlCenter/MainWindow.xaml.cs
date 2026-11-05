@@ -26,6 +26,8 @@ public partial class MainWindow : Window
             ["profiles"] = () => new ProfilesPage(),
             ["optimization"] = () => new OptimizationPage(),
             ["cleanup"] = () => new CleanupPage(),
+            ["tools"] = () => new ToolsPage(),
+            ["apps"] = () => new AppsPage(),
             ["appearance"] = () => new AppearancePage(),
             ["updates"] = () => new UpdatesPage(),
             ["recovery"] = () => new RecoveryPage(),
@@ -34,7 +36,7 @@ public partial class MainWindow : Window
         _nav = new()
         {
             ["home"] = NavHome, ["diagnostics"] = NavDiagnostics, ["performance"] = NavPerformance,
-            ["benchmark"] = NavBenchmark, ["cleanup"] = NavCleanup, ["gameboost"] = NavGameBoost, ["network"] = NavNetwork,
+            ["benchmark"] = NavBenchmark, ["cleanup"] = NavCleanup, ["gameboost"] = NavGameBoost, ["network"] = NavNetwork, ["tools"] = NavTools, ["apps"] = NavApps,
             ["profiles"] = NavProfiles, ["optimization"] = NavOptimization, ["appearance"] = NavAppearance,
             ["updates"] = NavUpdates, ["recovery"] = NavRecovery, ["settings"] = NavSettings,
         };
@@ -57,5 +59,6 @@ public partial class MainWindow : Window
         if (key is null) return;
         if (PageHost.Content is IDisposable d) d.Dispose();
         PageHost.Content = _pages[key]();
+        Views.Ui.Enter(PageHost, 0, 10);
     }
 }

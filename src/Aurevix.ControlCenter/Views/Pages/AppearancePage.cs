@@ -56,6 +56,14 @@ public sealed class AppearancePage : UserControl
                 Ui.Button("Clásico / Ligero", () => ApplyReg("Modo ligero", [Dw(Personalize, "EnableTransparency", 0), Sz(@"Control Panel\Desktop\WindowMetrics", "MinAnimate", "0")])),
                 Ui.Button("Elegante / Animado", () => ApplyReg("Modo elegante", [Dw(Personalize, "EnableTransparency", 1), Sz(@"Control Panel\Desktop\WindowMetrics", "MinAnimate", "1")]), primary: true))));
 
+        body.Children.Add(Ui.Card(Ui.H2("Iconos del escritorio"),
+            Ui.Muted("Tamaño de los iconos del escritorio. Se aplica al reiniciar el Explorador."),
+            Ui.Row(
+                Ui.Button("Pequeños", () => ApplyReg("Iconos pequeños", [Dw(@"Software\Microsoft\Windows\Shell\Bags\1\Desktop", "IconSize", 32)])),
+                Ui.Button("Medianos", () => ApplyReg("Iconos medianos", [Dw(@"Software\Microsoft\Windows\Shell\Bags\1\Desktop", "IconSize", 48)])),
+                Ui.Button("Grandes", () => ApplyReg("Iconos grandes", [Dw(@"Software\Microsoft\Windows\Shell\Bags\1\Desktop", "IconSize", 96)])),
+                Ui.Button("Reiniciar Explorador", AurevixStyle.RestartExplorer))));
+
         body.Children.Add(Ui.Card(Ui.H2("Barra de tareas"),
             Ui.Muted("Alineación de los iconos de la barra de tareas (opción oficial de Windows 11)."),
             Ui.Row(

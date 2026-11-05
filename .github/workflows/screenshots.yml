@@ -48,3 +48,38 @@ jobs:
           git add -A
           git commit -m "Capturas $env:GITHUB_SHA"
           git push -f origin ci-capturas
+
+  desktop:
+    # Windows 11 real (ARM64): escritorio antes y después del Estilo AUREVIX.
+    runs-on: windows-11-arm
+    needs: screenshots
+    timeout-minutes: 25
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Compilar (ARM64)
+        run: dotnet build src/Aurevix.ControlCenter -c Release -r win-arm64 -o out/cc
+      - name: Capturar escritorio
+        shell: pwsh
+        run: |
+          $dir = Join-Path $PWD 'escritorio'
+          New-Item -ItemType Directory -Force $dir | Out-Null
+          $p = Start-Process out/cc/AurevixControlCenter.exe -ArgumentList '--render-desktop', "`"$dir`"" -PassThru
+          if (-not $p.WaitForExit(600000)) { $p.Kill(); Write-Warning 'tiempo agotado' }
+          Get-ChildItem $dir | Format-Table Name, Length
+      - name: Añadir a la rama ci-capturas
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          $tmp = Join-Path $env:RUNNER_TEMP 'esc'
+          Copy-Item escritorio $tmp -Recurse
+          git fetch origin ci-capturas --depth 1
+          git checkout -B ci-capturas origin/ci-capturas
+          Copy-Item "$tmp\*" . -Recurse -Force
+          git add -A
+          git commit -m "Escritorio Windows 11 $env:GITHUB_SHA"
+          git push origin ci-capturas
