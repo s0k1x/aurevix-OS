@@ -46,7 +46,10 @@ public sealed class GameBoostPage : UserControl
 
         body.Children.Add(Ui.Card(Ui.H2("Al empezar a jugar"),
             Check("Vaciar la memoria en espera (como ISLC)", s.PurgeStandby, v => s.PurgeStandby = v),
-            Ui.Muted("Requiere AUREVIX Core Service. Útil si notas tirones en juegos de mundo abierto con poca RAM libre.")));
+            Check("Temporizador del sistema a 0,5 ms mientras juegas", s.TimerResolution, v => s.TimerResolution = v),
+            Check("Reservar la mitad de los núcleos para el juego (las apps de fondo usan el resto; 8+ núcleos)", s.ReserveCores, v => s.ReserveCores = v),
+            Ui.Muted("Memoria en espera: lo hace AUREVIX Core Service; útil si notas tirones con poca RAM libre. Temporizador: afecta a todo el sistema solo con «Resolución de temporizador global» (Optimización). " +
+                     "Núcleos: compruébalo con Benchmark; en algunos juegos no cambia nada. Todo se restaura al cerrar el juego.")));
         body.Children.Add(ListCard("Apps de streaming y grabación", "Nunca se apartan: suben a prioridad «por encima de lo normal» mientras juegas (OBS, Streamlabs…).", s.Streaming));
 
         body.Children.Add(ListCard("Apps de fondo que se apartan", "Bajan a prioridad mínima mientras juegas; no se cierran.", s.Background));

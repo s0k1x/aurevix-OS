@@ -24,6 +24,10 @@ public sealed class GameBoostSettings
     public bool TrimMemory { get; set; } = true;
     /// <summary>Vaciar la memoria en espera al empezar a jugar (como ISLC), mediante AUREVIX Core Service.</summary>
     public bool PurgeStandby { get; set; } = true;
+    /// <summary>Temporizador del sistema a 0,5 ms mientras juegas (con «Resolución de temporizador global» afecta a todo el sistema).</summary>
+    public bool TimerResolution { get; set; } = true;
+    /// <summary>Las apps de fondo solo usan la segunda mitad de los núcleos; la primera queda libre para el juego.</summary>
+    public bool ReserveCores { get; set; }
     /// <summary>Apps de streaming/grabación: nunca se apartan y suben a prioridad «por encima de lo normal».</summary>
     public List<string> Streaming { get; set; } = ["obs64.exe", "obs32.exe", "Streamlabs OBS.exe", "Medal.exe"];
     /// <summary>Ruta completa de cada juego (para los ajustes por juego de Windows).</summary>
@@ -75,6 +79,8 @@ public static class GameBoost
 
     private static System.Threading.Timer? _timer;
     private static readonly Dictionary<int, ProcessPriorityClass> Lowered = new();
+    private static readonly Dictionary<int, IntPtr> Affinity = new();
+    private static bool _timerSet;
     private static Guid? _previousPlan;
     private static int _busy;
 
@@ -127,6 +133,7 @@ public static class GameBoost
                     Lowered[p.Id] = p.PriorityClass;
                     p.PriorityClass = ProcessPriorityClass.Idle;
                     if (Settings.TrimMemory) EmptyWorkingSet(p.Handle);
+                    if (Settings.ReserveCores && BackgroundMask() is { } mask) { Affinity[p.Id] = p.ProcessorAffinity; p.ProcessorAffinity = mask; }
                 }
                 catch { }
                 finally { p.Dispose(); }
@@ -138,6 +145,8 @@ public static class GameBoost
                 try { Lowered[p.Id] = p.PriorityClass; p.PriorityClass = ProcessPriorityClass.AboveNormal; } catch { }
                 finally { p.Dispose(); }
             }
+
+        if (Settings.TimerResolution && NtSetTimerResolution(5000, true, out _) == 0) _timerSet = true;
 
         if (Settings.PurgeStandby)
             _ = CoreServiceClient.SendAsync(new CoreRequest { Op = "maintenance", Action = "purge-standby" });
@@ -171,6 +180,12 @@ public static class GameBoost
             try { using var p = Process.GetProcessById(pid); p.PriorityClass = prio; } catch { }
         }
         Lowered.Clear();
+        foreach (var (pid, mask) in Affinity)
+        {
+            try { using var p = Process.GetProcessById(pid); p.ProcessorAffinity = mask; } catch { }
+        }
+        Affinity.Clear();
+        if (_timerSet) { NtSetTimerResolution(5000, false, out _); _timerSet = false; }
         if (_previousPlan is { } plan)
         {
             try { new PowercfgPowerPlanAccess().SetActivePlan(plan); } catch { }
@@ -183,4 +198,17 @@ public static class GameBoost
 
     [DllImport("psapi.dll")]
     private static extern bool EmptyWorkingSet(IntPtr hProcess);
+
+    [DllImport("ntdll.dll")]
+    private static extern int NtSetTimerResolution(uint desired, bool set, out uint current);
+
+    /// <summary>Máscara con la segunda mitad de los núcleos lógicos (solo con 8 o más; en equipos pequeños no se toca).</summary>
+    private static IntPtr? BackgroundMask()
+    {
+        var n = Math.Min(Environment.ProcessorCount, 64);
+        if (n < 8) return null;
+        ulong mask = 0;
+        for (var i = n / 2; i < n; i++) mask |= 1UL << i;
+        return (IntPtr)(long)mask;
+    }
 }
