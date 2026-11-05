@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#050506">
 <link rel="icon" type="image/png" href="favicon.png">
 <style>
-  :root{--bg:#050506;--text:#f5f5f7;--muted:#8b8b94;--line:#1f1f25;--surface:#0e0e11;--accent:#e2b04a}
+  :root{--bg:#050506;--text:#f5f5f7;--muted:#8b8b94;--line:#1f1f25;--surface:#0e0e11;--accent:#8de03c}
   *{box-sizing:border-box;margin:0}
   html{scroll-behavior:smooth;background:var(--bg)}
   body{background:var(--bg);color:var(--text);font:15px/1.6 "Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,"Helvetica Neue",sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
@@ -19,7 +19,7 @@
   nav{position:fixed;top:0;left:0;right:0;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:14px 28px;
       background:linear-gradient(var(--bg),rgba(5,5,6,0));font-size:13px}
   .brand{display:flex;align-items:center;gap:10px;font-weight:600;letter-spacing:.02em;text-decoration:none}
-  .brand img{width:22px;height:22px;border-radius:6px}
+  .brand img{width:20px;height:20px}
   .links{display:flex;gap:26px;align-items:center}
   .links a{color:var(--muted);text-decoration:none;transition:color .2s}
   .links a:hover{color:var(--text)}
@@ -88,7 +88,7 @@
 <canvas id="orb" aria-hidden="true"></canvas>
 
 <nav aria-label="Principal">
-  <a class="brand" href="#inicio"><img src="favicon.png" alt="" width="22" height="22">AUREVIX</a>
+  <a class="brand" href="#inicio"><img src="logo.png" alt="" width="20" height="20">AUREVIX</a>
   <div class="links">
     <a href="#diagnostico">Sistema</a>
     <a href="#seguridad">Seguridad</a>
@@ -123,12 +123,12 @@
 
   <section class="right" id="perfiles" data-shape="wave" data-x=".33" data-scale=".72">
     <div class="copy">
-      <div class="eyebrow reveal">Perfiles</div>
-      <h2 class="reveal d1">Un equipo. Cuatro caracteres.</h2>
-      <p class="body reveal d2">Equilibrado, Gaming, Productividad y Eficiencia. Cada ajuste explica qué hace y se deshace con un clic. Sin trucos copiados de internet.</p>
+      <div class="eyebrow reveal">Rendimiento</div>
+      <h2 class="reveal d1">Tres niveles. Cero humo.</h2>
+      <p class="body reveal d2">Recomendado, Rendimiento y Máximo, o Personalizado ajuste a ajuste: energía sin ahorros, prioridad al juego, GPU, latencia, servicios y telemetría. Cada cambio se explica, se mide con AUREVIX Benchmark y se deshace con un clic.</p>
       <div class="stats reveal d3">
-        <div class="stat"><b>4</b><span>perfiles</span></div>
-        <div class="stat"><b>100%</b><span>reversible</span></div>
+        <div class="stat"><b>40+</b><span>ajustes revisados</span></div>
+        <div class="stat"><b>1%</b><span>lows medidos</span></div>
       </div>
     </div>
   </section>
@@ -137,7 +137,7 @@
     <div class="copy">
       <div class="eyebrow reveal">Estilo AUREVIX</div>
       <h2 class="reveal d1">Windows, pero en calma.</h2>
-      <p class="body reveal d2">Modo oscuro con acento dorado, barra de tareas limpia, Inicio sin anuncios y un Explorador ordenado. Con opciones oficiales de Windows, sin parchear el sistema.</p>
+      <p class="body reveal d2">Modo oscuro con acento verde lima, barra de tareas limpia, Inicio sin anuncios y un Explorador ordenado. Con opciones oficiales de Windows, sin parchear el sistema.</p>
     </div>
   </section>
 
@@ -231,8 +231,8 @@
       const depth = (1 - z2) / 2;
       const a = .12 + depth * .78;
       const size = (.6 + depth * 1.5) * dpr * p;
-      // Dorado en el frente, blanco frío al fondo.
-      ctx.fillStyle = depth > .55 ? `rgba(226,176,74,${a})` : `rgba(235,236,242,${a * .8})`;
+      // Verde lima en el frente, blanco frío al fondo.
+      ctx.fillStyle = depth > .55 ? `rgba(141,224,60,${a})` : `rgba(235,236,242,${a * .8})`;
       ctx.fillRect(cx + x1 * R * p, cy + y2 * R * p, size, size);
     }
     requestAnimationFrame(frame);

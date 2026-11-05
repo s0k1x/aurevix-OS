@@ -11,7 +11,7 @@ Experiencia de **Windows 11** personalizada, modular y actualizable. AUREVIX **n
 | **Control Center** (WPF, .NET 8) con 9 secciones: Inicio, Diagnóstico, Rendimiento, Perfiles, Optimización, Apariencia, Actualizaciones, Recuperación, Ajustes | Escrito. Pendiente de compilar y probar en Windows |
 | **AUREVIX Setup** (asistente de primer inicio): diagnóstico, informe, punto de restauración, perfil, resumen | Escrito. Pendiente de probar |
 | **Diagnóstico** de solo lectura (WMI) con niveles Correcto / Revisar / Requiere atención / No disponible. Nunca inventa temperaturas | Lógica probada; recopilación pendiente de probar en Windows |
-| **Catálogo de ajustes reversibles** (10 ajustes, solo HKCU) y 4 perfiles, con copia de seguridad y reversión automática si falla | Probado (36 pruebas automáticas) |
+| Perfiles de uso (Equilibrado, Gaming, Productividad, Eficiencia) | Probado |
 | **AUREVIX Update**: manifiesto firmado ECDSA P-256, anti-downgrade, caducidad, despliegue gradual, descarga verificada con SHA-256, canales Stable/Beta/Developer | Probado |
 | **Pantalla automática de actualización** al publicar una versión nueva | Escrita. Pendiente de probar |
 | **AUREVIX Installer**: instalar en este Windows · reinstalar limpio sin USB · crear USB (detección automática) o ISO. Ver [docs/INSTALLER.md](docs/INSTALLER.md) | Escrito. Pendiente de probar en Windows |
@@ -20,7 +20,8 @@ Experiencia de **Windows 11** personalizada, modular y actualizable. AUREVIX **n
 | Instalador del Control Center (Inno Setup) e ISO Builder por script | Publicados en v0.1.0 |
 | **Servidor de versiones** (Supabase: tabla `releases` + Storage `releases`) | Desplegado |
 | **Web de descargas** (`web/`) | Lista; se publica con GitHub Pages |
-| **AUREVIX Core Service** (servicio con privilegios mínimos) | **No implementado** (Hito 4). Hoy las acciones elevadas piden UAC puntualmente |
+| **AUREVIX Core Service**: ajustes de sistema solo del catálogo, API local cerrada. Ver [ADR 0008](docs/adr/0008-core-service.md) | Escrito. Pendiente de probar en Windows |
+| **Rendimiento**: 3 niveles + Personalizado (45 ajustes), Benchmark (PresentMon), Game Boost, Red (DNS, ping, QoS), Limpieza. Ver [docs/PERFORMANCE.md](docs/PERFORMANCE.md) | Lógica probada (60 pruebas). Pendiente de probar en Windows |
 | Rediseño del shell (sustituir barra de tareas, Inicio, Explorador o Configuración) | **No incluido** a propósito: no hay vía soportada. Ver ADR 0005 y 0007 |
 | Temperaturas y uso de GPU | **No incluidos**: no hay una fuente fiable sin privilegios. Ver ADR 0006 |
 

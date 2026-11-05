@@ -2,125 +2,1071 @@
   {
     "id": "gaming.game-mode.on",
     "category": "gaming",
-    "title": "Activar el Modo de juego de Windows",
-    "description": "Activa el Modo de juego oficial de Windows, que da prioridad al juego en primer plano y evita que Windows Update instale controladores o muestre avisos de reinicio mientras juegas.",
-    "expectedEffect": "Menos interrupciones durante las partidas. La mejora de FPS no está garantizada y depende del juego.",
+    "levels": [
+      "recommended",
+      "performance",
+      "maximum"
+    ],
+    "title": "Modo de juego de Windows",
+    "description": "Activa el Modo de juego oficial: Windows da prioridad al juego en primer plano y no instala controladores ni muestra avisos de reinicio mientras juegas.",
+    "expectedEffect": "Menos interrupciones y tirones durante las partidas.",
     "possibleImpact": "Ninguno conocido; es la opción por defecto en Windows 11.",
-    "risk": "low",
     "registry": [
-      { "hive": "currentUser", "key": "Software\\Microsoft\\GameBar", "name": "AutoGameModeEnabled", "kind": "dword", "value": "1" }
+      {
+        "hive": "currentUser",
+        "key": "Software\\Microsoft\\GameBar",
+        "name": "AutoGameModeEnabled",
+        "kind": "dword",
+        "value": "1"
+      }
     ]
   },
   {
     "id": "gaming.background-recording.off",
     "category": "gaming",
-    "title": "Desactivar la grabación en segundo plano (Game DVR)",
-    "description": "Desactiva la captura continua de los últimos minutos de juego de la Xbox Game Bar. Equivale a la opción de Configuración > Juegos > Capturas.",
-    "expectedEffect": "Elimina la carga de codificación de vídeo en segundo plano mientras juegas.",
-    "possibleImpact": "No podrás guardar los 'últimos 30 segundos' de una partida hasta que lo reactives.",
-    "risk": "low",
+    "levels": [
+      "performance",
+      "maximum"
+    ],
+    "title": "Sin grabación en segundo plano (Game DVR)",
+    "description": "Desactiva la captura continua de los últimos minutos de juego de la Xbox Game Bar.",
+    "expectedEffect": "Elimina la codificación de vídeo en segundo plano mientras juegas: mejores 1% lows en equipos modestos.",
+    "possibleImpact": "No podrás guardar «los últimos 30 segundos» hasta reactivarlo.",
     "registry": [
-      { "hive": "currentUser", "key": "System\\GameConfigStore", "name": "GameDVR_Enabled", "kind": "dword", "value": "0" },
-      { "hive": "currentUser", "key": "Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR", "name": "AppCaptureEnabled", "kind": "dword", "value": "0" }
+      {
+        "hive": "currentUser",
+        "key": "System\\GameConfigStore",
+        "name": "GameDVR_Enabled",
+        "kind": "dword",
+        "value": "0"
+      },
+      {
+        "hive": "currentUser",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR",
+        "name": "AppCaptureEnabled",
+        "kind": "dword",
+        "value": "0"
+      }
     ]
   },
   {
-    "id": "interface.transparency.off",
-    "category": "interface",
-    "title": "Desactivar los efectos de transparencia",
-    "description": "Desactiva la transparencia de la barra de tareas, el menú Inicio y las ventanas. Equivale a Configuración > Personalización > Colores > Efectos de transparencia.",
-    "expectedEffect": "Ligera reducción del trabajo de la GPU en equipos modestos.",
-    "possibleImpact": "Aspecto más plano.",
-    "risk": "low",
-    "registry": [
-      { "hive": "currentUser", "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize", "name": "EnableTransparency", "kind": "dword", "value": "0" }
-    ]
-  },
-  {
-    "id": "interface.transparency.on",
-    "category": "interface",
-    "title": "Activar los efectos de transparencia",
-    "description": "Activa la transparencia de la barra de tareas, el menú Inicio y las ventanas (valor por defecto de Windows 11).",
-    "expectedEffect": "Aspecto visual más moderno.",
-    "possibleImpact": "Uso de GPU algo mayor en equipos modestos.",
-    "risk": "low",
-    "registry": [
-      { "hive": "currentUser", "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize", "name": "EnableTransparency", "kind": "dword", "value": "1" }
-    ]
-  },
-  {
-    "id": "interface.minimize-animation.off",
-    "category": "interface",
-    "title": "Reducir animaciones al minimizar y maximizar",
-    "description": "Desactiva la animación de las ventanas al minimizarlas o maximizarlas.",
-    "expectedEffect": "Sensación de respuesta más rápida en equipos modestos.",
-    "possibleImpact": "Transiciones menos suaves. Requiere cerrar sesión para aplicarse por completo.",
-    "risk": "low",
+    "id": "gaming.mouse-acceleration.off",
+    "category": "gaming",
+    "levels": [
+      "performance",
+      "maximum"
+    ],
     "requiresSignOut": true,
+    "title": "Sin aceleración del ratón",
+    "description": "Desactiva «Mejorar precisión del puntero»: el movimiento del cursor pasa a ser 1:1 con el ratón.",
+    "expectedEffect": "Puntería consistente en juegos de disparos.",
+    "possibleImpact": "En el escritorio el cursor puede sentirse más lento; ajusta la sensibilidad si hace falta.",
     "registry": [
-      { "hive": "currentUser", "key": "Control Panel\\Desktop\\WindowMetrics", "name": "MinAnimate", "kind": "string", "value": "0" }
+      {
+        "hive": "currentUser",
+        "key": "Control Panel\\Mouse",
+        "name": "MouseSpeed",
+        "kind": "string",
+        "value": "0"
+      },
+      {
+        "hive": "currentUser",
+        "key": "Control Panel\\Mouse",
+        "name": "MouseThreshold1",
+        "kind": "string",
+        "value": "0"
+      },
+      {
+        "hive": "currentUser",
+        "key": "Control Panel\\Mouse",
+        "name": "MouseThreshold2",
+        "kind": "string",
+        "value": "0"
+      }
     ]
   },
   {
-    "id": "interface.file-extensions.show",
+    "id": "gaming.mmcss.games",
+    "category": "gaming",
+    "levels": [
+      "performance",
+      "maximum"
+    ],
+    "requiresRestart": true,
+    "title": "Prioridad alta para juegos (MMCSS)",
+    "description": "Ajusta el perfil «Games» del Programador de clases multimedia de Windows para dar más prioridad de CPU y E/S a los juegos.",
+    "expectedEffect": "Menos tirones cuando hay tareas en segundo plano.",
+    "possibleImpact": "Las tareas en segundo plano pueden ir algo más lentas mientras juegas.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games",
+        "name": "GPU Priority",
+        "kind": "dword",
+        "value": "8"
+      },
+      {
+        "hive": "localMachine",
+        "key": "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games",
+        "name": "Priority",
+        "kind": "dword",
+        "value": "6"
+      },
+      {
+        "hive": "localMachine",
+        "key": "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games",
+        "name": "Scheduling Category",
+        "kind": "string",
+        "value": "High"
+      },
+      {
+        "hive": "localMachine",
+        "key": "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games",
+        "name": "SFIO Priority",
+        "kind": "string",
+        "value": "High"
+      }
+    ]
+  },
+  {
+    "id": "gaming.system-responsiveness",
+    "category": "gaming",
+    "levels": [
+      "performance",
+      "maximum"
+    ],
+    "requiresRestart": true,
+    "title": "Menos CPU reservada para tareas en segundo plano",
+    "description": "Reduce del 20 % al 10 % la CPU que MMCSS reserva para tareas de baja prioridad (SystemResponsiveness).",
+    "expectedEffect": "Más tiempo de CPU para juegos y audio en tiempo real.",
+    "possibleImpact": "Ninguno relevante en uso normal.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile",
+        "name": "SystemResponsiveness",
+        "kind": "dword",
+        "value": "10"
+      }
+    ]
+  },
+  {
+    "id": "gaming.network-throttling.off",
+    "category": "network",
+    "levels": [
+      "performance",
+      "maximum"
+    ],
+    "requiresRestart": true,
+    "title": "Sin limitación de red multimedia",
+    "description": "Desactiva el límite de paquetes que Windows aplica a la red mientras se reproduce contenido multimedia (NetworkThrottlingIndex).",
+    "expectedEffect": "Latencia de red más estable en juegos online mientras suena música o un vídeo.",
+    "possibleImpact": "Ninguno relevante.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile",
+        "name": "NetworkThrottlingIndex",
+        "kind": "dword",
+        "value": "-1"
+      }
+    ]
+  },
+  {
+    "id": "gaming.foreground-boost",
+    "category": "gaming",
+    "levels": [
+      "performance",
+      "maximum"
+    ],
+    "requiresRestart": true,
+    "title": "Más prioridad a la aplicación en primer plano",
+    "description": "Configura el programador de Windows (Win32PrioritySeparation = 0x26) con intervalos cortos y variables y prioridad 3:1 para la ventana activa.",
+    "expectedEffect": "El juego o programa activo responde antes; menos latencia de entrada.",
+    "possibleImpact": "Las tareas en segundo plano (compilaciones, renders) pueden tardar algo más.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\PriorityControl",
+        "name": "Win32PrioritySeparation",
+        "kind": "dword",
+        "value": "38"
+      }
+    ]
+  },
+  {
+    "id": "gaming.timer-resolution.global",
+    "category": "gaming",
+    "levels": [
+      "maximum"
+    ],
+    "requiresRestart": true,
+    "minWindowsBuild": 22000,
+    "risk": "medium",
+    "title": "Resolución de temporizador global",
+    "description": "Restablece el comportamiento clásico: si un juego pide un temporizador de alta resolución, se aplica a todo el sistema (GlobalTimerResolutionRequests).",
+    "expectedEffect": "Tiempos de fotograma más regulares en juegos que dependen del temporizador.",
+    "possibleImpact": "Algo más de consumo de energía mientras un programa pide alta resolución.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\Session Manager\\kernel",
+        "name": "GlobalTimerResolutionRequests",
+        "kind": "dword",
+        "value": "1"
+      }
+    ]
+  },
+  {
+    "id": "gpu.hags.on",
+    "category": "graphics",
+    "levels": [
+      "recommended",
+      "performance",
+      "maximum"
+    ],
+    "requiresRestart": true,
+    "title": "Programación de GPU acelerada por hardware",
+    "description": "Deja que la GPU gestione su propia memoria de vídeo (HAGS). Es una opción oficial de Configuración > Pantalla > Gráficos.",
+    "expectedEffect": "Menos latencia y menos carga de CPU; necesaria para la generación de fotogramas en algunos drivers.",
+    "possibleImpact": "Con drivers antiguos puede no estar disponible; si notas problemas, desactívala.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers",
+        "name": "HwSchMode",
+        "kind": "dword",
+        "value": "2"
+      }
+    ]
+  },
+  {
+    "id": "gpu.windowed-optimizations.on",
+    "category": "graphics",
+    "levels": [
+      "recommended",
+      "performance",
+      "maximum"
+    ],
+    "minWindowsBuild": 22000,
+    "title": "Optimizaciones para juegos en ventana",
+    "description": "Activa el modelo de presentación moderno (flip) para juegos DirectX 10/11 en ventana o ventana sin bordes, y la frecuencia variable. Opción oficial de Configuración > Pantalla > Gráficos.",
+    "expectedEffect": "Menos latencia y menos tearing en ventana sin bordes, con rendimiento similar a pantalla completa.",
+    "possibleImpact": "Algún juego antiguo puede mostrar problemas; se desactiva por juego en Configuración.",
+    "registry": [
+      {
+        "hive": "currentUser",
+        "key": "Software\\Microsoft\\DirectX\\UserGpuPreferences",
+        "name": "DirectXUserGlobalSettings",
+        "kind": "string",
+        "value": "VRROptimizeEnable=1;SwapEffectUpgradeEnable=1;"
+      }
+    ]
+  },
+  {
+    "id": "power.plan.high-performance",
+    "category": "power",
+    "levels": [
+      "performance"
+    ],
+    "powerPlan": "8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c",
+    "title": "Plan de energía Alto rendimiento",
+    "description": "Activa el plan Alto rendimiento de Windows (se crea si tu equipo lo oculta).",
+    "expectedEffect": "La CPU sube de frecuencia antes y se mantiene más alta.",
+    "possibleImpact": "Más consumo y temperatura; en portátiles, menos batería."
+  },
+  {
+    "id": "power.plan.ultimate",
+    "category": "power",
+    "levels": [
+      "maximum"
+    ],
+    "risk": "medium",
+    "powerPlan": "e9a42b02-d5df-448d-aa00-03f14749eb61",
+    "requires": {
+      "desktopOnly": true
+    },
+    "title": "Plan de energía Máximo rendimiento",
+    "description": "Activa el plan oculto «Máximo rendimiento» de Windows (Ultimate Performance), pensado para estaciones de trabajo: elimina microlatencias de gestión de energía.",
+    "expectedEffect": "Respuesta inmediata de CPU, discos y USB.",
+    "possibleImpact": "Consumo y temperatura más altos. No recomendado en portátiles."
+  },
+  {
+    "id": "power.core-parking.off",
+    "category": "power",
+    "levels": [
+      "performance",
+      "maximum"
+    ],
+    "title": "Sin aparcamiento de núcleos (con corriente)",
+    "description": "Mantiene todos los núcleos de la CPU disponibles en lugar de «aparcarlos» cuando hay poca carga.",
+    "expectedEffect": "Menos tirones al subir la carga de golpe (cargas de escena, explosiones).",
+    "possibleImpact": "Algo más de consumo en reposo.",
+    "power": [
+      {
+        "subgroup": "54533251-82be-4824-96c1-47b60b740d00",
+        "setting": "0cc5b647-c1df-4637-891a-dec35c318583",
+        "ac": 100
+      }
+    ]
+  },
+  {
+    "id": "power.cpu-min-state.max",
+    "category": "power",
+    "levels": [
+      "maximum"
+    ],
+    "risk": "medium",
+    "requires": {
+      "desktopOnly": true
+    },
+    "title": "CPU siempre al 100 % de estado mínimo (con corriente)",
+    "description": "Fija el estado mínimo del procesador al 100 % mientras está enchufado.",
+    "expectedEffect": "Elimina la latencia de subida de frecuencia.",
+    "possibleImpact": "Más temperatura y ruido de ventilador en reposo.",
+    "power": [
+      {
+        "subgroup": "54533251-82be-4824-96c1-47b60b740d00",
+        "setting": "893dee8e-2bef-41e0-89c6-b55d0929964c",
+        "ac": 100
+      }
+    ]
+  },
+  {
+    "id": "power.usb-selective-suspend.off",
+    "category": "power",
+    "levels": [
+      "performance",
+      "maximum"
+    ],
+    "title": "Sin suspensión selectiva de USB (con corriente)",
+    "description": "Evita que Windows suspenda los puertos USB para ahorrar energía.",
+    "expectedEffect": "Ratón, teclado, mandos y audio USB sin microcortes ni retrasos al «despertar».",
+    "possibleImpact": "Consumo ligeramente mayor.",
+    "power": [
+      {
+        "subgroup": "2a737441-1930-4402-8d77-b2bebba308a3",
+        "setting": "48e6b7a6-50f5-4782-a5d4-53bb8f07e226",
+        "ac": 0
+      }
+    ]
+  },
+  {
+    "id": "power.pcie-aspm.off",
+    "category": "power",
+    "levels": [
+      "performance",
+      "maximum"
+    ],
+    "title": "Sin ahorro de energía en PCI Express (con corriente)",
+    "description": "Desactiva la administración de energía del estado de vínculo (ASPM) en GPU, NVMe y tarjeta de red.",
+    "expectedEffect": "Menos latencia al despertar los dispositivos PCIe.",
+    "possibleImpact": "Consumo ligeramente mayor.",
+    "power": [
+      {
+        "subgroup": "501a4d13-42af-4429-9fd1-a8218c268e20",
+        "setting": "ee12f906-d277-404b-b6da-e5fa1a576df5",
+        "ac": 0
+      }
+    ]
+  },
+  {
+    "id": "power.throttling.off",
+    "category": "power",
+    "levels": [
+      "maximum"
+    ],
+    "requiresRestart": true,
+    "requires": {
+      "desktopOnly": true
+    },
+    "title": "Sin limitación de energía de procesos",
+    "description": "Desactiva Power Throttling, que reduce la prioridad de CPU de los procesos en segundo plano para ahorrar batería.",
+    "expectedEffect": "Herramientas en segundo plano (streaming, voz, overlays) no se ralentizan.",
+    "possibleImpact": "Más consumo. No recomendado en portátiles.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\Power\\PowerThrottling",
+        "name": "PowerThrottlingOff",
+        "kind": "dword",
+        "value": "1"
+      }
+    ]
+  },
+  {
+    "id": "power.hibernation.off",
+    "category": "power",
+    "levels": [
+      "performance",
+      "maximum"
+    ],
+    "requiresRestart": true,
+    "requires": {
+      "desktopOnly": true
+    },
+    "title": "Desactivar hibernación",
+    "description": "Desactiva la hibernación (y con ella el inicio rápido). Libera el archivo hiberfil.sys, que ocupa varios GB.",
+    "expectedEffect": "Varios GB de disco libres y arranques siempre «limpios» (los drivers se cargan de cero).",
+    "possibleImpact": "No podrás hibernar. La suspensión normal sigue funcionando.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\Power",
+        "name": "HibernateEnabled",
+        "kind": "dword",
+        "value": "0"
+      }
+    ]
+  },
+  {
+    "id": "power.fast-startup.off",
+    "category": "power",
+    "levels": [
+      "performance",
+      "maximum"
+    ],
+    "requiresRestart": true,
+    "title": "Desactivar inicio rápido",
+    "description": "El inicio rápido guarda el núcleo de Windows al apagar. Desactivarlo hace que cada arranque sea completo.",
+    "expectedEffect": "Menos problemas con drivers y actualizaciones; el apagado es un apagado real.",
+    "possibleImpact": "El arranque desde apagado puede tardar unos segundos más.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power",
+        "name": "HiberbootEnabled",
+        "kind": "dword",
+        "value": "0"
+      }
+    ]
+  },
+  {
+    "id": "system.menu-delay",
     "category": "interface",
-    "title": "Mostrar las extensiones de archivo",
-    "description": "Muestra la extensión de los archivos en el Explorador (por ejemplo .pdf o .exe).",
-    "expectedEffect": "Facilita identificar archivos y ayuda a detectar archivos maliciosos disfrazados (por ejemplo factura.pdf.exe).",
+    "levels": [
+      "recommended",
+      "performance",
+      "maximum"
+    ],
+    "title": "Menús más rápidos",
+    "description": "Reduce el retraso al abrir submenús de 400 ms a 100 ms.",
+    "expectedEffect": "El escritorio se siente más ágil.",
     "possibleImpact": "Ninguno.",
-    "risk": "low",
     "registry": [
-      { "hive": "currentUser", "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced", "name": "HideFileExt", "kind": "dword", "value": "0" }
+      {
+        "hive": "currentUser",
+        "key": "Control Panel\\Desktop",
+        "name": "MenuShowDelay",
+        "kind": "string",
+        "value": "100"
+      }
     ]
   },
   {
-    "id": "interface.start-suggestions.off",
-    "category": "interface",
-    "title": "Desactivar sugerencias y contenido promocional en Inicio",
-    "description": "Desactiva las sugerencias de aplicaciones y consejos de Windows. Equivale a las opciones de Configuración > Personalización > Inicio y Notificaciones.",
-    "expectedEffect": "Menú Inicio y notificaciones más limpios.",
-    "possibleImpact": "No verás recomendaciones de Microsoft.",
-    "risk": "low",
+    "id": "system.startup-delay.off",
+    "category": "startup",
+    "levels": [
+      "recommended",
+      "performance",
+      "maximum"
+    ],
+    "title": "Sin espera para las aplicaciones de inicio",
+    "description": "Quita el retraso artificial que Windows añade antes de lanzar las aplicaciones de inicio.",
+    "expectedEffect": "El escritorio queda listo antes tras iniciar sesión.",
+    "possibleImpact": "Los primeros segundos tras iniciar sesión pueden ir más cargados.",
     "registry": [
-      { "hive": "currentUser", "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager", "name": "SystemPaneSuggestionsEnabled", "kind": "dword", "value": "0" },
-      { "hive": "currentUser", "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager", "name": "SubscribedContent-338388Enabled", "kind": "dword", "value": "0" },
-      { "hive": "currentUser", "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager", "name": "SubscribedContent-338389Enabled", "kind": "dword", "value": "0" }
+      {
+        "hive": "currentUser",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Serialize",
+        "name": "StartupDelayInMSec",
+        "kind": "dword",
+        "value": "0"
+      }
+    ]
+  },
+  {
+    "id": "system.background-apps.off",
+    "category": "startup",
+    "levels": [
+      "performance",
+      "maximum"
+    ],
+    "title": "Sin aplicaciones de la Store en segundo plano",
+    "description": "Impide que las aplicaciones de la Microsoft Store se ejecuten en segundo plano.",
+    "expectedEffect": "Menos procesos, memoria y red consumidos en segundo plano.",
+    "possibleImpact": "Algunas apps (Correo, Teléfono) no avisarán hasta que las abras.",
+    "registry": [
+      {
+        "hive": "currentUser",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\BackgroundAccessApplications",
+        "name": "GlobalUserDisabled",
+        "kind": "dword",
+        "value": "1"
+      }
+    ]
+  },
+  {
+    "id": "system.sysmain.off",
+    "category": "storage",
+    "levels": [
+      "maximum"
+    ],
+    "requiresRestart": true,
+    "risk": "medium",
+    "requires": {
+      "requiresSsd": true,
+      "minRamGb": 16
+    },
+    "title": "Desactivar SysMain (Superfetch)",
+    "description": "SysMain precarga en memoria los programas que usas a menudo. Con un SSD rápido y 16 GB o más su beneficio es pequeño.",
+    "expectedEffect": "Menos actividad de disco y CPU en segundo plano.",
+    "possibleImpact": "Algunos programas pueden tardar un poco más en abrir la primera vez.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Services\\SysMain",
+        "name": "Start",
+        "kind": "dword",
+        "value": "4"
+      }
+    ]
+  },
+  {
+    "id": "storage.last-access.off",
+    "category": "storage",
+    "levels": [
+      "performance",
+      "maximum"
+    ],
+    "requiresRestart": true,
+    "title": "No actualizar la fecha de último acceso (NTFS)",
+    "description": "Evita que NTFS escriba la fecha de último acceso cada vez que se lee un archivo.",
+    "expectedEffect": "Menos escrituras en disco al cargar juegos con miles de archivos.",
+    "possibleImpact": "La columna «Fecha de acceso» deja de actualizarse.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\FileSystem",
+        "name": "NtfsDisableLastAccessUpdate",
+        "kind": "dword",
+        "value": "-2147483647"
+      }
     ]
   },
   {
     "id": "storage.storage-sense.on",
     "category": "storage",
-    "title": "Activar el Sensor de almacenamiento",
-    "description": "Activa la función oficial de Windows que libera espacio automáticamente (archivos temporales, papelera antigua) cuando el disco se llena.",
-    "expectedEffect": "Ayuda a mantener espacio libre para Windows Update. No borra documentos personales con la configuración por defecto.",
-    "possibleImpact": "Los archivos de la Papelera con más de 30 días pueden eliminarse.",
-    "risk": "low",
+    "levels": [
+      "recommended",
+      "performance",
+      "maximum"
+    ],
+    "title": "Sensor de almacenamiento",
+    "description": "Activa la función oficial que libera espacio automáticamente (temporales, papelera antigua).",
+    "expectedEffect": "Espacio libre suficiente para Windows Update.",
+    "possibleImpact": "Archivos de la Papelera con más de 30 días pueden eliminarse.",
     "registry": [
-      { "hive": "currentUser", "key": "Software\\Microsoft\\Windows\\CurrentVersion\\StorageSense\\Parameters\\StoragePolicy", "name": "01", "kind": "dword", "value": "1" }
+      {
+        "hive": "currentUser",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\StorageSense\\Parameters\\StoragePolicy",
+        "name": "01",
+        "kind": "dword",
+        "value": "1"
+      }
+    ]
+  },
+  {
+    "id": "explorer.folder-discovery.off",
+    "category": "interface",
+    "levels": [
+      "recommended",
+      "performance",
+      "maximum"
+    ],
+    "title": "Explorador más rápido en carpetas grandes",
+    "description": "Desactiva la detección automática del tipo de carpeta, que hace que el Explorador analice el contenido antes de mostrarlo.",
+    "expectedEffect": "Carpetas con muchos archivos se abren al instante.",
+    "possibleImpact": "Las carpetas no cambiarán solas a vista de «Imágenes» o «Música».",
+    "registry": [
+      {
+        "hive": "currentUser",
+        "key": "Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\Shell\\Bags\\AllFolders\\Shell",
+        "name": "FolderType",
+        "kind": "string",
+        "value": "NotSpecified"
+      }
+    ]
+  },
+  {
+    "id": "interface.file-extensions.show",
+    "category": "interface",
+    "levels": [
+      "recommended",
+      "performance",
+      "maximum"
+    ],
+    "title": "Mostrar las extensiones de archivo",
+    "description": "Muestra la extensión de los archivos en el Explorador (.pdf, .exe…).",
+    "expectedEffect": "Ayuda a detectar archivos maliciosos disfrazados (factura.pdf.exe).",
+    "possibleImpact": "Ninguno.",
+    "registry": [
+      {
+        "hive": "currentUser",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+        "name": "HideFileExt",
+        "kind": "dword",
+        "value": "0"
+      }
+    ]
+  },
+  {
+    "id": "interface.start-suggestions.off",
+    "category": "interface",
+    "levels": [
+      "recommended",
+      "performance",
+      "maximum"
+    ],
+    "title": "Sin sugerencias ni promociones",
+    "description": "Desactiva sugerencias de aplicaciones y consejos promocionales en Inicio y notificaciones.",
+    "expectedEffect": "Menú Inicio y notificaciones limpios; menos descargas en segundo plano.",
+    "possibleImpact": "No verás recomendaciones de Microsoft.",
+    "registry": [
+      {
+        "hive": "currentUser",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+        "name": "SystemPaneSuggestionsEnabled",
+        "kind": "dword",
+        "value": "0"
+      },
+      {
+        "hive": "currentUser",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+        "name": "SubscribedContent-338388Enabled",
+        "kind": "dword",
+        "value": "0"
+      },
+      {
+        "hive": "currentUser",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+        "name": "SubscribedContent-338389Enabled",
+        "kind": "dword",
+        "value": "0"
+      },
+      {
+        "hive": "currentUser",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+        "name": "SilentInstalledAppsEnabled",
+        "kind": "dword",
+        "value": "0"
+      }
+    ]
+  },
+  {
+    "id": "interface.widgets.off",
+    "category": "interface",
+    "levels": [
+      "recommended",
+      "performance",
+      "maximum"
+    ],
+    "requiresSignOut": true,
+    "title": "Desactivar widgets",
+    "description": "Desactiva el panel de widgets y noticias mediante la directiva oficial de Windows.",
+    "expectedEffect": "Menos procesos (WebView) y memoria en segundo plano.",
+    "possibleImpact": "Desaparece el panel de widgets.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SOFTWARE\\Policies\\Microsoft\\Dsh",
+        "name": "AllowNewsAndInterests",
+        "kind": "dword",
+        "value": "0"
+      }
+    ]
+  },
+  {
+    "id": "interface.transparency.off",
+    "category": "interface",
+    "levels": [
+      "maximum"
+    ],
+    "title": "Sin efectos de transparencia",
+    "description": "Desactiva la transparencia de barra de tareas, Inicio y ventanas.",
+    "expectedEffect": "Algo menos de trabajo para la GPU en equipos modestos.",
+    "possibleImpact": "Aspecto más plano.",
+    "registry": [
+      {
+        "hive": "currentUser",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
+        "name": "EnableTransparency",
+        "kind": "dword",
+        "value": "0"
+      }
+    ]
+  },
+  {
+    "id": "interface.transparency.on",
+    "category": "interface",
+    "title": "Efectos de transparencia",
+    "description": "Activa la transparencia de barra de tareas, Inicio y ventanas (valor por defecto).",
+    "expectedEffect": "Aspecto moderno.",
+    "possibleImpact": "Algo más de uso de GPU en equipos modestos.",
+    "registry": [
+      {
+        "hive": "currentUser",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
+        "name": "EnableTransparency",
+        "kind": "dword",
+        "value": "1"
+      }
+    ]
+  },
+  {
+    "id": "interface.minimize-animation.off",
+    "category": "interface",
+    "levels": [
+      "maximum"
+    ],
+    "requiresSignOut": true,
+    "title": "Sin animación al minimizar",
+    "description": "Desactiva la animación de las ventanas al minimizar y maximizar.",
+    "expectedEffect": "Sensación de respuesta inmediata.",
+    "possibleImpact": "Transiciones menos suaves.",
+    "registry": [
+      {
+        "hive": "currentUser",
+        "key": "Control Panel\\Desktop\\WindowMetrics",
+        "name": "MinAnimate",
+        "kind": "string",
+        "value": "0"
+      }
+    ]
+  },
+  {
+    "id": "privacy.diagtrack.off",
+    "category": "privacy",
+    "levels": [
+      "recommended",
+      "performance",
+      "maximum"
+    ],
+    "requiresRestart": true,
+    "title": "Telemetría opcional desactivada",
+    "description": "Desactiva el servicio «Experiencias del usuario y telemetría asociadas» (DiagTrack) y fija los datos de diagnóstico en el mínimo que permite Windows.",
+    "expectedEffect": "Menos procesos, disco y red en segundo plano; más privacidad.",
+    "possibleImpact": "Ninguno funcional. Windows Update y la seguridad siguen funcionando.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Services\\DiagTrack",
+        "name": "Start",
+        "kind": "dword",
+        "value": "4"
+      },
+      {
+        "hive": "localMachine",
+        "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection",
+        "name": "AllowTelemetry",
+        "kind": "dword",
+        "value": "1"
+      }
+    ]
+  },
+  {
+    "id": "privacy.dmwappush.off",
+    "category": "privacy",
+    "levels": [
+      "performance",
+      "maximum"
+    ],
+    "requiresRestart": true,
+    "title": "Servicio de enrutamiento de mensajes WAP desactivado",
+    "description": "dmwappushservice solo se usa para gestión de dispositivos empresariales y telemetría.",
+    "expectedEffect": "Un servicio menos en segundo plano.",
+    "possibleImpact": "Ninguno en equipos personales (no gestionados por una empresa).",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Services\\dmwappushservice",
+        "name": "Start",
+        "kind": "dword",
+        "value": "4"
+      }
+    ]
+  },
+  {
+    "id": "privacy.telemetry-tasks.off",
+    "category": "privacy",
+    "levels": [
+      "recommended",
+      "performance",
+      "maximum"
+    ],
+    "title": "Tareas programadas de telemetría desactivadas",
+    "description": "Desactiva las tareas del Programa para la mejora de la experiencia del cliente y el evaluador de compatibilidad, que se ejecutan periódicamente.",
+    "expectedEffect": "Sin picos de CPU y disco inesperados en segundo plano.",
+    "possibleImpact": "Ninguno funcional. Las tareas que no existan en tu versión se omiten.",
+    "tasks": [
+      {
+        "path": "\\Microsoft\\Windows\\Application Experience\\Microsoft Compatibility Appraiser",
+        "enabled": false
+      },
+      {
+        "path": "\\Microsoft\\Windows\\Application Experience\\ProgramDataUpdater",
+        "enabled": false
+      },
+      {
+        "path": "\\Microsoft\\Windows\\Customer Experience Improvement Program\\Consolidator",
+        "enabled": false
+      },
+      {
+        "path": "\\Microsoft\\Windows\\Customer Experience Improvement Program\\UsbCeip",
+        "enabled": false
+      },
+      {
+        "path": "\\Microsoft\\Windows\\Autochk\\Proxy",
+        "enabled": false
+      },
+      {
+        "path": "\\Microsoft\\Windows\\DiskDiagnostic\\Microsoft-Windows-DiskDiagnosticDataCollector",
+        "enabled": false
+      }
+    ]
+  },
+  {
+    "id": "privacy.copilot.off",
+    "category": "privacy",
+    "levels": [
+      "recommended",
+      "performance",
+      "maximum"
+    ],
+    "requiresSignOut": true,
+    "title": "Desactivar Copilot de Windows",
+    "description": "Aplica la directiva oficial que desactiva Copilot en Windows.",
+    "expectedEffect": "Menos procesos y una barra de tareas más limpia.",
+    "possibleImpact": "Copilot no estará disponible (puedes usarlo en el navegador).",
+    "registry": [
+      {
+        "hive": "userPolicy",
+        "key": "Software\\Policies\\Microsoft\\Windows\\WindowsCopilot",
+        "name": "TurnOffWindowsCopilot",
+        "kind": "dword",
+        "value": "1"
+      }
+    ]
+  },
+  {
+    "id": "privacy.recall.off",
+    "category": "privacy",
+    "levels": [
+      "recommended",
+      "performance",
+      "maximum"
+    ],
+    "requiresRestart": true,
+    "minWindowsBuild": 22621,
+    "title": "Desactivar Recall (instantáneas de IA)",
+    "description": "Aplica las directivas oficiales que impiden que Windows guarde instantáneas de tu pantalla para la búsqueda con IA.",
+    "expectedEffect": "Más privacidad y menos uso de disco y NPU/CPU.",
+    "possibleImpact": "La función Recall no estará disponible.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsAI",
+        "name": "DisableAIDataAnalysis",
+        "kind": "dword",
+        "value": "1"
+      },
+      {
+        "hive": "localMachine",
+        "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsAI",
+        "name": "AllowRecallEnablement",
+        "kind": "dword",
+        "value": "0"
+      }
+    ]
+  },
+  {
+    "id": "privacy.web-search.off",
+    "category": "privacy",
+    "levels": [
+      "recommended",
+      "performance",
+      "maximum"
+    ],
+    "requiresSignOut": true,
+    "title": "Búsqueda de Inicio solo en tu PC",
+    "description": "Aplica la directiva oficial que quita los resultados web de Bing en la búsqueda de Inicio.",
+    "expectedEffect": "Búsquedas más rápidas y privadas.",
+    "possibleImpact": "La búsqueda de Inicio ya no muestra resultados de internet.",
+    "registry": [
+      {
+        "hive": "userPolicy",
+        "key": "Software\\Policies\\Microsoft\\Windows\\Explorer",
+        "name": "DisableSearchBoxSuggestions",
+        "kind": "dword",
+        "value": "1"
+      }
     ]
   },
   {
     "id": "privacy.advertising-id.off",
     "category": "privacy",
-    "title": "Desactivar el identificador de publicidad",
-    "description": "Impide que las aplicaciones usen el identificador de publicidad para mostrar anuncios personalizados. Equivale a Configuración > Privacidad y seguridad > General.",
-    "expectedEffect": "Menos seguimiento publicitario entre aplicaciones.",
-    "possibleImpact": "Los anuncios dentro de aplicaciones serán menos relevantes.",
-    "risk": "low",
+    "levels": [
+      "recommended",
+      "performance",
+      "maximum"
+    ],
+    "title": "Sin identificador de publicidad",
+    "description": "Impide que las aplicaciones usen el identificador de publicidad.",
+    "expectedEffect": "Menos seguimiento publicitario.",
+    "possibleImpact": "Anuncios menos relevantes en apps.",
     "registry": [
-      { "hive": "currentUser", "key": "Software\\Microsoft\\Windows\\CurrentVersion\\AdvertisingInfo", "name": "Enabled", "kind": "dword", "value": "0" }
+      {
+        "hive": "currentUser",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\AdvertisingInfo",
+        "name": "Enabled",
+        "kind": "dword",
+        "value": "0"
+      }
     ]
   },
   {
     "id": "privacy.tailored-experiences.off",
     "category": "privacy",
-    "title": "Desactivar experiencias personalizadas con datos de diagnóstico",
-    "description": "Impide que Microsoft use los datos de diagnóstico para mostrarte consejos y ofertas personalizadas. Es una opción legal y documentada de Windows; no desactiva Windows Update ni la seguridad.",
-    "expectedEffect": "Menos personalización basada en datos de diagnóstico.",
+    "levels": [
+      "recommended",
+      "performance",
+      "maximum"
+    ],
+    "title": "Sin experiencias personalizadas con diagnósticos",
+    "description": "Impide que Microsoft use datos de diagnóstico para consejos y ofertas personalizadas.",
+    "expectedEffect": "Más privacidad.",
     "possibleImpact": "Ninguno funcional.",
-    "risk": "low",
     "registry": [
-      { "hive": "currentUser", "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Privacy", "name": "TailoredExperiencesWithDiagnosticDataEnabled", "kind": "dword", "value": "0" }
+      {
+        "hive": "currentUser",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Privacy",
+        "name": "TailoredExperiencesWithDiagnosticDataEnabled",
+        "kind": "dword",
+        "value": "0"
+      }
+    ]
+  },
+  {
+    "id": "maintenance.delivery-optimization.p2p-off",
+    "category": "maintenance",
+    "levels": [
+      "recommended",
+      "performance",
+      "maximum"
+    ],
+    "requiresRestart": true,
+    "title": "Actualizaciones sin compartir con otros PCs",
+    "description": "Windows Update descarga solo de Microsoft (directiva DODownloadMode = 0) en lugar de compartir actualizaciones por internet con otros equipos.",
+    "expectedEffect": "Sin subida de datos en segundo plano: mejor ping mientras juegas.",
+    "possibleImpact": "Ninguno: Windows Update sigue funcionando normalmente.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\DeliveryOptimization",
+        "name": "DODownloadMode",
+        "kind": "dword",
+        "value": "0"
+      }
+    ]
+  },
+  {
+    "id": "network.nagle.off",
+    "category": "network",
+    "levels": [
+      "performance",
+      "maximum"
+    ],
+    "requiresRestart": true,
+    "title": "Sin retraso de Nagle en TCP (todas las tarjetas de red)",
+    "description": "Hace que Windows envíe cada paquete TCP y cada confirmación (ACK) al momento, sin agruparlos (TcpNoDelay y TcpAckFrequency en cada interfaz).",
+    "expectedEffect": "Unos milisegundos menos de latencia en juegos y apps que usan TCP. En juegos que usan UDP (la mayoría de shooters) no cambia nada.",
+    "possibleImpact": "Algo más de paquetes pequeños en la red; inapreciable en conexiones domésticas.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces\\*",
+        "name": "TcpAckFrequency",
+        "kind": "dword",
+        "value": "1"
+      },
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces\\*",
+        "name": "TCPNoDelay",
+        "kind": "dword",
+        "value": "1"
+      }
+    ]
+  },
+  {
+    "id": "network.update-bandwidth.limit",
+    "category": "network",
+    "levels": [
+      "performance",
+      "maximum"
+    ],
+    "requiresRestart": true,
+    "title": "Limitar las descargas de Windows Update en segundo plano",
+    "description": "Directiva oficial de Optimización de distribución: las descargas en segundo plano de Windows Update usan como máximo el 20 % del ancho de banda.",
+    "expectedEffect": "Las actualizaciones no disparan tu ping mientras juegas o haces videollamadas.",
+    "possibleImpact": "Las actualizaciones grandes pueden tardar algo más en descargarse en segundo plano. Siguen llegando igual.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\DeliveryOptimization",
+        "name": "DOPercentageMaxBackgroundBandwidth",
+        "kind": "dword",
+        "value": "20"
+      }
+    ]
+  },
+  {
+    "id": "network.qos-reserve.off",
+    "category": "network",
+    "levels": [],
+    "title": "Quitar el límite de ancho de banda reservable (QoS)",
+    "description": "Pone a 0 el límite de ancho de banda que las aplicaciones pueden reservar mediante QoS (NonBestEffortLimit).",
+    "expectedEffect": "Normalmente ninguno: es un mito que Windows reserve siempre el 20 % de tu conexión. Ese 20 % solo se usa si una app lo pide, y si no lo pide está disponible para todas.",
+    "possibleImpact": "Ninguno. Se incluye porque muchas guías lo recomiendan, pero no aumenta tu velocidad de internet.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\Psched",
+        "name": "NonBestEffortLimit",
+        "kind": "dword",
+        "value": "0"
+      }
+    ]
+  },
+  {
+    "id": "security.memory-integrity.off",
+    "category": "security",
+    "optIn": true,
+    "risk": "high",
+    "requiresRestart": true,
+    "title": "Desactivar Integridad de memoria (HVCI)",
+    "description": "Microsoft indica que Integridad de memoria puede afectar al rendimiento en algunos juegos y equipos, y que los jugadores pueden desactivarla mientras juegan y reactivarla después.",
+    "expectedEffect": "Posible mejora de FPS en CPUs sin aceleración para esta función. Mídelo con AUREVIX Benchmark.",
+    "possibleImpact": "REDUCE LA SEGURIDAD: el núcleo de Windows queda menos protegido frente a drivers maliciosos.",
+    "warning": "Reduce la seguridad del sistema. Actívala de nuevo cuando no juegues. Algunos juegos con antitrampas exigen tenerla activada.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\DeviceGuard\\Scenarios\\HypervisorEnforcedCodeIntegrity",
+        "name": "Enabled",
+        "kind": "dword",
+        "value": "0"
+      }
     ]
   }
 ]

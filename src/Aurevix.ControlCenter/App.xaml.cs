@@ -13,6 +13,7 @@ namespace Aurevix.ControlCenter;
 ///   --background      se queda en la bandeja; comprueba actualizaciones y muestra el asistente del primer inicio.
 ///   --first-run       fuerza el asistente de primer inicio.
 ///   --page &lt;id&gt;       abre una sección concreta (p. ej. updates).
+///   --after-update    tras una actualización silenciosa: ofrece reiniciar.
 /// </summary>
 public partial class App : Application
 {
@@ -72,7 +73,15 @@ public partial class App : Application
             exit: ExitApp);
 
         AppServices.Updates.UpdateAvailable += r => Dispatcher.Invoke(() => ShowUpdateWindow(r));
+
+        // Tras una actualización silenciosa: pedir reinicio para aplicarlo todo (sin forzarlo).
+        if (args.Contains("--after-update"))
+            RestartPrompt.Ask($"AUREVIX {AppServices.CurrentVersion} instalado",
+                "La actualización se ha instalado. Reinicia el equipo para que todos los componentes y ajustes se apliquen por completo.");
         AppServices.Updates.StartBackgroundChecks();
+
+        GameBoost.Notify += msg => Dispatcher.Invoke(() => _tray?.ShowBalloon("AUREVIX Game Boost", msg));
+        GameBoost.Start();
 
         if (!AppServices.State.FirstRunCompleted || args.Contains("--first-run"))
         {
@@ -128,6 +137,7 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        if (GameBoost.ActiveGame is not null) GameBoost.Restore();
         _tray?.Dispose();
         _mutex?.Dispose();
         base.OnExit(e);

@@ -1,0 +1,229 @@
+using System.Text.Json;
+using Aurevix.Core;
+using Aurevix.Core.Logging;
+
+namespace Aurevix.Performance;
+
+/// <summary>
+/// Protocolo entre AUREVIX Control Center (sin privilegios) y AUREVIX Core Service (con privilegios).
+/// Seguridad: el servicio NO acepta valores, rutas ni comandos del cliente. Solo identificadores de su propio
+/// catálogo incrustado, identificadores de copias de seguridad creadas por ese mismo usuario y una lista
+/// cerrada de tareas de mantenimiento.
+/// </summary>
+public static class CoreServiceProtocol
+{
+    public const string PipeName = "AurevixCoreService";
+    public const int MaxMessageBytes = 64 * 1024;
+    public const int Version = 1;
+
+    /// <summary>Tareas de mantenimiento permitidas (comandos fijos definidos en el servicio).</summary>
+    public static readonly IReadOnlyDictionary<string, string> MaintenanceActions = new Dictionary<string, string>
+    {
+        ["dism-cleanup"] = "Limpiar componentes antiguos de Windows Update (DISM /StartComponentCleanup)",
+        ["retrim"] = "Optimizar el SSD del sistema (TRIM)",
+        ["flush-dns"] = "Vaciar la caché DNS",
+        ["tcp-defaults"] = "Restablecer los ajustes TCP óptimos de Windows (autoajuste y RSS)",
+        ["network-repair"] = "Reparar la red (Winsock e IP; requiere reiniciar)",
+    };
+
+    /// <summary>Proveedores DNS permitidos. El cliente solo envía el identificador.</summary>
+    public static readonly IReadOnlyList<DnsProvider> DnsProviders =
+    [
+        new("cloudflare", "Cloudflare", ["1.1.1.1", "1.0.0.1"], ["2606:4700:4700::1111", "2606:4700:4700::1001"]),
+        new("google", "Google", ["8.8.8.8", "8.8.4.4"], ["2001:4860:4860::8888", "2001:4860:4860::8844"]),
+        new("quad9", "Quad9 (bloquea dominios maliciosos)", ["9.9.9.9", "149.112.112.112"], ["2620:fe::fe", "2620:fe::9"]),
+        new("opendns", "OpenDNS", ["208.67.222.222", "208.67.220.220"], ["2620:119:35::35", "2620:119:53::53"]),
+    ];
+
+    /// <summary>Nombre de ejecutable válido para una directiva QoS (sin rutas ni comodines).</summary>
+    public static bool IsValidExeName(string? exe) =>
+        exe is { Length: > 4 and <= 64 } && exe.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) &&
+        exe.All(c => char.IsLetterOrDigit(c) || c is '-' or '_' or '.' or ' ') && !exe.Contains("..");
+}
+
+public sealed record DnsProvider(string Id, string Name, string[] IPv4, string[] IPv6);
+
+/// <summary>Configuración de red del sistema (implementada en el servicio con PowerShell y parámetros validados).</summary>
+public interface INetworkConfigurator
+{
+    (bool ok, string message) SetDns(DnsProvider provider);
+    (bool ok, string message) RestoreDns();
+    (bool ok, string message) AddGameQos(string exe);
+    (bool ok, string message) RemoveGameQos(string exe);
+    IReadOnlyList<string> ListGameQos();
+}
+
+public sealed class CoreRequest
+{
+    public string Op { get; set; } = "";
+    public List<string>? Ids { get; set; }
+    public string? Label { get; set; }
+    public string? BackupId { get; set; }
+    public string? Action { get; set; }
+}
+
+public sealed class CoreStatus
+{
+    public TweakState State { get; set; }
+    public int Matched { get; set; }
+    public int Total { get; set; }
+}
+
+public sealed class CoreResponse
+{
+    public bool Ok { get; set; }
+    public string? Error { get; set; }
+    public int Version { get; set; } = CoreServiceProtocol.Version;
+    public string? BackupId { get; set; }
+    public bool RequiresRestart { get; set; }
+    public List<string> Messages { get; set; } = [];
+    public List<string>? Items { get; set; }
+    public Dictionary<string, CoreStatus>? Statuses { get; set; }
+
+    public static CoreResponse Fail(string error) => new() { Ok = false, Error = error };
+}
+
+public interface IMaintenanceRunner
+{
+    (bool ok, string message) Run(string action);
+}
+
+/// <summary>Lógica del servicio, independiente del transporte (named pipe) para poder probarla.</summary>
+public sealed class CoreRequestHandler(IReadOnlyList<TweakDefinition> catalog, Func<string, TweakEngine> engineForUserSid, IMaintenanceRunner? maintenance, INetworkConfigurator? network = null)
+{
+    private readonly Dictionary<string, TweakDefinition> _byId = catalog.ToDictionary(t => t.Id);
+
+    public string HandleJson(string json, string callerSid)
+    {
+        CoreResponse resp;
+        try
+        {
+            if (json.Length > CoreServiceProtocol.MaxMessageBytes) resp = CoreResponse.Fail("Petición demasiado grande.");
+            else
+            {
+                var req = JsonSerializer.Deserialize<CoreRequest>(json, JsonDefaults.Options);
+                resp = req is null ? CoreResponse.Fail("Petición vacía.") : Handle(req, callerSid);
+            }
+        }
+        catch (JsonException) { resp = CoreResponse.Fail("Petición con formato no válido."); }
+        catch (Exception ex)
+        {
+            AurevixLog.Error("Error en Core Service", ex);
+            resp = CoreResponse.Fail("Error interno del servicio.");
+        }
+        return JsonSerializer.Serialize(resp, JsonDefaults.Options);
+    }
+
+    public CoreResponse Handle(CoreRequest req, string callerSid)
+    {
+        if (string.IsNullOrWhiteSpace(callerSid)) return CoreResponse.Fail("No se pudo identificar al usuario.");
+        switch (req.Op)
+        {
+            case "ping":
+                return new CoreResponse { Ok = true };
+
+            case "status":
+            {
+                var (tweaks, err) = Resolve(req.Ids);
+                if (err is not null) return CoreResponse.Fail(err);
+                var engine = engineForUserSid(callerSid);
+                return new CoreResponse
+                {
+                    Ok = true,
+                    Statuses = tweaks.ToDictionary(t => t.Id, t =>
+                    {
+                        var s = engine.GetStatus(t);
+                        return new CoreStatus { State = s.State, Matched = s.Matched, Total = s.Total };
+                    })
+                };
+            }
+
+            case "apply":
+            {
+                var (tweaks, err) = Resolve(req.Ids);
+                if (err is not null) return CoreResponse.Fail(err);
+                var machine = tweaks.Where(t => t.HasMachinePart).ToList();
+                if (machine.Count == 0) return new CoreResponse { Ok = true };
+                var label = Sanitize(req.Label) ?? "Ajustes";
+                var r = engineForUserSid(callerSid).Apply(machine, label, ownerSid: callerSid);
+                AurevixLog.Info($"Core Service: apply [{string.Join(", ", machine.Select(t => t.Id))}] por {callerSid}: {(r.Success ? "ok" : "fallo")}");
+                return new CoreResponse
+                {
+                    Ok = r.Success, Error = r.Success ? null : string.Join(" ", r.Messages),
+                    BackupId = r.Success ? r.Backup?.Id : null, RequiresRestart = r.Backup?.RequiresRestart ?? false,
+                    Messages = r.Messages.ToList()
+                };
+            }
+
+            case "revert":
+            {
+                if (string.IsNullOrWhiteSpace(req.BackupId) || req.BackupId.Length > 64 || req.BackupId.Any(c => !(char.IsLetterOrDigit(c) || c == '-')))
+                    return CoreResponse.Fail("Identificador de copia no válido.");
+                var engine = engineForUserSid(callerSid);
+                var b = engine.FindBackup(req.BackupId);
+                if (b is null) return CoreResponse.Fail("No existe esa copia de seguridad.");
+                if (!string.Equals(b.OwnerSid, callerSid, StringComparison.OrdinalIgnoreCase))
+                    return CoreResponse.Fail("Esa copia de seguridad pertenece a otro usuario.");
+                engine.Revert(b);
+                engine.DeleteBackup(b.Id);
+                AurevixLog.Info($"Core Service: revert {b.Id} por {callerSid}");
+                return new CoreResponse { Ok = true, RequiresRestart = b.RequiresRestart };
+            }
+
+            case "maintenance":
+            {
+                if (req.Action is null || !CoreServiceProtocol.MaintenanceActions.ContainsKey(req.Action))
+                    return CoreResponse.Fail("Tarea de mantenimiento no permitida.");
+                if (maintenance is null) return CoreResponse.Fail("Mantenimiento no disponible.");
+                var (ok, msg) = maintenance.Run(req.Action);
+                return new CoreResponse { Ok = ok, Error = ok ? null : msg, Messages = [msg] };
+            }
+
+            case "dns-set":
+            {
+                var p = CoreServiceProtocol.DnsProviders.FirstOrDefault(d => d.Id == req.Action);
+                if (p is null) return CoreResponse.Fail("Proveedor DNS no permitido.");
+                if (network is null) return CoreResponse.Fail("Red no disponible.");
+                var (ok, msg) = network.SetDns(p);
+                return new CoreResponse { Ok = ok, Error = ok ? null : msg, Messages = [msg] };
+            }
+
+            case "dns-restore":
+            {
+                if (network is null) return CoreResponse.Fail("Red no disponible.");
+                var (ok, msg) = network.RestoreDns();
+                return new CoreResponse { Ok = ok, Error = ok ? null : msg, Messages = [msg] };
+            }
+
+            case "qos-add" or "qos-remove":
+            {
+                if (!CoreServiceProtocol.IsValidExeName(req.Action)) return CoreResponse.Fail("Nombre de juego no válido (debe ser un .exe sin ruta).");
+                if (network is null) return CoreResponse.Fail("Red no disponible.");
+                var (ok, msg) = req.Op == "qos-add" ? network.AddGameQos(req.Action!) : network.RemoveGameQos(req.Action!);
+                return new CoreResponse { Ok = ok, Error = ok ? null : msg, Messages = [msg] };
+            }
+
+            case "qos-list":
+                return new CoreResponse { Ok = true, Items = network?.ListGameQos().ToList() ?? [] };
+
+            default:
+                return CoreResponse.Fail("Operación desconocida.");
+        }
+    }
+
+    private (List<TweakDefinition> tweaks, string? error) Resolve(List<string>? ids)
+    {
+        if (ids is null || ids.Count == 0) return ([], "No se indicaron ajustes.");
+        if (ids.Count > 200) return ([], "Demasiados ajustes en una petición.");
+        var list = new List<TweakDefinition>();
+        foreach (var id in ids.Distinct())
+        {
+            if (!_byId.TryGetValue(id, out var t)) return ([], $"Ajuste desconocido: {id}");
+            list.Add(t);
+        }
+        return (list, null);
+    }
+
+    private static string? Sanitize(string? s) =>
+        s is null ? null : new string(s.Where(c => !char.IsControl(c)).Take(120).ToArray());
+}

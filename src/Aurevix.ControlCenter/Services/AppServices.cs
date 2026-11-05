@@ -32,6 +32,7 @@ public static class AppServices
     public static DiagnosticReport? LastReport { get; set; }
 
     public static int WindowsBuild => Environment.OSVersion.Version.Build;
+    public static SystemProfile Hardware { get; private set; } = SystemProfile.Unknown;
 
     public static bool IsAdmin
     {
@@ -53,7 +54,13 @@ public static class AppServices
         Catalog = TweakEngine.LoadCatalog();
         Profiles = TweakEngine.LoadProfiles();
         var power = new PowercfgPowerPlanAccess();
-        Tweaks = new TweakEngine(new WindowsRegistryAccess(), power, AurevixPaths.Backups, WindowsBuild, IsAdmin);
+        Hardware = SystemProfileDetector.Detect();
+        // Ámbito de usuario: lo de sistema lo aplica AUREVIX Core Service.
+        Tweaks = new TweakEngine(new TweakContext
+        {
+            Registry = new WindowsRegistryAccess(), PowerPlans = power, BackupDirectory = AurevixPaths.Backups,
+            WindowsBuild = WindowsBuild, Scope = TweakScope.User, System = Hardware
+        });
         ProfileManager = new ProfileManager(Tweaks, Catalog, Profiles, power);
         Updates = new UpdateService();
     }

@@ -171,11 +171,11 @@ public sealed class FirstRunWindow : Window
     // 6. Aspecto
     private void StyleStep() => Show(6, "Aspecto",
         Ui.H1("Dale a Windows el estilo AUREVIX"),
-        Ui.Muted("Minimalista y oscuro: acento dorado, fondo y pantalla de bloqueo AUREVIX, barra de tareas limpia, " +
+        Ui.Muted("Minimalista y oscuro: acento verde lima, fondo y pantalla de bloqueo AUREVIX, barra de tareas limpia, " +
                  "menú Inicio sin recomendaciones y Explorador ordenado. Puedes volver al aspecto original desde Apariencia."),
         Ui.Card(
             Ui.Text("Qué cambia"),
-            Ui.Muted("• Modo oscuro con transparencias y acento dorado"),
+            Ui.Muted("• Modo oscuro con transparencias y acento verde lima"),
             Ui.Muted("• Barra de tareas: iconos centrados, búsqueda como icono, sin Vista de tareas ni widgets"),
             Ui.Muted("• Inicio: más anclados, sin recomendaciones ni sugerencias"),
             Ui.Muted("• Explorador: abre en «Este equipo», extensiones visibles, sin archivos recientes"),

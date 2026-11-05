@@ -56,6 +56,19 @@ jobs:
       - name: Publicar Control Center
         run: dotnet publish src/Aurevix.ControlCenter -c Release -r win-x64 --self-contained -p:Version=${{ steps.meta.outputs.version }} -o out/app
 
+      - name: Publicar AUREVIX Core Service
+        run: dotnet publish src/Aurevix.Service -c Release -r win-x64 --self-contained -p:Version=${{ steps.meta.outputs.version }} -o out/service
+
+      - name: Descargar PresentMon (Intel, MIT) verificado
+        shell: pwsh
+        run: |
+          $url = 'https://github.com/GameTechDev/PresentMon/releases/download/v2.6.0/PresentMon-2.6.0-x64.exe'
+          New-Item -ItemType Directory -Force out\app\tools | Out-Null
+          Invoke-WebRequest $url -OutFile out\app\tools\PresentMon.exe
+          $h = (Get-FileHash out\app\tools\PresentMon.exe -Algorithm SHA256).Hash.ToLower()
+          if ($h -ne 'b2a706bc6ad475749e3b7e3409263aa1e6906d45bdcf993f6dbc0f660188f1af') { throw "Hash de PresentMon inesperado: $h" }
+          Copy-Item third_party\presentmon\LICENSE.txt out\app\tools\PresentMon-LICENSE.txt
+
       - name: Publicar AUREVIX Installer (un solo .exe)
         shell: pwsh
         run: |
@@ -68,7 +81,7 @@ jobs:
 
       - name: Crear instalador del Control Center (Inno Setup)
         run: |
-          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DAppVersion=${{ steps.meta.outputs.version }}" "/DSourceDir=..\out\app" "/DOutputDir=..\out\installer" installer\AurevixSetup.iss
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DAppVersion=${{ steps.meta.outputs.version }}" "/DSourceDir=..\out\app" "/DServiceDir=..\out\service" "/DOutputDir=..\out\installer" installer\AurevixSetup.iss
           if ($LASTEXITCODE -ne 0) { throw "ISCC falló" }
         shell: pwsh
 
