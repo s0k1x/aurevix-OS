@@ -38,6 +38,10 @@ public sealed class RegistryAction
     public RegistryValueKind Kind { get; set; } = RegistryValueKind.DWord;
     /// <summary>Valor recomendado como texto. DWord admite negativos para valores ≥ 0x80000000 (p. ej. -1 = 0xFFFFFFFF).</summary>
     public string Value { get; set; } = "";
+    /// <summary>Con comodines («*» en cualquier segmento de la clave), aplicar solo donde el valor ya existe (p. ej. EnableUlps de AMD).</summary>
+    public bool OnlyIfExists { get; set; }
+    /// <summary>Si el valor no existía, al deshacer se elimina esta clave completa (debe contener a Key).</summary>
+    public string? RevertDeleteKey { get; set; }
 
     public TweakScope Scope => Hive == RegistryHive.CurrentUser ? TweakScope.User : TweakScope.Machine;
 }
@@ -65,6 +69,8 @@ public sealed class TweakRequirements
     public double? MinRamGb { get; set; }
     public bool RequiresSsd { get; set; }
     public bool DesktopOnly { get; set; }
+    /// <summary>Solo con GPU de este fabricante: "AMD", "NVIDIA" o "Intel".</summary>
+    public string? GpuVendor { get; set; }
 }
 
 /// <summary>Datos del equipo usados para decidir qué ajustes son compatibles.</summary>
@@ -93,6 +99,8 @@ public sealed class TweakDefinition
     /// <summary>Nunca se incluye en un nivel: solo se activa a mano en Personalizado, con aviso.</summary>
     public bool OptIn { get; set; }
     public string? Warning { get; set; }
+    /// <summary>De dónde viene la idea (p. ej. "WinterOS Rev05 · Optimizar sistema"), para la documentación.</summary>
+    public string? Origin { get; set; }
     public TweakRequirements? Requires { get; set; }
     /// <summary>Plan de energía a activar (se crea a partir de la plantilla de Windows si no existe).</summary>
     public Guid? PowerPlan { get; set; }

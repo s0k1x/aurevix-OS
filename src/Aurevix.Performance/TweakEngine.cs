@@ -12,6 +12,8 @@ public sealed class RegistryBackupEntry
     public RegistryValueKind Kind { get; set; }
     public bool Existed { get; set; }
     public string? PreviousValue { get; set; }
+    /// <summary>Clave que se elimina al deshacer si el valor no existía (p. ej. el menú contextual clásico).</summary>
+    public string? DeleteKeyOnRevert { get; set; }
 }
 
 public sealed class TaskBackupEntry
@@ -96,15 +98,37 @@ public sealed class TweakEngine
     private bool InScope(TweakScope s) => _c.Scope == TweakScope.All || _c.Scope == s;
     private IEnumerable<RegistryAction> Reg(TweakDefinition t) => t.Registry.Where(r => InScope(r.Scope)).SelectMany(Expand);
 
-    /// <summary>Una clave terminada en «\\*» se aplica a cada subclave existente (p. ej. todas las interfaces de red).</summary>
+    /// <summary>
+    /// Comodines: cada segmento «*» de la clave se expande a las subclaves existentes (p. ej. todas las interfaces de red,
+    /// o Enum\USB\*\*\Device Parameters). Con OnlyIfExists solo se toca donde el valor ya existe.
+    /// </summary>
     private IEnumerable<RegistryAction> Expand(RegistryAction a)
     {
-        if (!a.Key.EndsWith(@"\*")) return [a];
-        var parent = a.Key[..^2];
-        IReadOnlyList<string> subs;
-        try { subs = _c.Registry.ListSubKeys(a.Hive, parent); } catch { subs = []; }
-        return subs.Select(sub => new RegistryAction { Hive = a.Hive, Key = $@"{parent}\{sub}", Name = a.Name, Kind = a.Kind, Value = a.Value });
+        if (!a.Key.Split('\\').Contains("*")) return [a];
+        var keys = new List<string> { "" };
+        foreach (var seg in a.Key.Split('\\'))
+        {
+            if (seg != "*") { keys = keys.Select(k => k.Length == 0 ? seg : $@"{k}\{seg}").ToList(); continue; }
+            var next = new List<string>();
+            foreach (var k in keys)
+            {
+                try { next.AddRange(_c.Registry.ListSubKeys(a.Hive, k).Select(sub => $@"{k}\{sub}")); } catch { }
+            }
+            keys = next;
+            if (keys.Count > 2000) return []; // límite de seguridad: nunca aplicar rutas incompletas
+        }
+        var result = new List<RegistryAction>();
+        foreach (var k in keys)
+        {
+            if (a.OnlyIfExists)
+            {
+                try { if (_c.Registry.GetValue(a.Hive, k, a.Name) is null) continue; } catch { continue; }
+            }
+            result.Add(new RegistryAction { Hive = a.Hive, Key = k, Name = a.Name, Kind = a.Kind, Value = a.Value, RevertDeleteKey = a.RevertDeleteKey });
+        }
+        return result;
     }
+
     private IEnumerable<TaskAction> Tasks(TweakDefinition t) => InScope(TweakScope.Machine) ? t.Tasks : [];
     private IEnumerable<PowerSettingAction> Power(TweakDefinition t) => InScope(TweakScope.Machine) ? t.Power : [];
     private bool PlanInScope(TweakDefinition t) => t.PowerPlan is not null && InScope(TweakScope.User);
@@ -118,6 +142,7 @@ public sealed class TweakEngine
             if (r.MinRamGb is { } min && _c.System.RamGb < min) return $"Solo recomendado con {min:0} GB de RAM o más.";
             if (r.RequiresSsd && !_c.System.HasSsd) return "Solo recomendado con el sistema en un SSD.";
             if (r.DesktopOnly && _c.System.IsLaptop) return "Solo para equipos de sobremesa o mini PC (en portátiles reduce mucho la batería).";
+            if (r.GpuVendor is { } v && !string.Equals(_c.System.GpuVendor, v, StringComparison.OrdinalIgnoreCase)) return $"Solo para gráficas {v}.";
         }
         return null;
     }
@@ -192,7 +217,11 @@ public sealed class TweakEngine
         foreach (var a in tweaks.SelectMany(Reg))
         {
             var prev = _c.Registry.GetValue(a.Hive, a.Key, a.Name);
-            backup.Registry.Add(new RegistryBackupEntry { Hive = a.Hive, Key = a.Key, Name = a.Name, Kind = a.Kind, Existed = prev is not null, PreviousValue = prev });
+            backup.Registry.Add(new RegistryBackupEntry
+            {
+                Hive = a.Hive, Key = a.Key, Name = a.Name, Kind = a.Kind, Existed = prev is not null, PreviousValue = prev,
+                DeleteKeyOnRevert = prev is null ? a.RevertDeleteKey : null
+            });
         }
         foreach (var a in tweaks.SelectMany(Tasks))
             if (_c.Tasks?.IsEnabled(a.Path) is { } en) backup.Tasks.Add(new TaskBackupEntry { Path = a.Path, WasEnabled = en });
@@ -260,6 +289,7 @@ public sealed class TweakEngine
             try
             {
                 if (e.Existed && e.PreviousValue is not null) _c.Registry.SetValue(e.Hive, e.Key, e.Name, e.Kind, e.PreviousValue);
+                else if (e.DeleteKeyOnRevert is { Length: > 0 } dk) _c.Registry.DeleteKey(e.Hive, dk);
                 else _c.Registry.DeleteValue(e.Hive, e.Key, e.Name);
             }
             catch (Exception ex) { AurevixLog.Error($"No se pudo revertir {e.Key}\\{e.Name}", ex); }

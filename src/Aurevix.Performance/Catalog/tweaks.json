@@ -47,7 +47,8 @@
         "kind": "dword",
         "value": "0"
       }
-    ]
+    ],
+    "origin": "WinterOS Rev05 · Configurar barra de juegos"
   },
   {
     "id": "gaming.mouse-acceleration.off",
@@ -83,7 +84,8 @@
         "kind": "string",
         "value": "0"
       }
-    ]
+    ],
+    "origin": "WinterOS · Optimizador Mouse"
   },
   {
     "id": "gaming.mmcss.games",
@@ -192,7 +194,8 @@
         "kind": "dword",
         "value": "38"
       }
-    ]
+    ],
+    "origin": "WinterOS Rev16 · Hydroid (Win32PrioritySeparation)"
   },
   {
     "id": "gaming.timer-resolution.global",
@@ -215,7 +218,8 @@
         "kind": "dword",
         "value": "1"
       }
-    ]
+    ],
+    "origin": "WinterOS · Void / Core (temporizador)"
   },
   {
     "id": "gpu.hags.on",
@@ -238,7 +242,8 @@
         "kind": "dword",
         "value": "2"
       }
-    ]
+    ],
+    "origin": "WinterOS Rev05 · Configurar HAGS"
   },
   {
     "id": "gpu.windowed-optimizations.on",
@@ -273,7 +278,8 @@
     "title": "Plan de energía Alto rendimiento",
     "description": "Activa el plan Alto rendimiento de Windows (se crea si tu equipo lo oculta).",
     "expectedEffect": "La CPU sube de frecuencia antes y se mantiene más alta.",
-    "possibleImpact": "Más consumo y temperatura; en portátiles, menos batería."
+    "possibleImpact": "Más consumo y temperatura; en portátiles, menos batería.",
+    "origin": "WinterOS · Wisp / Modos (plan de energía)"
   },
   {
     "id": "power.plan.ultimate",
@@ -289,7 +295,8 @@
     "title": "Plan de energía Máximo rendimiento",
     "description": "Activa el plan oculto «Máximo rendimiento» de Windows (Ultimate Performance), pensado para estaciones de trabajo: elimina microlatencias de gestión de energía.",
     "expectedEffect": "Respuesta inmediata de CPU, discos y USB.",
-    "possibleImpact": "Consumo y temperatura más altos. No recomendado en portátiles."
+    "possibleImpact": "Consumo y temperatura más altos. No recomendado en portátiles.",
+    "origin": "WinterOS · Modo Diamond / Platinum"
   },
   {
     "id": "power.core-parking.off",
@@ -308,7 +315,8 @@
         "setting": "0cc5b647-c1df-4637-891a-dec35c318583",
         "ac": 100
       }
-    ]
+    ],
+    "origin": "WinterOS Rev05 · Optimizar CPU (todos los núcleos)"
   },
   {
     "id": "power.cpu-min-state.max",
@@ -417,7 +425,8 @@
         "kind": "dword",
         "value": "0"
       }
-    ]
+    ],
+    "origin": "WinterOS · Complementos: hibernación"
   },
   {
     "id": "power.fast-startup.off",
@@ -439,7 +448,8 @@
         "kind": "dword",
         "value": "0"
       }
-    ]
+    ],
+    "origin": "WinterOS · Complementos: inicio rápido"
   },
   {
     "id": "system.menu-delay",
@@ -530,7 +540,8 @@
         "kind": "dword",
         "value": "4"
       }
-    ]
+    ],
+    "origin": "WinterOS Rev16 · Rhyno v2 (SysMain)"
   },
   {
     "id": "storage.last-access.off",
@@ -684,7 +695,8 @@
         "kind": "dword",
         "value": "0"
       }
-    ]
+    ],
+    "origin": "WinterOS · Complementos: widgets"
   },
   {
     "id": "interface.transparency.off",
@@ -704,7 +716,8 @@
         "kind": "dword",
         "value": "0"
       }
-    ]
+    ],
+    "origin": "WinterOS · Transparencia del sistema"
   },
   {
     "id": "interface.transparency.on",
@@ -742,7 +755,8 @@
         "kind": "string",
         "value": "0"
       }
-    ]
+    ],
+    "origin": "WinterOS Rev05 · Optimizador Global: animaciones"
   },
   {
     "id": "privacy.diagtrack.off",
@@ -772,7 +786,8 @@
         "kind": "dword",
         "value": "1"
       }
-    ]
+    ],
+    "origin": "WinterOS Rev16 · Rhyno (DiagTrack) / Complementos: telemetría"
   },
   {
     "id": "privacy.dmwappush.off",
@@ -977,7 +992,8 @@
         "kind": "dword",
         "value": "0"
       }
-    ]
+    ],
+    "origin": "WinterOS · Optimizar internet"
   },
   {
     "id": "network.nagle.off",
@@ -1006,7 +1022,8 @@
         "kind": "dword",
         "value": "1"
       }
-    ]
+    ],
+    "origin": "WinterOS · Optimizar ping en juegos / TCP-IP"
   },
   {
     "id": "network.update-bandwidth.limit",
@@ -1049,6 +1066,340 @@
     ]
   },
   {
+    "id": "power.cpu-max.95",
+    "category": "power",
+    "levels": [],
+    "origin": "WinterOS Rev05 · Modo Gold",
+    "title": "Modo Gold: CPU hasta el 95 % (más frío)",
+    "description": "Limita el estado máximo del procesador al 95 %. Desactiva el turbo más agresivo, que es el que más calor genera.",
+    "expectedEffect": "Temperaturas y ruido bastante menores con una pérdida de rendimiento pequeña. Útil en portátiles y mini PC.",
+    "possibleImpact": "Algo menos de rendimiento máximo en tareas de CPU.",
+    "power": [
+      {
+        "subgroup": "54533251-82be-4824-96c1-47b60b740d00",
+        "setting": "bc5038f7-23e0-4960-96da-33abaf5935ec",
+        "ac": 95,
+        "dc": 95
+      }
+    ]
+  },
+  {
+    "id": "power.cpu-max.60",
+    "category": "power",
+    "levels": [],
+    "risk": "medium",
+    "origin": "WinterOS Rev05 · Modo Iron",
+    "title": "Modo Iron: CPU hasta el 60 % (refrigeración mala)",
+    "description": "Limita el procesador al 60 % de su velocidad máxima.",
+    "expectedEffect": "Evita el sobrecalentamiento en equipos con mala refrigeración.",
+    "possibleImpact": "Rendimiento claramente menor. Solo para emergencias térmicas.",
+    "power": [
+      {
+        "subgroup": "54533251-82be-4824-96c1-47b60b740d00",
+        "setting": "bc5038f7-23e0-4960-96da-33abaf5935ec",
+        "ac": 60,
+        "dc": 60
+      }
+    ]
+  },
+  {
+    "id": "system.svchost-grouping",
+    "category": "startup",
+    "levels": [],
+    "risk": "medium",
+    "requiresRestart": true,
+    "requires": {
+      "minRamGb": 8
+    },
+    "origin": "WinterOS Rev05 · Optimizar sistema (procesos)",
+    "title": "Agrupar servicios en menos procesos svchost",
+    "description": "Hace que Windows agrupe sus servicios en menos procesos (SvcHostSplitThresholdInKB), como en equipos con poca RAM.",
+    "expectedEffect": "Muchos menos procesos en el Administrador de tareas y algo menos de RAM usada.",
+    "possibleImpact": "Menos aislamiento: si un servicio falla puede arrastrar a otros del mismo grupo. Más procesos no significa más lento: el efecto en FPS es mínimo.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Control",
+        "name": "SvcHostSplitThresholdInKB",
+        "kind": "dword",
+        "value": "-1"
+      }
+    ]
+  },
+  {
+    "id": "system.wsearch.off",
+    "category": "startup",
+    "levels": [],
+    "risk": "medium",
+    "requiresRestart": true,
+    "origin": "WinterOS · Rhyno / Complementos: Windows Search",
+    "title": "Desactivar la indexación de búsqueda (WSearch)",
+    "description": "Desactiva el servicio que indexa tus archivos para la búsqueda.",
+    "expectedEffect": "Sin indexación en segundo plano: menos disco y CPU, sobre todo en HDD.",
+    "possibleImpact": "La búsqueda de Inicio y del Explorador será más lenta e incompleta; afecta a Outlook y al Historial de archivos.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Services\\WSearch",
+        "name": "Start",
+        "kind": "dword",
+        "value": "4"
+      }
+    ]
+  },
+  {
+    "id": "system.maps-broker.off",
+    "category": "startup",
+    "levels": [],
+    "requiresRestart": true,
+    "origin": "WinterOS Rev05 · Complementos: mapas descargados",
+    "title": "Desactivar el administrador de mapas descargados",
+    "description": "Desactiva MapsBroker, que solo usa la app Mapas.",
+    "expectedEffect": "Un servicio menos en segundo plano.",
+    "possibleImpact": "La app Mapas no podrá descargar mapas sin conexión.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Services\\MapsBroker",
+        "name": "Start",
+        "kind": "dword",
+        "value": "4"
+      }
+    ]
+  },
+  {
+    "id": "system.print-spooler.off",
+    "category": "startup",
+    "levels": [],
+    "requiresRestart": true,
+    "origin": "WinterOS Rev05 · Configurar impresora",
+    "title": "Desactivar la cola de impresión (sin impresora)",
+    "description": "Desactiva el servicio Spooler. Si no tienes impresora, además reduce la superficie de ataque (vulnerabilidades tipo PrintNightmare).",
+    "expectedEffect": "Un servicio menos y algo más de seguridad.",
+    "possibleImpact": "No podrás imprimir ni usar «Imprimir a PDF» hasta reactivarlo.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Services\\Spooler",
+        "name": "Start",
+        "kind": "dword",
+        "value": "4"
+      }
+    ]
+  },
+  {
+    "id": "interface.logon-image.off",
+    "category": "interface",
+    "levels": [],
+    "origin": "WinterOS · Complementos: imagen de bloqueo de inicio",
+    "title": "Inicio de sesión con fondo liso",
+    "description": "Muestra un color liso en lugar de la imagen en la pantalla de inicio de sesión (directiva oficial).",
+    "expectedEffect": "Pantalla de inicio de sesión más limpia y algo más rápida en equipos modestos.",
+    "possibleImpact": "No verás la imagen de fondo al iniciar sesión.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\System",
+        "name": "DisableLogonBackgroundImage",
+        "kind": "dword",
+        "value": "1"
+      }
+    ]
+  },
+  {
+    "id": "interface.visualfx.performance",
+    "category": "interface",
+    "levels": [],
+    "requiresSignOut": true,
+    "origin": "WinterOS Rev05 · Optimizador Global: animaciones",
+    "title": "Efectos visuales: ajustar para el mejor rendimiento",
+    "description": "Equivale a Propiedades del sistema > Rendimiento > «Ajustar para obtener el mejor rendimiento».",
+    "expectedEffect": "Menos animaciones y efectos: respuesta inmediata en equipos modestos.",
+    "possibleImpact": "Windows se ve más básico (sin sombras ni animaciones). Contrario al Estilo AUREVIX.",
+    "registry": [
+      {
+        "hive": "currentUser",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VisualEffects",
+        "name": "VisualFXSetting",
+        "kind": "dword",
+        "value": "2"
+      }
+    ]
+  },
+  {
+    "id": "gaming.gamebar.off",
+    "category": "gaming",
+    "levels": [],
+    "origin": "WinterOS Rev05 · Configurar barra de juegos",
+    "title": "Desactivar Xbox Game Bar (Win+G)",
+    "description": "Desactiva la superposición de la Game Bar.",
+    "expectedEffect": "Un overlay menos al jugar.",
+    "possibleImpact": "No podrás usar Win+G para capturas, widgets ni el chat de Xbox.",
+    "registry": [
+      {
+        "hive": "currentUser",
+        "key": "Software\\Microsoft\\GameBar",
+        "name": "UseNexusForGameBarEnabled",
+        "kind": "dword",
+        "value": "0"
+      },
+      {
+        "hive": "currentUser",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR",
+        "name": "AppCaptureEnabled",
+        "kind": "dword",
+        "value": "0"
+      }
+    ]
+  },
+  {
+    "id": "graphics.mpo.off",
+    "category": "graphics",
+    "levels": [],
+    "risk": "medium",
+    "requiresRestart": true,
+    "origin": "WinterOS Rev16 · Resolución en pantallas (MPO)",
+    "title": "Desactivar Multiplane Overlay (MPO)",
+    "description": "Desactiva MPO en el compositor de Windows (OverlayTestMode = 5), la solución que documenta NVIDIA para parpadeos y tirones en algunos equipos.",
+    "expectedEffect": "Corrige parpadeos, pantallazos negros o microtirones en navegadores y juegos en ventana en equipos afectados.",
+    "possibleImpact": "Si no tienes esos problemas, puede subir un poco el consumo de GPU. Deshazlo si no notas mejora.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SOFTWARE\\Microsoft\\Windows\\Dwm",
+        "name": "OverlayTestMode",
+        "kind": "dword",
+        "value": "5"
+      }
+    ]
+  },
+  {
+    "id": "graphics.amd-ulps.off",
+    "category": "graphics",
+    "levels": [],
+    "risk": "medium",
+    "requiresRestart": true,
+    "requires": {
+      "gpuVendor": "AMD"
+    },
+    "origin": "WinterOS · Optimizar arranque en placas ATI/AMD (ULPS)",
+    "title": "Desactivar ULPS de AMD",
+    "description": "Desactiva el estado de ultra bajo consumo (ULPS) del driver de AMD.",
+    "expectedEffect": "Puede corregir arranques lentos o pantalla negra al iniciar y caídas de rendimiento en algunas gráficas AMD.",
+    "possibleImpact": "Algo más de consumo en reposo. Si no tienes esos problemas, déjalo como está.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\*",
+        "name": "EnableUlps",
+        "kind": "dword",
+        "value": "0",
+        "onlyIfExists": true
+      }
+    ]
+  },
+  {
+    "id": "input.usb-power-saving.off",
+    "category": "gaming",
+    "levels": [
+      "maximum"
+    ],
+    "risk": "medium",
+    "requiresRestart": true,
+    "origin": "WinterOS Rev16 · Yareli",
+    "title": "Sin ahorro de energía en dispositivos USB",
+    "description": "Desactiva la administración de energía mejorada en cada dispositivo USB conectado (ratón, teclado, auriculares…).",
+    "expectedEffect": "Ratón y teclado sin microcortes ni retrasos al «despertar».",
+    "possibleImpact": "Algo más de consumo, sobre todo en portátiles.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Enum\\USB\\*\\*\\Device Parameters",
+        "name": "EnhancedPowerManagementEnabled",
+        "kind": "dword",
+        "value": "0",
+        "onlyIfExists": true
+      },
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Enum\\USB\\*\\*\\Device Parameters",
+        "name": "AllowIdleIrpInD3",
+        "kind": "dword",
+        "value": "0",
+        "onlyIfExists": true
+      }
+    ]
+  },
+  {
+    "id": "input.queue-size",
+    "category": "gaming",
+    "levels": [],
+    "risk": "medium",
+    "requiresRestart": true,
+    "origin": "WinterOS Rev05 · Optimizador Mouse / Teclado",
+    "title": "Búfer de ratón y teclado más corto",
+    "description": "Reduce de 100 a 50 el tamaño de la cola de datos del ratón y del teclado (MouseDataQueueSize, KeyboardDataQueueSize).",
+    "expectedEffect": "Posible reducción mínima de latencia de entrada. El efecto real es difícil de medir.",
+    "possibleImpact": "Con valores demasiado bajos se pueden perder pulsaciones; 50 es un valor conservador.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Services\\mouclass\\Parameters",
+        "name": "MouseDataQueueSize",
+        "kind": "dword",
+        "value": "50"
+      },
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Services\\kbdclass\\Parameters",
+        "name": "KeyboardDataQueueSize",
+        "kind": "dword",
+        "value": "50"
+      }
+    ]
+  },
+  {
+    "id": "maintenance.wu-drivers.off",
+    "category": "maintenance",
+    "levels": [],
+    "origin": "WinterOS · Drivers: descarga de drivers por Windows Update",
+    "title": "Windows Update no instala drivers",
+    "description": "Directiva oficial: Windows Update deja de instalar controladores automáticamente (las actualizaciones de seguridad siguen llegando).",
+    "expectedEffect": "Evita que Windows sustituya tu driver de GPU o de audio por uno más antiguo o genérico.",
+    "possibleImpact": "Tendrás que actualizar los drivers tú (desde la web del fabricante).",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate",
+        "name": "ExcludeWUDriversInQualityUpdate",
+        "kind": "dword",
+        "value": "1"
+      }
+    ]
+  },
+  {
+    "id": "interface.context-menu.classic",
+    "category": "interface",
+    "levels": [],
+    "requiresSignOut": true,
+    "minWindowsBuild": 22000,
+    "origin": "WinterOS Rev16 · Menú contextual estilo Windows 10",
+    "title": "Menú contextual clásico (estilo Windows 10)",
+    "description": "El clic derecho muestra directamente el menú completo, sin «Mostrar más opciones».",
+    "expectedEffect": "Un clic menos para acceder a todas las opciones.",
+    "possibleImpact": "Aspecto menos moderno. Se aplica al reiniciar el Explorador.",
+    "registry": [
+      {
+        "hive": "currentUser",
+        "key": "Software\\Classes\\CLSID\\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\\InprocServer32",
+        "name": "",
+        "kind": "string",
+        "value": "",
+        "revertDeleteKey": "Software\\Classes\\CLSID\\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}"
+      }
+    ]
+  },
+  {
     "id": "security.memory-integrity.off",
     "category": "security",
     "optIn": true,
@@ -1067,6 +1418,7 @@
         "kind": "dword",
         "value": "0"
       }
-    ]
+    ],
+    "origin": "WinterOS · Configurar core isolation"
   }
 ]
