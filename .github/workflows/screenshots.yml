@@ -4,6 +4,9 @@ name: Capturas
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   screenshots:
     runs-on: windows-latest
@@ -32,3 +35,16 @@ jobs:
           name: capturas
           path: capturas
           retention-days: 7
+      - name: Publicar capturas en la rama ci-capturas
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          $tmp = Join-Path $env:RUNNER_TEMP 'cap'
+          Copy-Item capturas $tmp -Recurse
+          git checkout --orphan ci-capturas
+          git rm -rf . | Out-Null
+          Copy-Item "$tmp\*" . -Recurse
+          git add -A
+          git commit -m "Capturas $env:GITHUB_SHA"
+          git push -f origin ci-capturas
