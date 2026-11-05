@@ -23,6 +23,27 @@ public sealed class AppearancePage : UserControl
     {
         var (root, body) = Ui.Page("Apariencia", "Identidad visual AUREVIX con métodos soportados por Windows. Puedes volver al aspecto original en cualquier momento.");
 
+        var applied = AurevixStyle.IsApplied;
+        body.Children.Add(Ui.Card(
+            Ui.Eyebrow(applied ? "ACTIVO" : "RECOMENDADO"),
+            Ui.H2("Estilo AUREVIX"),
+            Ui.Muted("Windows minimalista en un clic: modo oscuro con acento dorado, fondo y pantalla de bloqueo AUREVIX, " +
+                     "barra de tareas limpia (iconos centrados, búsqueda solo icono, sin Vista de tareas ni widgets), " +
+                     "menú Inicio sin recomendaciones y Explorador que abre en «Este equipo» sin recientes. Todo es reversible."),
+            Ui.Row(
+                Ui.Button(applied ? "Volver a aplicar" : "Aplicar estilo AUREVIX", () => _ = ApplyStyleAsync(), primary: true),
+                Ui.Button("Restaurar Windows original", () => _ = RestoreStyleAsync()))));
+
+        body.Children.Add(Ui.Card(
+            Ui.Eyebrow("OPCIONAL · DE TERCEROS"),
+            Ui.H2("Barra de tareas translúcida"),
+            Ui.Muted("TranslucentTB hace la barra de tareas transparente o con desenfoque. Es gratuita y de código abierto (GPL-3.0), " +
+                     "se distribuye en Microsoft Store y se instala con winget desde su origen oficial. AUREVIX no la modifica. " +
+                     "Si una actualización de Windows le afecta, basta con desinstalarla."),
+            Ui.Row(
+                Ui.Button("Instalar TranslucentTB", () => Winget("install", "Instalar TranslucentTB")),
+                Ui.Button("Desinstalar", () => Winget("uninstall", "Desinstalar TranslucentTB")))));
+
         body.Children.Add(Ui.Card(Ui.H2("Tema de color"),
             Ui.Muted("Cambia el modo de color de Windows y de las aplicaciones."),
             Ui.Row(
@@ -65,6 +86,47 @@ public sealed class AppearancePage : UserControl
             Ui.Row(Ui.Button("Restaurar apariencia de Windows", RestoreAll))));
 
         Content = root;
+    }
+
+    private async Task ApplyStyleAsync()
+    {
+        if (MessageBox.Show("Se aplicará el Estilo AUREVIX (tema, barra de tareas, Inicio, Explorador y pantalla de bloqueo).\n\n" +
+                "Se guarda una copia de todo y puedes restaurar Windows original cuando quieras. ¿Continuar?",
+                "Estilo AUREVIX", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        var r = await AurevixStyle.ApplyAsync(includeLockScreen: true);
+        var msg = "Aplicado:\n• " + string.Join("\n• ", r.Applied);
+        if (r.Skipped.Count > 0) msg += "\n\nOmitido (Windows no lo permitió):\n• " + string.Join("\n• ", r.Skipped);
+        msg += "\n\nPara ver la barra de tareas y el Explorador nuevos hay que reiniciar el Explorador de Windows " +
+               "(se cierran las ventanas de carpetas abiertas, no tus programas). ¿Reiniciarlo ahora?";
+        if (MessageBox.Show(msg, "Estilo AUREVIX", MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.Yes)
+            AurevixStyle.RestartExplorer();
+        Build();
+    }
+
+    private async Task RestoreStyleAsync()
+    {
+        if (MessageBox.Show("¿Restaurar el aspecto original de Windows?", "Estilo AUREVIX", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
+        await AurevixStyle.RestoreAsync();
+        if (MessageBox.Show("Restaurado. ¿Reiniciar el Explorador para ver los cambios ahora?", "Estilo AUREVIX", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+            AurevixStyle.RestartExplorer();
+        Build();
+    }
+
+    /// <summary>Instala/desinstala TranslucentTB con winget (fuente oficial). Siempre tras confirmación.</summary>
+    private static void Winget(string verb, string title)
+    {
+        if (MessageBox.Show($"{title} con winget (Microsoft). ¿Continuar?", "Apariencia", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
+        try
+        {
+            var args = verb == "install"
+                ? "install --id CharlesMilette.TranslucentTB --exact --source winget --accept-package-agreements --accept-source-agreements"
+                : "uninstall --id CharlesMilette.TranslucentTB --exact";
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("winget", args) { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"No se pudo ejecutar winget: {ex.Message}\nInstala «App Installer» desde Microsoft Store.", "Apariencia");
+        }
     }
 
     private static RegistryAction Dw(string key, string name, int v) => new() { Hive = RegistryHive.CurrentUser, Key = key, Name = name, Kind = RegistryValueKind.DWord, Value = v.ToString() };

@@ -26,6 +26,8 @@ param(
     [string]$InstallerPath,
     [string]$WorkDir = (Join-Path $env:TEMP 'aurevix-iso-work'),
     [string]$UiLanguage = 'es-ES',
+    [string]$InputLocale = '040a:0000040a',
+    [string]$TimeZone = 'Romance Standard Time',
     [switch]$KeepWorkDir
 )
 
@@ -104,7 +106,7 @@ Falta oscdimg.exe (herramienta oficial de Microsoft). Instálala una vez con:
     # --- Añadir AUREVIX -------------------------------------------------------
     Log 'Añadiendo AUREVIX a la ISO…'
     $unattend = Get-Content (Join-Path $here 'autounattend.xml') -Raw -Encoding UTF8
-    $unattend = $unattend.Replace('{{UI_LANGUAGE}}', $UiLanguage)
+    $unattend = $unattend.Replace('{{UI_LANGUAGE}}', $UiLanguage).Replace('{{INPUT_LOCALE}}', $InputLocale).Replace('{{TIME_ZONE}}', $TimeZone)
     Set-Content -Path (Join-Path $WorkDir 'autounattend.xml') -Value $unattend -Encoding UTF8
 
     $oemScripts = Join-Path $WorkDir 'sources\$OEM$\$$\Setup\Scripts'
