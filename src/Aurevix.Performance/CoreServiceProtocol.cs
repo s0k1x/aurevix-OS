@@ -29,6 +29,7 @@ public static class CoreServiceProtocol
         ["chkdsk-scan"] = "Buscar errores en el disco del sistema (CHKDSK en línea, sin reiniciar)",
         ["optimize-drives"] = "Optimizar unidades (TRIM en SSD, desfragmentar en HDD)",
         ["purge-standby"] = "Vaciar la memoria en espera (como ISLC)",
+        ["power-defaults"] = "Restaurar los planes de energía de fábrica de Windows",
     };
 
     /// <summary>Proveedores DNS permitidos. El cliente solo envía el identificador.</summary>
@@ -69,6 +70,16 @@ public interface IDeviceConfigurator
     (bool ok, string message) SetGpuMsi(bool enabled);
     /// <summary>Prioridad de CPU alta permanente para un juego (Image File Execution Options\PerfOptions).</summary>
     (bool ok, string message) SetGamePriority(string exe, bool high);
+    /// <summary>Memoria virtual fija de 2× la RAM en C: (true) o administrada por Windows (false).</summary>
+    (bool ok, string message) SetPagefile(bool fixedDoubleRam);
+    /// <summary>Procesos de fondo en baja prioridad: prioridad baja persistente para una lista FIJA de procesos de fondo de Windows.</summary>
+    (bool ok, string message) SetBackgroundLowPriority(bool on);
+    /// <summary>Prioridad de interrupciones alta para tarjetas de red y controladoras NVMe/SATA.</summary>
+    (bool ok, string message) SetComponentPriority(bool on);
+    /// <summary>Hipervisor de Windows (Hyper-V, WSL2, VBS). Requiere reiniciar.</summary>
+    (bool ok, string message) SetHypervisor(bool on);
+    /// <summary>Detección de redes y uso compartido de archivos e impresoras (reglas del Firewall).</summary>
+    (bool ok, string message) SetNetworkSharing(bool on);
 }
 
 public sealed class CoreRequest
@@ -249,6 +260,27 @@ public sealed class CoreRequestHandler(IReadOnlyList<TweakDefinition> catalog, F
                 if (devices is null) return CoreResponse.Fail("Dispositivos no disponibles.");
                 var (ok, msg) = devices.SetGamePriority(req.Action!, req.Op == "game-priority-set");
                 return new CoreResponse { Ok = ok, Error = ok ? null : msg, Messages = [msg] };
+            }
+
+            case "pagefile-fixed" or "pagefile-auto":
+            {
+                if (devices is null) return CoreResponse.Fail("Dispositivos no disponibles.");
+                var (ok, msg) = devices.SetPagefile(req.Op == "pagefile-fixed");
+                return new CoreResponse { Ok = ok, Error = ok ? null : msg, Messages = [msg], RequiresRestart = ok };
+            }
+
+            case "bgprio-on" or "bgprio-off" or "irqprio-on" or "irqprio-off" or "hyperv-on" or "hyperv-off" or "sharing-on" or "sharing-off":
+            {
+                if (devices is null) return CoreResponse.Fail("Dispositivos no disponibles.");
+                var on = req.Op.EndsWith("-on");
+                var (ok, msg) = req.Op[..req.Op.IndexOf('-')] switch
+                {
+                    "bgprio" => devices.SetBackgroundLowPriority(on),
+                    "irqprio" => devices.SetComponentPriority(on),
+                    "hyperv" => devices.SetHypervisor(on),
+                    _ => devices.SetNetworkSharing(on)
+                };
+                return new CoreResponse { Ok = ok, Error = ok ? null : msg, Messages = [msg], RequiresRestart = ok && !req.Op.StartsWith("sharing") };
             }
 
             case "qos-list":

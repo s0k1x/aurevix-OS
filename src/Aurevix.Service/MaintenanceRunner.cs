@@ -17,6 +17,7 @@ public sealed class MaintenanceRunner : IMaintenanceRunner
         ["sfc"] = ("sfc.exe", "/scannow"),
         ["dism-restorehealth"] = ("dism.exe", "/Online /Cleanup-Image /RestoreHealth /NoRestart"),
         ["chkdsk-scan"] = ("chkdsk.exe", "C: /scan"),
+        ["power-defaults"] = ("powercfg.exe", "-restoredefaultschemes"),
         ["optimize-drives"] = ("powershell.exe", "-NoProfile -NonInteractive -Command \"Get-Volume | Where-Object { $_.DriveLetter -and $_.DriveType -eq 'Fixed' } | ForEach-Object { Optimize-Volume -DriveLetter $_.DriveLetter }\""),
     };
 

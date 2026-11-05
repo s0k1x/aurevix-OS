@@ -115,6 +115,11 @@ public class CoreDeviceTests
         public readonly List<string> Calls = [];
         public (bool ok, string message) SetGpuMsi(bool on) { Calls.Add("msi:" + on); return (true, "ok"); }
         public (bool ok, string message) SetGamePriority(string exe, bool high) { Calls.Add($"prio:{exe}:{high}"); return (true, "ok"); }
+        public (bool ok, string message) SetPagefile(bool f) { Calls.Add("pf:" + f); return (true, "ok"); }
+        public (bool ok, string message) SetBackgroundLowPriority(bool on) { Calls.Add("bgprio:" + on); return (true, "ok"); }
+        public (bool ok, string message) SetComponentPriority(bool on) { Calls.Add("irq:" + on); return (true, "ok"); }
+        public (bool ok, string message) SetHypervisor(bool on) { Calls.Add("hv:" + on); return (true, "ok"); }
+        public (bool ok, string message) SetNetworkSharing(bool on) { Calls.Add("share:" + on); return (true, "ok"); }
     }
 
     [Fact]

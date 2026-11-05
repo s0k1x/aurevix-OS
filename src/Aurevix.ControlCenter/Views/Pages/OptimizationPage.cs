@@ -13,7 +13,10 @@ public sealed class OptimizationPage : UserControl
 {
     private static readonly Dictionary<TweakCategory, string> CategoryNames = new()
     {
+        [TweakCategory.Modes] = "Modos de juego AUREVIX",
+        [TweakCategory.PowerPlans] = "Planes de energía AUREVIX",
         [TweakCategory.Gaming] = "Juegos y latencia",
+        [TweakCategory.Input] = "Ratón, teclado y USB",
         [TweakCategory.Graphics] = "Gráficos",
         [TweakCategory.Power] = "Energía",
         [TweakCategory.Startup] = "Inicio y segundo plano",

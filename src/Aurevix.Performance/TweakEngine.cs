@@ -143,6 +143,8 @@ public sealed class TweakEngine
             if (r.RequiresSsd && !_c.System.HasSsd) return "Solo recomendado con el sistema en un SSD.";
             if (r.DesktopOnly && _c.System.IsLaptop) return "Solo para equipos de sobremesa o mini PC (en portátiles reduce mucho la batería).";
             if (r.GpuVendor is { } v && !string.Equals(_c.System.GpuVendor, v, StringComparison.OrdinalIgnoreCase)) return $"Solo para gráficas {v}.";
+            if (r.CpuVendor is { } cv && !string.Equals(_c.System.CpuVendor, cv, StringComparison.OrdinalIgnoreCase)) return $"Solo para procesadores {cv}.";
+            if (r.MinThreads is { } mt && _c.System.Threads < mt) return $"Necesita un procesador de al menos {mt} hilos.";
         }
         return null;
     }

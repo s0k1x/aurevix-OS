@@ -2,15 +2,19 @@ namespace Aurevix.Performance;
 
 public enum RiskLevel { Low, Medium, High }
 
+/// <summary>Categorías del catálogo, en el orden en que se muestran.</summary>
 public enum TweakCategory
 {
-    Startup,        // Inicio y aplicaciones en segundo plano
-    Power,          // Energía y planes de rendimiento
+    Modes,          // Modos de juego AUREVIX (combinaciones listas)
+    PowerPlans,     // Planes de energía AUREVIX
+    Power,          // Energía y CPU
     Gaming,         // Juegos y latencia
-    Graphics,       // GPU
-    Storage,        // Almacenamiento y limpieza segura
+    Input,          // Ratón, teclado y USB
+    Graphics,       // GPU y pantalla
     Network,        // Red y conectividad
-    Interface,      // Interfaz y efectos visuales
+    Startup,        // Servicios y segundo plano
+    Storage,        // Almacenamiento
+    Interface,      // Interfaz y Explorador
     Privacy,        // Privacidad y telemetría (dentro de las opciones legales)
     Maintenance,    // Mantenimiento y actualizaciones
     Security        // Opciones de seguridad que Microsoft permite relajar para juegos (solo opt-in)
@@ -71,10 +75,14 @@ public sealed class TweakRequirements
     public bool DesktopOnly { get; set; }
     /// <summary>Solo con GPU de este fabricante: "AMD", "NVIDIA" o "Intel".</summary>
     public string? GpuVendor { get; set; }
+    /// <summary>Solo con CPU de este fabricante: "AMD" o "Intel".</summary>
+    public string? CpuVendor { get; set; }
+    /// <summary>Mínimo de hilos (procesadores lógicos).</summary>
+    public int? MinThreads { get; set; }
 }
 
 /// <summary>Datos del equipo usados para decidir qué ajustes son compatibles.</summary>
-public sealed record SystemProfile(double RamGb, bool HasSsd, bool IsLaptop, string? GpuVendor)
+public sealed record SystemProfile(double RamGb, bool HasSsd, bool IsLaptop, string? GpuVendor, string? CpuVendor = null, int Threads = 8)
 {
     public static readonly SystemProfile Unknown = new(16, true, false, null);
 }
@@ -99,8 +107,6 @@ public sealed class TweakDefinition
     /// <summary>Nunca se incluye en un nivel: solo se activa a mano en Personalizado, con aviso.</summary>
     public bool OptIn { get; set; }
     public string? Warning { get; set; }
-    /// <summary>De dónde viene la idea (p. ej. "WinterOS Rev05 · Optimizar sistema"), para la documentación.</summary>
-    public string? Origin { get; set; }
     public TweakRequirements? Requires { get; set; }
     /// <summary>Plan de energía a activar (se crea a partir de la plantilla de Windows si no existe).</summary>
     public Guid? PowerPlan { get; set; }

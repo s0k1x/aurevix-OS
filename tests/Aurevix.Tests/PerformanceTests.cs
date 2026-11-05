@@ -262,7 +262,7 @@ public class WildcardTests : IDisposable
     }
 }
 
-public class WinterOsMappingTests : IDisposable
+public class CatalogMappingTests : IDisposable
 {
     private readonly string _dir = Path.Combine(Path.GetTempPath(), "aurevix-wo-" + Guid.NewGuid().ToString("N"));
     public void Dispose() { try { Directory.Delete(_dir, true); } catch { } }
@@ -303,5 +303,26 @@ public class WinterOsMappingTests : IDisposable
     {
         var e = new TweakEngine(new TweakContext { Registry = new FakeRegistry(), BackupDirectory = _dir, System = new SystemProfile(16, true, false, "NVIDIA") });
         Assert.NotNull(e.CompatibilityProblem(T("graphics.amd-ulps.off")));
+    }
+}
+
+public class AurevixModesTests
+{
+    [Fact]
+    public void ModesAndPlansUseOnlyAurevixNamingAndStayOutOfAutomaticLevels()
+    {
+        var catalog = TweakEngine.LoadCatalog();
+        var modes = catalog.Where(t => t.Category is TweakCategory.Modes or TweakCategory.PowerPlans).ToList();
+        Assert.True(modes.Count >= 10);
+        foreach (var id in new[] { "mode.smooth", "mode.aim", "mode.online", "mode.highend", "mode.lowend", "plan.desktop", "plan.laptop" })
+            Assert.Contains(modes, t => t.Id == id);
+        // Los modos se eligen a mano: no entran en los niveles automáticos.
+        Assert.All(catalog.Where(t => t.Category == TweakCategory.Modes), t => Assert.Empty(t.Levels));
+        string[] foreign = ["winter", "wos.", "pows", "wisp", "rhyno", "khora", "cyte", "oraxia", "octavia", "hydroid", "yareli", "nokko", "voruna", "saryn", "dante"];
+        foreach (var t in catalog)
+        {
+            var text = string.Join(" ", t.Id, t.Title, t.Description, t.ExpectedEffect, t.PossibleImpact).ToLowerInvariant();
+            Assert.DoesNotContain(foreign, f => text.Contains(f));
+        }
     }
 }

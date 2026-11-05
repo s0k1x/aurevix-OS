@@ -11,7 +11,7 @@ namespace Aurevix.Service;
 /// Modo MSI de la GPU y prioridad de CPU por juego. Las rutas de registro las calcula el servicio
 /// (el cliente solo envía on/off o un nombre de .exe validado). Guarda los valores originales.
 /// </summary>
-public sealed class DeviceConfigurator(string stateDir) : IDeviceConfigurator
+public sealed partial class DeviceConfigurator(string stateDir) : IDeviceConfigurator
 {
     private string MsiBackup => Path.Combine(stateDir, "msi-original.json");
     private const string MsiSub = @"Device Parameters\Interrupt Management\MessageSignaledInterruptProperties";
