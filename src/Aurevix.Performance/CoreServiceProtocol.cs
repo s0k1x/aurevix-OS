@@ -24,6 +24,11 @@ public static class CoreServiceProtocol
         ["flush-dns"] = "Vaciar la caché DNS",
         ["tcp-defaults"] = "Restablecer los ajustes TCP óptimos de Windows (autoajuste y RSS)",
         ["network-repair"] = "Reparar la red (Winsock e IP; requiere reiniciar)",
+        ["sfc"] = "Comprobar y reparar archivos de sistema (SFC /scannow)",
+        ["dism-restorehealth"] = "Reparar la imagen de Windows (DISM /RestoreHealth)",
+        ["chkdsk-scan"] = "Buscar errores en el disco del sistema (CHKDSK en línea, sin reiniciar)",
+        ["optimize-drives"] = "Optimizar unidades (TRIM en SSD, desfragmentar en HDD)",
+        ["purge-standby"] = "Vaciar la memoria en espera (como ISLC)",
     };
 
     /// <summary>Proveedores DNS permitidos. El cliente solo envía el identificador.</summary>
@@ -51,6 +56,19 @@ public interface INetworkConfigurator
     (bool ok, string message) AddGameQos(string exe);
     (bool ok, string message) RemoveGameQos(string exe);
     IReadOnlyList<string> ListGameQos();
+    /// <summary>Ahorro de energía, EEE, Green Ethernet, moderación de interrupciones y offload en adaptadores físicos. Guarda los valores previos.</summary>
+    (bool ok, string message) OptimizeAdapters();
+    (bool ok, string message) RestoreAdapters();
+    (bool ok, string message) SetMtu(int mtu);
+}
+
+/// <summary>Ajustes de dispositivos y procesos con privilegios (las rutas las calcula el propio servicio).</summary>
+public interface IDeviceConfigurator
+{
+    /// <summary>Modo MSI (Message Signaled Interrupts) en las GPU detectadas. Requiere reiniciar.</summary>
+    (bool ok, string message) SetGpuMsi(bool enabled);
+    /// <summary>Prioridad de CPU alta permanente para un juego (Image File Execution Options\PerfOptions).</summary>
+    (bool ok, string message) SetGamePriority(string exe, bool high);
 }
 
 public sealed class CoreRequest
@@ -89,7 +107,7 @@ public interface IMaintenanceRunner
 }
 
 /// <summary>Lógica del servicio, independiente del transporte (named pipe) para poder probarla.</summary>
-public sealed class CoreRequestHandler(IReadOnlyList<TweakDefinition> catalog, Func<string, TweakEngine> engineForUserSid, IMaintenanceRunner? maintenance, INetworkConfigurator? network = null)
+public sealed class CoreRequestHandler(IReadOnlyList<TweakDefinition> catalog, Func<string, TweakEngine> engineForUserSid, IMaintenanceRunner? maintenance, INetworkConfigurator? network = null, IDeviceConfigurator? devices = null)
 {
     private readonly Dictionary<string, TweakDefinition> _byId = catalog.ToDictionary(t => t.Id);
 
@@ -200,6 +218,36 @@ public sealed class CoreRequestHandler(IReadOnlyList<TweakDefinition> catalog, F
                 if (!CoreServiceProtocol.IsValidExeName(req.Action)) return CoreResponse.Fail("Nombre de juego no válido (debe ser un .exe sin ruta).");
                 if (network is null) return CoreResponse.Fail("Red no disponible.");
                 var (ok, msg) = req.Op == "qos-add" ? network.AddGameQos(req.Action!) : network.RemoveGameQos(req.Action!);
+                return new CoreResponse { Ok = ok, Error = ok ? null : msg, Messages = [msg] };
+            }
+
+            case "nic-optimize" or "nic-restore":
+            {
+                if (network is null) return CoreResponse.Fail("Red no disponible.");
+                var (ok, msg) = req.Op == "nic-optimize" ? network.OptimizeAdapters() : network.RestoreAdapters();
+                return new CoreResponse { Ok = ok, Error = ok ? null : msg, Messages = [msg] };
+            }
+
+            case "mtu-set":
+            {
+                if (!int.TryParse(req.Action, out var mtu) || mtu is < 1280 or > 1500) return CoreResponse.Fail("MTU fuera de rango (1280-1500).");
+                if (network is null) return CoreResponse.Fail("Red no disponible.");
+                var (ok, msg) = network.SetMtu(mtu);
+                return new CoreResponse { Ok = ok, Error = ok ? null : msg, Messages = [msg] };
+            }
+
+            case "msi-gpu-on" or "msi-gpu-off":
+            {
+                if (devices is null) return CoreResponse.Fail("Dispositivos no disponibles.");
+                var (ok, msg) = devices.SetGpuMsi(req.Op == "msi-gpu-on");
+                return new CoreResponse { Ok = ok, Error = ok ? null : msg, Messages = [msg], RequiresRestart = ok };
+            }
+
+            case "game-priority-set" or "game-priority-remove":
+            {
+                if (!CoreServiceProtocol.IsValidExeName(req.Action)) return CoreResponse.Fail("Nombre de juego no válido (debe ser un .exe sin ruta).");
+                if (devices is null) return CoreResponse.Fail("Dispositivos no disponibles.");
+                var (ok, msg) = devices.SetGamePriority(req.Action!, req.Op == "game-priority-set");
                 return new CoreResponse { Ok = ok, Error = ok ? null : msg, Messages = [msg] };
             }
 

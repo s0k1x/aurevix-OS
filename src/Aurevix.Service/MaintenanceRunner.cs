@@ -14,10 +14,15 @@ public sealed class MaintenanceRunner : IMaintenanceRunner
         ["flush-dns"] = ("ipconfig.exe", "/flushdns"),
         ["tcp-defaults"] = ("netsh.exe", "int tcp set global autotuninglevel=normal rss=enabled"),
         ["network-repair"] = ("cmd.exe", "/c netsh winsock reset && netsh int ip reset"),
+        ["sfc"] = ("sfc.exe", "/scannow"),
+        ["dism-restorehealth"] = ("dism.exe", "/Online /Cleanup-Image /RestoreHealth /NoRestart"),
+        ["chkdsk-scan"] = ("chkdsk.exe", "C: /scan"),
+        ["optimize-drives"] = ("powershell.exe", "-NoProfile -NonInteractive -Command \"Get-Volume | Where-Object { $_.DriveLetter -and $_.DriveType -eq 'Fixed' } | ForEach-Object { Optimize-Volume -DriveLetter $_.DriveLetter }\""),
     };
 
     public (bool ok, string message) Run(string action)
     {
+        if (action == "purge-standby") return StandbyList.Purge();
         if (!Commands.TryGetValue(action, out var c)) return (false, "No permitido.");
         try
         {
@@ -28,6 +33,41 @@ public sealed class MaintenanceRunner : IMaintenanceRunner
             return p.ExitCode == 0
                 ? (true, $"{CoreServiceProtocol.MaintenanceActions[action]}: completado.")
                 : (false, $"{CoreServiceProtocol.MaintenanceActions[action]}: terminó con código {p.ExitCode}.");
+        }
+        catch (Exception ex) { return (false, ex.Message); }
+    }
+}
+
+/// <summary>Vacía la lista de memoria en espera (lo mismo que hacen ISLC o RAMMap) con la API del sistema.</summary>
+internal static class StandbyList
+{
+    [System.Runtime.InteropServices.DllImport("ntdll.dll")]
+    private static extern int NtSetSystemInformation(int infoClass, ref int info, int length);
+
+    [System.Runtime.InteropServices.DllImport("advapi32.dll", SetLastError = true)]
+    private static extern bool OpenProcessToken(IntPtr process, uint access, out IntPtr token);
+    [System.Runtime.InteropServices.DllImport("advapi32.dll", SetLastError = true, CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+    private static extern bool LookupPrivilegeValue(string? system, string name, out long luid);
+    [System.Runtime.InteropServices.DllImport("advapi32.dll", SetLastError = true)]
+    private static extern bool AdjustTokenPrivileges(IntPtr token, bool disableAll, ref TokenPrivileges newState, int len, IntPtr prev, IntPtr retLen);
+
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential, Pack = 4)]
+    private struct TokenPrivileges { public int Count; public long Luid; public int Attributes; }
+
+    public static (bool ok, string message) Purge()
+    {
+        try
+        {
+            if (OpenProcessToken(System.Diagnostics.Process.GetCurrentProcess().Handle, 0x28, out var tok) &&
+                LookupPrivilegeValue(null, "SeProfileSingleProcessPrivilege", out var luid))
+            {
+                var tp = new TokenPrivileges { Count = 1, Luid = luid, Attributes = 2 };
+                AdjustTokenPrivileges(tok, false, ref tp, 0, IntPtr.Zero, IntPtr.Zero);
+            }
+            var cmd = 4; // MemoryPurgeStandbyList
+            var status = NtSetSystemInformation(80, ref cmd, sizeof(int)); // SystemMemoryListInformation
+            Aurevix.Core.Logging.AurevixLog.Info($"Purge standby: 0x{status:X}");
+            return status == 0 ? (true, "Memoria en espera vaciada.") : (false, $"Windows no permitió vaciar la memoria en espera (0x{status:X}).");
         }
         catch (Exception ex) { return (false, ex.Message); }
     }

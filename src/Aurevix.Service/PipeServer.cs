@@ -33,7 +33,7 @@ public sealed class PipeServer : BackgroundService
             WindowsBuild = build,
             Scope = TweakScope.Machine,
             System = system
-        }), new MaintenanceRunner(), new NetworkConfigurator(Root));
+        }), new MaintenanceRunner(), new NetworkConfigurator(Root), new DeviceConfigurator(Root));
 
         while (!ct.IsCancellationRequested)
         {
