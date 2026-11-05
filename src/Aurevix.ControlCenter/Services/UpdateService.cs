@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.IO;
+using System.Net.Http;
 using Aurevix.Core;
 using Aurevix.Core.Logging;
 using Aurevix.Update;
