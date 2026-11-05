@@ -8,6 +8,9 @@
 #ifndef SourceDir
   #define SourceDir "..\out\app"
 #endif
+#ifndef ServiceDir
+  #define ServiceDir "..\out\service"
+#endif
 #ifndef OutputDir
   #define OutputDir "..\out\installer"
 #endif
@@ -49,6 +52,8 @@ Name: "desktopicon"; Description: "Crear un acceso directo en el escritorio"; Gr
 
 [Files]
 Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
+; AUREVIX Core Service (operaciones de sistema limitadas al catálogo de AUREVIX)
+Source: "{#ServiceDir}\*"; DestDir: "{app}\service"; Flags: recursesubdirs createallsubdirs ignoreversion
 
 [Icons]
 Name: "{autoprograms}\AUREVIX Control Center"; Filename: "{app}\{#AppExe}"
@@ -60,12 +65,32 @@ Root: HKLM; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: 
   ValueData: """{app}\{#AppExe}"" --background"; Flags: uninsdeletevalue
 
 [Run]
+; Registrar e iniciar AUREVIX Core Service (inicio automático, se reinicia solo si falla).
+Filename: "{sys}\sc.exe"; Parameters: "create AurevixCoreService binPath= ""{app}\service\AurevixCoreService.exe"" start= auto DisplayName= ""AUREVIX Core Service"""; Flags: runhidden waituntilterminated
+Filename: "{sys}\sc.exe"; Parameters: "config AurevixCoreService binPath= ""{app}\service\AurevixCoreService.exe"" start= auto"; Flags: runhidden waituntilterminated
+Filename: "{sys}\sc.exe"; Parameters: "description AurevixCoreService ""Aplica los ajustes de sistema de AUREVIX. Solo acepta ajustes de su catálogo."""; Flags: runhidden waituntilterminated
+Filename: "{sys}\sc.exe"; Parameters: "failure AurevixCoreService reset= 86400 actions= restart/5000/restart/30000//"; Flags: runhidden waituntilterminated
+Filename: "{sys}\sc.exe"; Parameters: "start AurevixCoreService"; Flags: runhidden waituntilterminated
 ; Instalación normal: abrir el asistente de primer inicio (o el Control Center si ya se completó).
 Filename: "{app}\{#AppExe}"; Description: "Abrir AUREVIX Control Center"; Flags: nowait postinstall skipifsilent runasoriginaluser
 ; Actualización silenciosa lanzada por AUREVIX Update: volver a dejarlo en la bandeja.
-Filename: "{app}\{#AppExe}"; Parameters: "--background"; Flags: nowait runasoriginaluser; Check: IsAurevixUpdate
+Filename: "{app}\{#AppExe}"; Parameters: "--background --after-update"; Flags: nowait runasoriginaluser; Check: IsAurevixUpdate
+
+[UninstallRun]
+Filename: "{sys}\sc.exe"; Parameters: "stop AurevixCoreService"; Flags: runhidden waituntilterminated; RunOnceId: "StopSvc"
+Filename: "{sys}\sc.exe"; Parameters: "delete AurevixCoreService"; Flags: runhidden waituntilterminated; RunOnceId: "DelSvc"
 
 [Code]
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+var
+  Code: Integer;
+begin
+  // Detener el servicio antes de reemplazar sus archivos (actualizaciones).
+  Exec(ExpandConstant('{sys}\sc.exe'), 'stop AurevixCoreService', '', SW_HIDE, ewWaitUntilTerminated, Code);
+  Sleep(1500);
+  Result := '';
+end;
+
 function IsAurevixUpdate: Boolean;
 begin
   Result := WizardSilent and (Pos('/AUREVIXUPDATE', UpperCase(GetCmdTail)) > 0);

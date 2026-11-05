@@ -26,6 +26,8 @@ jobs:
           dotnet-version: 8.0.x
       - name: Compilar Control Center y sus dependencias
         run: dotnet build src/Aurevix.ControlCenter --configuration Release
+      - name: Compilar AUREVIX Core Service
+        run: dotnet build src/Aurevix.Service --configuration Release
       - name: Compilar AUREVIX Installer
         run: dotnet build src/Aurevix.Installer --configuration Release
       - name: Publicar Control Center

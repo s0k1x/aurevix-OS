@@ -9,7 +9,7 @@ namespace Aurevix.ControlCenter.Services;
 
 /// <summary>
 /// "Estilo AUREVIX": Windows minimalista con mecanismos OFICIALES y reversibles:
-///   - Tema .theme propio (modo oscuro, acento dorado, fondo AUREVIX) aplicado por Windows.
+///   - Tema .theme propio (modo oscuro, acento verde lima, fondo AUREVIX) aplicado por Windows.
 ///   - Barra de tareas limpia (iconos centrados, búsqueda solo icono, sin Vista de tareas ni widgets).
 ///   - Menú Inicio sin recomendaciones ni sugerencias.
 ///   - Explorador abierto en "Este equipo", extensiones visibles, sin recientes/frecuentes.
@@ -197,7 +197,7 @@ public static class AurevixStyle
             ColorStyle=NormalColor
             Size=NormalSize
             AutoColorization=0
-            ColorizationColor=0XC4E2B04A
+            ColorizationColor=0XC48DE03C
             SystemMode=Dark
             AppMode=Dark
             Transparency=1

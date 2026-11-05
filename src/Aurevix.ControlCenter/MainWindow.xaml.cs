@@ -20,8 +20,12 @@ public partial class MainWindow : Window
             ["home"] = () => new HomePage(this),
             ["diagnostics"] = () => new DiagnosticsPage(),
             ["performance"] = () => new PerformancePage(),
+            ["gameboost"] = () => new GameBoostPage(),
+            ["benchmark"] = () => new BenchmarkPage(),
+            ["network"] = () => new NetworkPage(),
             ["profiles"] = () => new ProfilesPage(),
             ["optimization"] = () => new OptimizationPage(),
+            ["cleanup"] = () => new CleanupPage(),
             ["appearance"] = () => new AppearancePage(),
             ["updates"] = () => new UpdatesPage(),
             ["recovery"] = () => new RecoveryPage(),
@@ -30,6 +34,7 @@ public partial class MainWindow : Window
         _nav = new()
         {
             ["home"] = NavHome, ["diagnostics"] = NavDiagnostics, ["performance"] = NavPerformance,
+            ["benchmark"] = NavBenchmark, ["cleanup"] = NavCleanup, ["gameboost"] = NavGameBoost, ["network"] = NavNetwork,
             ["profiles"] = NavProfiles, ["optimization"] = NavOptimization, ["appearance"] = NavAppearance,
             ["updates"] = NavUpdates, ["recovery"] = NavRecovery, ["settings"] = NavSettings,
         };

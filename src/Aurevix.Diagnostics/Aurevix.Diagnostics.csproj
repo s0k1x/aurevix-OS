@@ -5,6 +5,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Aurevix.Core\Aurevix.Core.csproj" />
+    <ProjectReference Include="..\Aurevix.Performance\Aurevix.Performance.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="System.Management" Version="8.0.0" />

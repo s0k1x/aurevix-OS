@@ -27,7 +27,7 @@ public sealed class AppearancePage : UserControl
         body.Children.Add(Ui.Card(
             Ui.Eyebrow(applied ? "ACTIVO" : "RECOMENDADO"),
             Ui.H2("Estilo AUREVIX"),
-            Ui.Muted("Windows minimalista en un clic: modo oscuro con acento dorado, fondo y pantalla de bloqueo AUREVIX, " +
+            Ui.Muted("Windows minimalista en un clic: modo oscuro con acento verde lima, fondo y pantalla de bloqueo AUREVIX, " +
                      "barra de tareas limpia (iconos centrados, búsqueda solo icono, sin Vista de tareas ni widgets), " +
                      "menú Inicio sin recomendaciones y Explorador que abre en «Este equipo» sin recientes. Todo es reversible."),
             Ui.Row(

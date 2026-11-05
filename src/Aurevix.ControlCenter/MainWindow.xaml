@@ -25,8 +25,12 @@
                     <RadioButton Style="{StaticResource NavItem}" Tag="&#xE80F;" Content="Inicio" x:Name="NavHome" IsChecked="True" Checked="OnNav" />
                     <RadioButton Style="{StaticResource NavItem}" Tag="&#xE9D9;" Content="Diagnóstico" x:Name="NavDiagnostics" Checked="OnNav" />
                     <RadioButton Style="{StaticResource NavItem}" Tag="&#xE9D2;" Content="Rendimiento" x:Name="NavPerformance" Checked="OnNav" />
+                    <RadioButton Style="{StaticResource NavItem}" Tag="&#xE7FC;" Content="Game Boost" x:Name="NavGameBoost" Checked="OnNav" />
+                    <RadioButton Style="{StaticResource NavItem}" Tag="&#xEC4A;" Content="Benchmark" x:Name="NavBenchmark" Checked="OnNav" />
+                    <RadioButton Style="{StaticResource NavItem}" Tag="&#xE968;" Content="Red" x:Name="NavNetwork" Checked="OnNav" />
                     <RadioButton Style="{StaticResource NavItem}" Tag="&#xE945;" Content="Perfiles" x:Name="NavProfiles" Checked="OnNav" />
                     <RadioButton Style="{StaticResource NavItem}" Tag="&#xE713;" Content="Optimización" x:Name="NavOptimization" Checked="OnNav" />
+                    <RadioButton Style="{StaticResource NavItem}" Tag="&#xE74D;" Content="Limpieza" x:Name="NavCleanup" Checked="OnNav" />
                     <RadioButton Style="{StaticResource NavItem}" Tag="&#xE771;" Content="Apariencia" x:Name="NavAppearance" Checked="OnNav" />
                     <RadioButton Style="{StaticResource NavItem}" Tag="&#xE895;" Content="Actualizaciones" x:Name="NavUpdates" Checked="OnNav" />
                     <RadioButton Style="{StaticResource NavItem}" Tag="&#xE777;" Content="Recuperación" x:Name="NavRecovery" Checked="OnNav" />
