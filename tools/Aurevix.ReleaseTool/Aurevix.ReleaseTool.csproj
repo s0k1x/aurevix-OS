@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>aurevix-release</AssemblyName>
+    <RootNamespace>Aurevix.ReleaseTool</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Aurevix.Update\Aurevix.Update.csproj" />
+  </ItemGroup>
+</Project>

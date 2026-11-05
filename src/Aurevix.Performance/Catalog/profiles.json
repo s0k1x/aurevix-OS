@@ -1,0 +1,30 @@
+[
+  {
+    "id": "balanced",
+    "name": "Equilibrado",
+    "description": "Configuración recomendada para el día a día: plan de energía Equilibrado, Modo de juego y Sensor de almacenamiento.",
+    "preferredPowerPlans": [ "381b4222-f694-41f0-9685-ff5bb260df2e" ],
+    "tweaks": [ "gaming.game-mode.on", "storage.storage-sense.on", "interface.transparency.on" ]
+  },
+  {
+    "id": "gaming",
+    "name": "Gaming",
+    "description": "Prioriza los juegos: Modo de juego, sin grabación en segundo plano y plan de Alto rendimiento si el equipo lo ofrece (si no, Equilibrado).",
+    "preferredPowerPlans": [ "8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c", "381b4222-f694-41f0-9685-ff5bb260df2e" ],
+    "tweaks": [ "gaming.game-mode.on", "gaming.background-recording.off" ]
+  },
+  {
+    "id": "productivity",
+    "name": "Productividad",
+    "description": "Escritorio limpio y práctico: extensiones visibles, sin sugerencias promocionales y Sensor de almacenamiento.",
+    "preferredPowerPlans": [ "381b4222-f694-41f0-9685-ff5bb260df2e" ],
+    "tweaks": [ "interface.file-extensions.show", "interface.start-suggestions.off", "storage.storage-sense.on" ]
+  },
+  {
+    "id": "efficiency",
+    "name": "Silencioso / Eficiencia",
+    "description": "Menos consumo y ruido: plan Economizador si existe, sin transparencias y con menos animaciones.",
+    "preferredPowerPlans": [ "a1841308-3519-4b5f-a6a9-5dc8bf2bd8b6", "381b4222-f694-41f0-9685-ff5bb260df2e" ],
+    "tweaks": [ "interface.transparency.off", "interface.minimize-animation.off" ]
+  }
+]

@@ -1,0 +1,15 @@
+bin/
+obj/
+out/
+artifacts/
+*.user
+.vs/
+*.iso
+*.wim
+*.esd
+*.pem
+!src/Aurevix.Update/Keys/*.public.pem
+.env
+.env.*
+node_modules/
+iso-builder/work/

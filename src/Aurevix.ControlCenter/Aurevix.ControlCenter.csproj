@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.22000.0</SupportedOSPlatformVersion>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AssemblyName>AurevixControlCenter</AssemblyName>
+    <RootNamespace>Aurevix.ControlCenter</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\aurevix.ico</ApplicationIcon>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>false</PublishSingleFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Aurevix.Core\Aurevix.Core.csproj" />
+    <ProjectReference Include="..\Aurevix.Update\Aurevix.Update.csproj" />
+    <ProjectReference Include="..\Aurevix.Performance\Aurevix.Performance.csproj" />
+    <ProjectReference Include="..\Aurevix.Diagnostics\Aurevix.Diagnostics.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Assets\aurevix.ico" />
+    <Content Include="Assets\Wallpapers\*.png" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <!-- WinForms se usa SOLO para el icono de la bandeja; evita conflictos de nombres con WPF. -->
+  <ItemGroup>
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
+</Project>

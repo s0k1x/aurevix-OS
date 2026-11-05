@@ -1,0 +1,66 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{A3152AE1-D830-4C6E-92DC-642B4540127F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aurevix.Core", "src\Aurevix.Core\Aurevix.Core.csproj", "{A3702FC2-B35B-477B-84CA-A1D17367E67B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aurevix.Update", "src\Aurevix.Update\Aurevix.Update.csproj", "{D619C798-76C0-4ADE-860F-CC5587BA1BA2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aurevix.Performance", "src\Aurevix.Performance\Aurevix.Performance.csproj", "{AF0B7812-3CBF-4AF8-AAEC-534A854808A8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aurevix.Diagnostics", "src\Aurevix.Diagnostics\Aurevix.Diagnostics.csproj", "{E5E94AC2-7D33-47F9-82AA-28F747485FF4}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{00EA7EC6-43AF-4533-8493-3D14F661075C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aurevix.ReleaseTool", "tools\Aurevix.ReleaseTool\Aurevix.ReleaseTool.csproj", "{C8AF0101-FD45-41C1-99E3-B5855937E537}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{A7B90DF0-1E91-4092-B4FC-297B01DF9578}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aurevix.Tests", "tests\Aurevix.Tests\Aurevix.Tests.csproj", "{6095076C-E64E-49A2-BB7C-3DF32CCF558C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A3702FC2-B35B-477B-84CA-A1D17367E67B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A3702FC2-B35B-477B-84CA-A1D17367E67B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A3702FC2-B35B-477B-84CA-A1D17367E67B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A3702FC2-B35B-477B-84CA-A1D17367E67B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D619C798-76C0-4ADE-860F-CC5587BA1BA2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D619C798-76C0-4ADE-860F-CC5587BA1BA2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D619C798-76C0-4ADE-860F-CC5587BA1BA2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D619C798-76C0-4ADE-860F-CC5587BA1BA2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AF0B7812-3CBF-4AF8-AAEC-534A854808A8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AF0B7812-3CBF-4AF8-AAEC-534A854808A8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AF0B7812-3CBF-4AF8-AAEC-534A854808A8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AF0B7812-3CBF-4AF8-AAEC-534A854808A8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E5E94AC2-7D33-47F9-82AA-28F747485FF4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E5E94AC2-7D33-47F9-82AA-28F747485FF4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E5E94AC2-7D33-47F9-82AA-28F747485FF4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E5E94AC2-7D33-47F9-82AA-28F747485FF4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C8AF0101-FD45-41C1-99E3-B5855937E537}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C8AF0101-FD45-41C1-99E3-B5855937E537}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C8AF0101-FD45-41C1-99E3-B5855937E537}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C8AF0101-FD45-41C1-99E3-B5855937E537}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6095076C-E64E-49A2-BB7C-3DF32CCF558C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6095076C-E64E-49A2-BB7C-3DF32CCF558C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6095076C-E64E-49A2-BB7C-3DF32CCF558C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6095076C-E64E-49A2-BB7C-3DF32CCF558C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{A3702FC2-B35B-477B-84CA-A1D17367E67B} = {A3152AE1-D830-4C6E-92DC-642B4540127F}
+		{D619C798-76C0-4ADE-860F-CC5587BA1BA2} = {A3152AE1-D830-4C6E-92DC-642B4540127F}
+		{AF0B7812-3CBF-4AF8-AAEC-534A854808A8} = {A3152AE1-D830-4C6E-92DC-642B4540127F}
+		{E5E94AC2-7D33-47F9-82AA-28F747485FF4} = {A3152AE1-D830-4C6E-92DC-642B4540127F}
+		{C8AF0101-FD45-41C1-99E3-B5855937E537} = {00EA7EC6-43AF-4533-8493-3D14F661075C}
+		{6095076C-E64E-49A2-BB7C-3DF32CCF558C} = {A7B90DF0-1E91-4092-B4FC-297B01DF9578}
+	EndGlobalSection
+EndGlobal
