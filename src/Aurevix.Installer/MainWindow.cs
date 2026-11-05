@@ -315,6 +315,41 @@ public sealed class MainWindow : Window
             Ui.Row(Ui.Button("Abrir carpeta", () => OpenFolder(Path.GetDirectoryName(output)!), primary: true))));
     }
 
+    // ------------------------------------------------------------------ Capturas (workflow de GitHub Actions)
+
+    public async Task RenderScreenshotsAsync(string dir)
+    {
+        Directory.CreateDirectory(dir);
+        Ui.ReduceMotion = true;
+        Home(); await Task.Delay(1200); Save(Path.Combine(dir, "inst-01-inicio.png"));
+        MediaIntro(); await Task.Delay(5000); Save(Path.Combine(dir, "inst-02-usb-iso.png"));
+        CleanInstallIntro(); await Task.Delay(5000); Save(Path.Combine(dir, "inst-03-reinstalar.png"));
+        var (text, bar) = ProgressPage("Creando el USB de AUREVIX OS", "Puede tardar entre 15 y 40 minutos según tu conexión y el pendrive. No lo desenchufes.");
+        text.Text = "Descargando Windows 11 de Microsoft… 3,1 de 6,9 GB"; bar.IsIndeterminate = false; bar.Value = 45;
+        await Task.Delay(800); Save(Path.Combine(dir, "inst-04-progreso.png"));
+        _usbTimer?.Stop();
+    }
+
+    private void Save(string path)
+    {
+        UpdateLayout();
+        var el = (FrameworkElement)Content;
+        int w = (int)Math.Ceiling(el.ActualWidth), h = (int)Math.Ceiling(el.ActualHeight);
+        const double dpi = 144;
+        var rtb = new System.Windows.Media.Imaging.RenderTargetBitmap((int)(w * 1.5), (int)(h * 1.5), dpi, dpi, PixelFormats.Pbgra32);
+        var dv = new DrawingVisual();
+        using (var ctx = dv.RenderOpen())
+        {
+            ctx.DrawRectangle(Background, null, new Rect(0, 0, w, h));
+            ctx.DrawRectangle(new VisualBrush(el), null, new Rect(0, 0, w, h));
+        }
+        rtb.Render(dv);
+        var enc = new System.Windows.Media.Imaging.PngBitmapEncoder();
+        enc.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(rtb));
+        using var fs = File.Create(path);
+        enc.Save(fs);
+    }
+
     // ------------------------------------------------------------------ Utilidades
 
     private static void OpenFolder(string dir) { Directory.CreateDirectory(dir); OpenUrl(dir); }

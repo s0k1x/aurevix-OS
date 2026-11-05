@@ -1,3 +1,4 @@
+using System.IO;
 using System.Threading;
 using System.Windows;
 using Aurevix.ControlCenter.Services;
@@ -51,6 +52,20 @@ public partial class App : Application
 
         AppServices.Initialize();
         Views.Ui.ReduceMotion = AppServices.Settings.ReduceMotion;
+
+        // Modo capturas (solo lo usa el workflow de GitHub Actions).
+        var shotIdx = Array.FindIndex(e.Args, a => a.Equals("--render-screenshots", StringComparison.OrdinalIgnoreCase));
+        if (shotIdx >= 0 && shotIdx + 1 < e.Args.Length)
+        {
+            var dir = e.Args[shotIdx + 1];
+            Dispatcher.InvokeAsync(async () =>
+            {
+                try { await Screenshotter.RunAsync(dir); }
+                catch (Exception ex) { File.WriteAllText(System.IO.Path.Combine(dir, "error.txt"), ex.ToString()); }
+                Shutdown();
+            });
+            return;
+        }
         AurevixLog.Info($"AUREVIX Control Center {AppServices.CurrentVersion} iniciado (args: {string.Join(' ', args)})");
 
         if (background && !AppServices.Settings.StartWithWindows && AppServices.State.FirstRunCompleted)

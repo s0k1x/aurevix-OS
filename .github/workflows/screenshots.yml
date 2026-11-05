@@ -1,0 +1,34 @@
+name: Capturas
+
+# Abre cada pantalla del Control Center y del Installer en un Windows real y guarda PNGs (artefacto "capturas").
+on:
+  workflow_dispatch:
+
+jobs:
+  screenshots:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Compilar
+        run: |
+          dotnet build src/Aurevix.ControlCenter -c Release -o out/cc
+          dotnet build src/Aurevix.Installer -c Release -o out/inst
+      - name: Capturar pantallas
+        shell: pwsh
+        run: |
+          $dir = Join-Path $PWD 'capturas'
+          New-Item -ItemType Directory -Force $dir | Out-Null
+          $p = Start-Process out/cc/AurevixControlCenter.exe -ArgumentList '--render-screenshots', "`"$dir`"" -PassThru
+          if (-not $p.WaitForExit(240000)) { $p.Kill(); Write-Warning 'Control Center: tiempo agotado' }
+          $q = Start-Process out/inst/AurevixInstaller.exe -ArgumentList '--render-screenshots', "`"$dir`"" -PassThru
+          if (-not $q.WaitForExit(120000)) { $q.Kill(); Write-Warning 'Installer: tiempo agotado' }
+          Get-ChildItem $dir | Format-Table Name, Length
+      - uses: actions/upload-artifact@v4
+        with:
+          name: capturas
+          path: capturas
+          retention-days: 7
