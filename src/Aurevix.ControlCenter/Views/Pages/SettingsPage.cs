@@ -42,7 +42,8 @@ public sealed class SettingsPage : UserControl
         body.Children.Add(Ui.Card(Ui.H2("Permisos"),
             Ui.Muted(AppServices.IsAdmin
                 ? "⚠ AUREVIX se está ejecutando como administrador. No es necesario: ciérralo y ábrelo normalmente."
-                : "AUREVIX se ejecuta sin privilegios de administrador. Las acciones que los necesitan (punto de restauración, actualizaciones) los piden puntualmente con el aviso de Windows (UAC).")));
+                : "AUREVIX forma parte del sistema: los cambios de sistema (ajustes, punto de restauración, red, Benchmark y actualizaciones) los hace AUREVIX Core Service, sin avisos de permisos. " +
+                  "Solo lo que reduce la seguridad, como excluir carpetas de Defender, sigue pidiendo confirmación a Windows a propósito.")));
 
         Content = root;
     }

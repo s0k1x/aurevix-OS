@@ -56,7 +56,7 @@ public sealed class AppsPage : UserControl
             body.Children.Add(Ui.Card(Ui.H2(group.Key), wrap));
         }
         body.Children.Add(Ui.Card(
-            Ui.Muted("Las apps se descargan de la fuente oficial de cada fabricante a través de winget. Algunas pueden pedir permiso (UAC). " +
+            Ui.Muted("Las apps se descargan de la fuente oficial de cada fabricante a través de winget. Algunos instaladores de terceros pueden pedir permiso a Windows. " +
                      "AUREVIX no incluye ni instala software de pago, activadores ni programas de origen dudoso."),
             Ui.Row(Ui.Button("Instalar seleccionadas", () => _ = InstallAsync(), primary: true), Ui.Button("Actualizar todas mis apps", () => _ = UpgradeAllAsync())),
             _bar, _status));

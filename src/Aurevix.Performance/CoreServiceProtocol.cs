@@ -6,9 +6,9 @@ namespace Aurevix.Performance;
 
 /// <summary>
 /// Protocolo entre AUREVIX Control Center (sin privilegios) y AUREVIX Core Service (con privilegios).
-/// Seguridad: el servicio NO acepta valores, rutas ni comandos del cliente. Solo identificadores de su propio
-/// catálogo incrustado, identificadores de copias de seguridad creadas por ese mismo usuario y una lista
-/// cerrada de tareas de mantenimiento.
+/// Seguridad: el servicio NO acepta comandos del cliente. Solo identificadores de su propio catálogo incrustado,
+/// copias de seguridad creadas por ese mismo usuario, listas cerradas (mantenimiento, DNS, canales) y unos pocos
+/// valores muy acotados y validados aquí (nombre de un .exe, ruta de un .exe a bloquear, descripción corta).
 /// </summary>
 public static class CoreServiceProtocol
 {
@@ -89,6 +89,9 @@ public sealed class CoreRequest
     public string? Label { get; set; }
     public string? BackupId { get; set; }
     public string? Action { get; set; }
+    /// <summary>Texto libre corto (descripción del punto de restauración, ruta de un programa, canal…). Siempre se valida.</summary>
+    public string? Value { get; set; }
+    public int Seconds { get; set; }
 }
 
 public sealed class CoreStatus
@@ -108,6 +111,8 @@ public sealed class CoreResponse
     public List<string> Messages { get; set; } = [];
     public List<string>? Items { get; set; }
     public Dictionary<string, CoreStatus>? Statuses { get; set; }
+    /// <summary>Resultado estructurado (por ejemplo, la medición del Benchmark en JSON).</summary>
+    public string? Data { get; set; }
 
     public static CoreResponse Fail(string error) => new() { Ok = false, Error = error };
 }
@@ -118,8 +123,54 @@ public interface IMaintenanceRunner
 }
 
 /// <summary>Lógica del servicio, independiente del transporte (named pipe) para poder probarla.</summary>
-public sealed class CoreRequestHandler(IReadOnlyList<TweakDefinition> catalog, Func<string, TweakEngine> engineForUserSid, IMaintenanceRunner? maintenance, INetworkConfigurator? network = null, IDeviceConfigurator? devices = null)
+/// <summary>
+/// Acciones de sistema que antes pedían UAC y ahora hace el servicio, porque AUREVIX forma parte del sistema.
+/// Las que REDUCEN la seguridad (exclusiones de Defender) no están aquí a propósito: siguen pidiendo confirmación a Windows.
+/// </summary>
+public interface ISystemActions
 {
+    (bool ok, string message) CreateRestorePoint(string description);
+    (bool ok, string message) BlockProgram(string exePath);
+    (bool ok, string message) UnblockAll();
+    IReadOnlyList<string> ListBlocked();
+    /// <summary>Mide un juego con PresentMon (ruta fija del servicio). Devuelve el resultado en JSON.</summary>
+    (bool ok, string message, string? json) RunBenchmark(string exe, int seconds, string label);
+    /// <summary>Comprueba el manifiesto FIRMADO, descarga, verifica el SHA-256 y lanza el instalador con argumentos fijos.</summary>
+    (bool ok, string message) InstallUpdate(string channel, string installId);
+}
+
+public static class SystemActionRules
+{
+    public static string SanitizeDescription(string? s) =>
+        new string((s ?? "").Where(c => char.IsLetterOrDigit(c) || c is ' ' or '-' or '.' or '_').Take(60).ToArray()).Trim() is { Length: > 0 } d ? d : "AUREVIX";
+
+    /// <summary>
+    /// Ruta de programa que se puede bloquear en el Firewall: absoluta, .exe, sin comillas ni comodines y fuera de
+    /// Windows y de Defender (así ningún programa puede usar el servicio para dejar sin red a la protección del sistema).
+    /// </summary>
+    public static bool IsBlockablePath(string? path, string windowsDir, IEnumerable<string> protectedDirs)
+    {
+        if (path is not { Length: > 7 and <= 260 } || !char.IsAsciiLetter(path[0]) || path[1] != ':' || path[2] != '\\') return false;
+        if (!path.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) || path.IndexOfAny(['"', '\'', '*', '?', '<', '>', '|', '\0', '\n', '\r']) >= 0) return false;
+        if (path.Contains("..") || path.StartsWith(@"\\")) return false;
+        foreach (var d in protectedDirs.Append(windowsDir))
+            if (path.StartsWith(d.TrimEnd('\\') + "\\", StringComparison.OrdinalIgnoreCase)) return false;
+        return true;
+    }
+
+    public static bool IsValidInstallId(string? id) => id is { Length: 32 } && id.All(Uri.IsHexDigit);
+}
+
+public sealed class CoreRequestHandler(IReadOnlyList<TweakDefinition> catalog, Func<string, TweakEngine> engineForUserSid, IMaintenanceRunner? maintenance, INetworkConfigurator? network = null, IDeviceConfigurator? devices = null, ISystemActions? system = null, string? windowsDir = null, IReadOnlyList<string>? protectedDirs = null)
+{
+    private readonly string _windir = windowsDir ?? Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+    private readonly IReadOnlyList<string> _protected = protectedDirs ??
+    [
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Windows Defender"),
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Microsoft", "Windows Defender"),
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "AUREVIX"),
+    ];
+
     private readonly Dictionary<string, TweakDefinition> _byId = catalog.ToDictionary(t => t.Id);
 
     public string HandleJson(string json, string callerSid)
@@ -285,6 +336,51 @@ public sealed class CoreRequestHandler(IReadOnlyList<TweakDefinition> catalog, F
 
             case "qos-list":
                 return new CoreResponse { Ok = true, Items = network?.ListGameQos().ToList() ?? [] };
+
+            case "restore-point":
+            {
+                if (system is null) return CoreResponse.Fail("Acciones de sistema no disponibles.");
+                var (ok, msg) = system.CreateRestorePoint(SystemActionRules.SanitizeDescription(req.Value));
+                return new CoreResponse { Ok = ok, Error = ok ? null : msg, Messages = [msg] };
+            }
+
+            case "firewall-block":
+            {
+                if (system is null) return CoreResponse.Fail("Acciones de sistema no disponibles.");
+                if (!SystemActionRules.IsBlockablePath(req.Value, _windir, _protected))
+                    return CoreResponse.Fail("Ese programa no se puede bloquear (solo .exe fuera de Windows y de Defender).");
+                var (ok, msg) = system.BlockProgram(req.Value!);
+                return new CoreResponse { Ok = ok, Error = ok ? null : msg, Messages = [msg] };
+            }
+
+            case "firewall-unblock-all":
+            {
+                if (system is null) return CoreResponse.Fail("Acciones de sistema no disponibles.");
+                var (ok, msg) = system.UnblockAll();
+                return new CoreResponse { Ok = ok, Error = ok ? null : msg, Messages = [msg] };
+            }
+
+            case "firewall-list":
+                return new CoreResponse { Ok = true, Items = system?.ListBlocked().ToList() ?? [] };
+
+            case "benchmark":
+            {
+                if (system is null) return CoreResponse.Fail("Acciones de sistema no disponibles.");
+                if (!CoreServiceProtocol.IsValidExeName(req.Value)) return CoreResponse.Fail("Nombre de juego no válido.");
+                if (req.Seconds is < 10 or > 300) return CoreResponse.Fail("Duración no válida (10-300 s).");
+                var (ok, msg, json) = system.RunBenchmark(req.Value!, req.Seconds, Sanitize(req.Label) ?? "Medición");
+                return new CoreResponse { Ok = ok, Error = ok ? null : msg, Messages = [msg], Data = json };
+            }
+
+            case "update-install":
+            {
+                if (system is null) return CoreResponse.Fail("Acciones de sistema no disponibles.");
+                var channel = req.Value ?? "stable";
+                if (!new[] { "stable", "beta", "developer" }.Contains(channel)) return CoreResponse.Fail("Canal no válido.");
+                if (!SystemActionRules.IsValidInstallId(req.Label)) return CoreResponse.Fail("Identificador de instalación no válido.");
+                var (ok, msg) = system.InstallUpdate(channel, req.Label!);
+                return new CoreResponse { Ok = ok, Error = ok ? null : msg, Messages = [msg] };
+            }
 
             default:
                 return CoreResponse.Fail("Operación desconocida.");

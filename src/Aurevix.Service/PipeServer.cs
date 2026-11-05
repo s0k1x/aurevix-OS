@@ -12,6 +12,7 @@ public sealed class PipeServer : BackgroundService
 {
     private static readonly string Root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Aurevix", "service");
     private CoreRequestHandler? _handler;
+    private readonly SystemActions _actions = new(Root);
 
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
@@ -33,7 +34,8 @@ public sealed class PipeServer : BackgroundService
             WindowsBuild = build,
             Scope = TweakScope.Machine,
             System = system
-        }), new MaintenanceRunner(), new NetworkConfigurator(Root), new DeviceConfigurator(Root));
+        }), new MaintenanceRunner(), new NetworkConfigurator(Root), new DeviceConfigurator(Root), _actions);
+        _actions.RelaunchIfPending();
 
         while (!ct.IsCancellationRequested)
         {

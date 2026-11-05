@@ -62,8 +62,8 @@ public sealed class NetworkPage : UserControl
             Ui.Row(Ui.Button("Abrir test de bufferbloat", () => SystemTools.Start("https://www.waveform.com/tools/bufferbloat")))));
 
         body.Children.Add(Ui.Card(Ui.H2("Bloquear internet a una aplicación"),
-            Ui.Muted("Crea una regla en el Firewall de Windows que impide que el programa elegido se conecte a internet. Windows pedirá permiso (UAC)."),
-            Ui.Row(Ui.Button("Elegir programa…", () => Firewall(block: true)), Ui.Button("Quitar bloqueos de AUREVIX", () => Firewall(block: false)))));
+            Ui.Muted("Crea una regla en el Firewall de Windows que impide que el programa elegido se conecte a internet. Lo hace AUREVIX Core Service, sin avisos de permisos."),
+            Ui.Row(Ui.Button("Elegir programa…", () => _ = FirewallAsync(block: true)), Ui.Button("Quitar bloqueos de AUREVIX", () => _ = FirewallAsync(block: false)))));
 
         var tools = Ui.Wrap(
             Ui.Button("Vaciar caché DNS", () => _ = ServiceAsync(new CoreRequest { Op = "maintenance", Action = "flush-dns" })),
@@ -112,28 +112,21 @@ public sealed class NetworkPage : UserControl
             await ServiceAsync(new CoreRequest { Op = "mtu-set", Action = mtu.ToString() });
     }
 
-    /// <summary>El firewall se cambia con PowerShell elevado (UAC): así nunca lo puede hacer otro programa sin que el usuario lo vea.</summary>
-    private static void Firewall(bool block)
+    /// <summary>
+    /// Bloqueo de programas en el Firewall a través de AUREVIX Core Service (sin UAC). El servicio solo acepta
+    /// .exe fuera de Windows y de Defender, y solo toca las reglas del grupo AUREVIX.
+    /// </summary>
+    private static async Task FirewallAsync(bool block)
     {
-        string script;
+        CoreResponse r;
         if (block)
         {
             var dlg = new Microsoft.Win32.OpenFileDialog { Filter = "Programas|*.exe", Title = "Programa al que bloquear internet" };
             if (dlg.ShowDialog() != true) return;
-            var path = dlg.FileName.Replace("'", "''");
-            var name = System.IO.Path.GetFileName(dlg.FileName).Replace("'", "''");
-            script = $"New-NetFirewallRule -DisplayName 'AUREVIX Bloqueo {name}' -Group 'AUREVIX' -Direction Outbound -Program '{path}' -Action Block | Out-Null; " +
-                     $"New-NetFirewallRule -DisplayName 'AUREVIX Bloqueo {name} (entrada)' -Group 'AUREVIX' -Direction Inbound -Program '{path}' -Action Block | Out-Null";
+            r = await CoreServiceClient.SendAsync(new CoreRequest { Op = "firewall-block", Value = dlg.FileName });
         }
-        else script = "Remove-NetFirewallRule -Group 'AUREVIX' -ErrorAction SilentlyContinue";
-        try
-        {
-            var enc = Convert.ToBase64String(System.Text.Encoding.Unicode.GetBytes(script));
-            using var p = Process.Start(new ProcessStartInfo("powershell.exe", $"-NoProfile -WindowStyle Hidden -EncodedCommand {enc}") { UseShellExecute = true, Verb = "runas" })!;
-            p.WaitForExit(30000);
-            MessageBox.Show(p.ExitCode == 0 ? (block ? "Programa bloqueado en el Firewall." : "Bloqueos de AUREVIX eliminados.") : "No se pudo cambiar el Firewall.", "Red");
-        }
-        catch (System.ComponentModel.Win32Exception) { }
+        else r = await CoreServiceClient.SendAsync(new CoreRequest { Op = "firewall-unblock-all" });
+        MessageBox.Show(r.Ok ? string.Join("\n", r.Messages) : r.Error ?? "No se pudo cambiar el Firewall.", "Red");
     }
 
     private static TextBox Box(string text, double width) => new()

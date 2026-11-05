@@ -9,12 +9,16 @@ namespace Aurevix.ControlCenter.Services;
 public static class SystemTools
 {
     /// <summary>
-    /// Crea un punto de restauración con el cmdlet oficial Checkpoint-Computer.
-    /// Requiere administrador: Windows mostrará el aviso de UAC. Devuelve false si el usuario cancela
-    /// o si Protección del sistema está desactivada.
+    /// Crea un punto de restauración con el cmdlet oficial Checkpoint-Computer. Lo hace AUREVIX Core Service,
+    /// sin aviso de UAC; solo si el servicio no está disponible se pide permiso a Windows.
+    /// Devuelve false si se cancela o si Protección del sistema está desactivada.
     /// </summary>
     public static async Task<bool> CreateRestorePointAsync(string description)
     {
+        var viaService = await CoreServiceClient.SendAsync(new Aurevix.Performance.CoreRequest { Op = "restore-point", Value = description }, TimeSpan.FromMinutes(5));
+        if (viaService.Ok) { AurevixLog.Info($"Punto de restauración '{description}' creado por el servicio."); return true; }
+        if (await CoreServiceClient.IsAvailableAsync()) return false; // el servicio respondió: el fallo es real (p. ej. protección desactivada)
+
         var safe = new string(description.Where(c => char.IsLetterOrDigit(c) || c is ' ' or '-' or '.').ToArray());
         var psi = new ProcessStartInfo("powershell.exe",
             $"-NoProfile -ExecutionPolicy Bypass -Command \"Checkpoint-Computer -Description '{safe}' -RestorePointType MODIFY_SETTINGS\"")

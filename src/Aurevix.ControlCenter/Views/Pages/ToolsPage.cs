@@ -9,7 +9,7 @@ namespace Aurevix.ControlCenter.Views.Pages;
 
 /// <summary>
 /// Herramientas: Explorador, reparación del sistema (SFC, DISM, CHKDSK), discos, memoria,
-/// drivers (información del equipo y enlaces oficiales) y modo MSI de la GPU.
+/// drivers (información del equipo y enlaces oficiales), modo MSI de la GPU y ajustes avanzados del sistema.
 /// </summary>
 public sealed class ToolsPage : UserControl
 {
@@ -41,7 +41,37 @@ public sealed class ToolsPage : UserControl
             Tool("Activar modo MSI en la GPU", "Message Signaled Interrupts: interrupciones más eficientes entre CPU y GPU. Muchas GPU modernas ya lo usan. Requiere reiniciar.", () => _ = MsiAsync(true)),
             Tool("Restaurar modo de interrupciones original", "Deshace el cambio anterior. Requiere reiniciar.", () => _ = MsiAsync(false))));
 
+        body.Children.Add(Section("Sistema avanzado",
+            Pair("Memoria virtual fija", "Archivo de paginación fijo de 2× tu RAM en C: (evita que crezca a tirones mientras juegas). Necesita espacio libre. Requiere reiniciar.",
+                "pagefile-fixed", "pagefile-auto", "Fijar", "Automática (Windows)", restart: true),
+            Pair("Procesos de fondo de Windows en baja prioridad", "Indexador de búsqueda, telemetría de compatibilidad y trabajadores de Windows Update ceden CPU y disco a tus juegos. Siguen funcionando.",
+                "bgprio-on", "bgprio-off", "Activar", "Restaurar"),
+            Pair("Prioridad para red y discos", "Prioridad de interrupciones alta para tarjetas de red y controladoras NVMe/SATA. Guarda los valores originales. Requiere reiniciar.",
+                "irqprio-on", "irqprio-off", "Activar", "Restaurar", restart: true),
+            Pair("Hipervisor de Windows (Hyper-V, WSL2, VBS)", "Desactivarlo puede dar algo de rendimiento en juegos, pero WSL2, Docker, Sandbox y algunos anticheat lo necesitan. Requiere reiniciar.",
+                "hyperv-off", "hyperv-on", "Desactivar", "Activar", restart: true),
+            Pair("Detección de redes y uso compartido", "Solo en redes privadas. Desactívalo si no compartes carpetas ni impresoras con otros equipos.",
+                "sharing-off", "sharing-on", "Desactivar", "Activar"),
+            Svc("Restaurar los planes de energía de Windows", "Vuelve a los planes de fábrica (Equilibrado, etc.). Útil si un plan da problemas.", "power-defaults")));
+
         Content = root;
+    }
+
+    private static UIElement Pair(string title, string text, string opA, string opB, string labelA, string labelB, bool restart = false)
+    {
+        async Task Run(string op, string label)
+        {
+            if (!Confirm($"{title}: {label.ToLowerInvariant()}.\n\n{text}\n\n¿Continuar?")) return;
+            var r = await CoreServiceClient.SendAsync(new CoreRequest { Op = op }, TimeSpan.FromMinutes(3));
+            if (!r.Ok) { MessageBox.Show(r.Error ?? "Error", title); return; }
+            if (restart && r.RequiresRestart) RestartPrompt.Ask("Reinicia para aplicar el cambio", string.Join(" ", r.Messages));
+            else MessageBox.Show(string.Join("\n", r.Messages), title);
+        }
+        var info = new StackPanel { Children = { Ui.Text(title, 14, FontWeights.SemiBold), Ui.Muted(text) } };
+        var buttons = Ui.Row(Ui.Button(labelA, () => _ = Run(opA, labelA), primary: true), Ui.Button(labelB, () => _ = Run(opB, labelB)));
+        var row = Ui.Columns(info, buttons);
+        row.Margin = new Thickness(0, 8, 0, 8);
+        return row;
     }
 
     private static Border Section(string title, params UIElement[] items)

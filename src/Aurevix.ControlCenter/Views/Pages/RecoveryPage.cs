@@ -17,12 +17,12 @@ public sealed class RecoveryPage : UserControl
         var (root, body) = Ui.Page("Recuperación", "Herramientas para deshacer cambios y proteger la configuración.");
 
         body.Children.Add(Ui.Card(Ui.H2("Puntos de restauración de Windows"),
-            Ui.Muted("Crea un punto con la herramienta oficial de Windows. Requiere permiso de administrador y que Protección del sistema esté activada."),
+            Ui.Muted("Crea un punto con la herramienta oficial de Windows, sin avisos de permisos. Necesita que Protección del sistema esté activada en C:."),
             Ui.Row(
                 Ui.Button("Crear punto de restauración", async () =>
                 {
                     var ok = await SystemTools.CreateRestorePointAsync("AUREVIX manual");
-                    MessageBox.Show(ok ? "Punto de restauración creado." : "No se pudo crear (cancelado o Protección del sistema desactivada).", "Recuperación");
+                    MessageBox.Show(ok ? "Punto de restauración creado." : "No se pudo crear. Comprueba que Protección del sistema está activada en C: (Windows solo permite un punto cada 24 h).", "Recuperación");
                 }, primary: true),
                 Ui.Button("Abrir Restaurar sistema", SystemTools.OpenSystemRestore))));
 

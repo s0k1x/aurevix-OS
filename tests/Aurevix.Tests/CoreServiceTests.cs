@@ -136,3 +136,63 @@ public class CoreDeviceTests
         Assert.Equal(["prio:cs2.exe:True", "msi:True"], dev.Calls);
     }
 }
+
+public class CoreSystemActionTests
+{
+    private sealed class FakeSys : ISystemActions
+    {
+        public readonly List<string> Calls = [];
+        public (bool ok, string message) CreateRestorePoint(string d) { Calls.Add("rp:" + d); return (true, "ok"); }
+        public (bool ok, string message) BlockProgram(string p) { Calls.Add("block:" + p); return (true, "ok"); }
+        public (bool ok, string message) UnblockAll() { Calls.Add("unblock"); return (true, "ok"); }
+        public IReadOnlyList<string> ListBlocked() => [];
+        public (bool ok, string message, string? json) RunBenchmark(string exe, int s, string l) { Calls.Add($"bench:{exe}:{s}"); return (true, "ok", "{}"); }
+        public (bool ok, string message) InstallUpdate(string c, string id) { Calls.Add("upd:" + c); return (true, "ok"); }
+    }
+
+    private static (CoreRequestHandler, FakeSys) Make()
+    {
+        var sys = new FakeSys();
+        var dir = Path.Combine(Path.GetTempPath(), "aurevix-sys-" + Guid.NewGuid().ToString("N"));
+        return (new CoreRequestHandler(TweakEngine.LoadCatalog(), _ => new TweakEngine(new TweakContext { Registry = new FakeRegistry(), BackupDirectory = dir }),
+            null, null, null, sys, @"C:\Windows", [@"C:\Program Files\Windows Defender"]), sys);
+    }
+
+    [Theory]
+    [InlineData(@"D:\Games\Juego\juego.exe", true)]
+    [InlineData(@"C:\Program Files (x86)\Steam\steam.exe", true)]
+    [InlineData(@"C:\Windows\System32\svchost.exe", false)]
+    [InlineData(@"C:\Program Files\Windows Defender\MsMpEng.exe", false)]
+    [InlineData(@"C:\Games\..\Windows\x.exe", false)]
+    [InlineData(@"\\servidor\share\x.exe", false)]
+    [InlineData(@"C:\Games\x"" -Action Allow.exe", false)]
+    [InlineData(@"C:\Games\script.ps1", false)]
+    [InlineData("juego.exe", false)]
+    public void FirewallOnlyBlocksSafeProgramPaths(string path, bool ok)
+    {
+        var (h, s) = Make();
+        Assert.Equal(ok, h.Handle(new CoreRequest { Op = "firewall-block", Value = path }, "S-1").Ok);
+        Assert.Equal(ok ? 1 : 0, s.Calls.Count);
+    }
+
+    [Fact]
+    public void RestorePointDescriptionIsSanitized()
+    {
+        var (h, s) = Make();
+        Assert.True(h.Handle(new CoreRequest { Op = "restore-point", Value = "Antes'; Remove-Item C:\\ -Recurse" }, "S-1").Ok);
+        Assert.Equal("rp:Antes Remove-Item C -Recurse", s.Calls.Single());
+    }
+
+    [Fact]
+    public void BenchmarkAndUpdateValidateInputs()
+    {
+        var (h, s) = Make();
+        Assert.False(h.Handle(new CoreRequest { Op = "benchmark", Value = "..\\x.exe", Seconds = 60 }, "S-1").Ok);
+        Assert.False(h.Handle(new CoreRequest { Op = "benchmark", Value = "game.exe", Seconds = 5000 }, "S-1").Ok);
+        Assert.True(h.Handle(new CoreRequest { Op = "benchmark", Value = "game.exe", Seconds = 60 }, "S-1").Ok);
+        Assert.False(h.Handle(new CoreRequest { Op = "update-install", Value = "evil", Label = new string('a', 32) }, "S-1").Ok);
+        Assert.False(h.Handle(new CoreRequest { Op = "update-install", Value = "stable", Label = "x" }, "S-1").Ok);
+        Assert.True(h.Handle(new CoreRequest { Op = "update-install", Value = "stable", Label = new string('a', 32) }, "S-1").Ok);
+        Assert.Equal(["bench:game.exe:60", "upd:stable"], s.Calls);
+    }
+}

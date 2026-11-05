@@ -15,5 +15,6 @@
     <ProjectReference Include="..\Aurevix.Core\Aurevix.Core.csproj" />
     <ProjectReference Include="..\Aurevix.Performance\Aurevix.Performance.csproj" />
     <ProjectReference Include="..\Aurevix.Diagnostics\Aurevix.Diagnostics.csproj" />
+    <ProjectReference Include="..\Aurevix.Update\Aurevix.Update.csproj" />
   </ItemGroup>
 </Project>
