@@ -46,7 +46,7 @@ public sealed class FirstRunWindow : Window
 
     private void Show(int n, string name, params UIElement[] content)
     {
-        _step.Text = $"Paso {n} de 6 · {name}";
+        _step.Text = $"Paso {n} de 7 · {name}";
         var sp = new StackPanel { Margin = new Thickness(32, 20, 32, 32), MaxWidth = 820, HorizontalAlignment = HorizontalAlignment.Left };
         foreach (var c in content) sp.Children.Add(c);
         _host.Content = new ScrollViewer { Content = sp };
@@ -148,7 +148,7 @@ public sealed class FirstRunWindow : Window
             Ui.Muted("Podrás cambiarlo o deshacerlo en cualquier momento desde AUREVIX Control Center > Perfiles."),
             Ui.Card(options),
             Ui.Row(Ui.Button("Aplicar perfil", ApplyProfile, primary: true),
-                   Ui.Button("No aplicar ningún perfil", () => { _pending.Add("Elegir un perfil (opcional)."); Summary(); })));
+                   Ui.Button("No aplicar ningún perfil", () => { _pending.Add("Elegir un perfil (opcional)."); StyleStep(); })));
     }
 
     private void ApplyProfile()
@@ -165,8 +165,34 @@ public sealed class FirstRunWindow : Window
             _done.AddRange(r.Messages.Where(m => !m.StartsWith("Aplicado")).Select(m => "  " + m));
         }
         else _pending.Add($"El perfil «{p.Name}» no se pudo aplicar: {string.Join(" ", r.Messages)}");
-        Summary();
+        StyleStep();
     }
+
+    // 6. Aspecto
+    private void StyleStep() => Show(6, "Aspecto",
+        Ui.H1("Dale a Windows el estilo AUREVIX"),
+        Ui.Muted("Minimalista y oscuro: acento dorado, fondo y pantalla de bloqueo AUREVIX, barra de tareas limpia, " +
+                 "menú Inicio sin recomendaciones y Explorador ordenado. Puedes volver al aspecto original desde Apariencia."),
+        Ui.Card(
+            Ui.Text("Qué cambia"),
+            Ui.Muted("• Modo oscuro con transparencias y acento dorado"),
+            Ui.Muted("• Barra de tareas: iconos centrados, búsqueda como icono, sin Vista de tareas ni widgets"),
+            Ui.Muted("• Inicio: más anclados, sin recomendaciones ni sugerencias"),
+            Ui.Muted("• Explorador: abre en «Este equipo», extensiones visibles, sin archivos recientes"),
+            Ui.Muted("• Fondo y pantalla de bloqueo AUREVIX")),
+        Ui.Row(
+            Ui.Button("Aplicar estilo AUREVIX", async () =>
+            {
+                var r = await Services.AurevixStyle.ApplyAsync(includeLockScreen: true);
+                _done.Add("Estilo AUREVIX aplicado.");
+                foreach (var sk in r.Skipped) _pending.Add($"Estilo: {sk} (Windows no lo permitió).");
+                if (MessageBox.Show("Para ver la nueva barra de tareas hay que reiniciar el Explorador de Windows (unos segundos). ¿Hacerlo ahora?",
+                        "Estilo AUREVIX", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+                    Services.AurevixStyle.RestartExplorer();
+                else _pending.Add("Cerrar sesión o reiniciar para ver la barra de tareas nueva.");
+                Summary();
+            }, primary: true),
+            Ui.Button("Mantener el aspecto de Windows", () => Summary())));
 
     // 6. Resumen
     private void Summary()
@@ -176,7 +202,7 @@ public sealed class FirstRunWindow : Window
         foreach (var d in _done.DefaultIfEmpty("Ningún cambio aplicado.")) done.Children.Add(Ui.Text("✓ " + d));
         var pending = new StackPanel();
         foreach (var p in _pending.DefaultIfEmpty("Nada pendiente.")) pending.Children.Add(Ui.Muted("• " + p));
-        Show(6, "Resumen", Ui.H1("¡Tu equipo está listo!"),
+        Show(7, "Resumen", Ui.H1("¡Tu equipo está listo!"),
             Ui.Card(Ui.H2("Realizado"), done),
             Ui.Card(Ui.H2("Pendiente"), pending),
             Ui.Muted("AUREVIX Control Center queda disponible en el escritorio, en el menú Inicio y en la bandeja del sistema."),

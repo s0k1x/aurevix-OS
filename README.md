@@ -14,18 +14,19 @@ Experiencia de **Windows 11** personalizada, modular y actualizable. AUREVIX **n
 | **Catálogo de ajustes reversibles** (10 ajustes, solo HKCU) y 4 perfiles, con copia de seguridad y reversión automática si falla | Probado (36 pruebas automáticas) |
 | **AUREVIX Update**: manifiesto firmado ECDSA P-256, anti-downgrade, caducidad, despliegue gradual, descarga verificada con SHA-256, canales Stable/Beta/Developer | Probado |
 | **Pantalla automática de actualización** al publicar una versión nueva | Escrita. Pendiente de probar |
-| **Launcher Installer** (Inno Setup) | Escrito. Se compila en GitHub Actions |
-| **ISO Builder** (convierte tu ISO oficial en una ISO de AUREVIX) | Escrito. Pendiente de probar |
+| **AUREVIX Installer**: instalar en este Windows · reinstalar limpio sin USB · crear USB (detección automática) o ISO. Ver [docs/INSTALLER.md](docs/INSTALLER.md) | Escrito. Pendiente de probar en Windows |
+| **Instalación en español casi automática** (idioma, región, teclado, zona horaria, privacidad) | Escrito. Pendiente de probar |
+| **Estilo AUREVIX**: Windows minimalista en un clic (tema, barra de tareas, Inicio, Explorador, pantalla de bloqueo), reversible | Escrito. Pendiente de probar |
+| Instalador del Control Center (Inno Setup) e ISO Builder por script | Publicados en v0.1.0 |
 | **Servidor de versiones** (Supabase: tabla `releases` + Storage `releases`) | Desplegado |
 | **Web de descargas** (`web/`) | Lista; se publica con GitHub Pages |
 | **AUREVIX Core Service** (servicio con privilegios mínimos) | **No implementado** (Hito 4). Hoy las acciones elevadas piden UAC puntualmente |
-| Personalización profunda del shell (barra de tareas, Inicio, Explorador, iconos, cursores) | **No incluida** a propósito. Ver ADR 0005 |
+| Rediseño del shell (sustituir barra de tareas, Inicio, Explorador o Configuración) | **No incluido** a propósito: no hay vía soportada. Ver ADR 0005 y 0007 |
 | Temperaturas y uso de GPU | **No incluidos**: no hay una fuente fiable sin privilegios. Ver ADR 0006 |
 
 ## Instalar
 
-- **Launcher Installer** (Windows 11 ya instalado): descarga `AurevixSetup-x.y.z.exe` de la web o de [Releases](../../releases) y ejecútalo.
-- **ISO propia**: descarga la ISO *oficial* de Windows 11 desde Microsoft y usa el **ISO Builder** (`iso-builder/`). Ver [docs/ISO_BUILDER.md](docs/ISO_BUILDER.md).
+Descarga **AUREVIX Installer** desde la web (https://s0k1x.github.io/sistema-OS-aurevix-OS/) y elige: instalar en este Windows, reinstalar limpio o crear un USB/ISO. Ver [docs/INSTALLER.md](docs/INSTALLER.md).
 
 > No se publica ninguna ISO de Windows modificada: la licencia no lo permite. Ver [ADR 0004](docs/adr/0004-iso-y-licencias.md).
 

@@ -6,17 +6,19 @@
         Icon="pack://application:,,,/Assets/aurevix.ico">
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="236" />
+            <ColumnDefinition Width="240" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
         <!-- Barra lateral -->
-        <Border Grid.Column="0" Background="{StaticResource Surface}" BorderBrush="{StaticResource BorderBrushAx}" BorderThickness="0,0,1,0">
+        <Border Grid.Column="0" Background="{StaticResource Bg}" BorderBrush="{StaticResource BorderBrushAx}" BorderThickness="0,0,1,0">
             <DockPanel>
-                <StackPanel DockPanel.Dock="Top" Margin="22,24,16,22">
-                    <TextBlock Text="AUREVIX" FontFamily="{StaticResource DisplayFont}" FontSize="22" FontWeight="Bold"
-                               Foreground="{StaticResource Accent}" />
-                    <TextBlock Text="Control Center" Style="{StaticResource Muted}" />
+                <StackPanel DockPanel.Dock="Top" Margin="24,28,16,26" Orientation="Horizontal">
+                    <Image Source="pack://application:,,,/Assets/aurevix.ico" Width="26" Height="26" Margin="0,0,10,0" />
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="AUREVIX" FontFamily="{StaticResource DisplayFont}" FontSize="15" FontWeight="SemiBold" />
+                        <TextBlock Text="Control Center" Style="{StaticResource Muted}" FontSize="12" />
+                    </StackPanel>
                 </StackPanel>
                 <TextBlock x:Name="VersionText" DockPanel.Dock="Bottom" Style="{StaticResource Muted}" Margin="22,0,16,18" FontSize="12" />
                 <StackPanel x:Name="Nav" Margin="0,0,0,8">

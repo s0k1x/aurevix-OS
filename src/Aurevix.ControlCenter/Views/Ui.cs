@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using Aurevix.Core.Diagnostics;
 
 namespace Aurevix.ControlCenter.Views;
@@ -9,6 +10,36 @@ namespace Aurevix.ControlCenter.Views;
 public static class Ui
 {
     public static T Res<T>(string key) => (T)Application.Current.FindResource(key);
+
+    /// <summary>Lo fija la app según Ajustes ("Reducir movimiento").</summary>
+    public static bool ReduceMotion { get; set; }
+
+    /// <summary>Animaciones activas solo si Windows las tiene activadas y el usuario no pidió reducir movimiento.</summary>
+    public static bool AnimationsEnabled => !ReduceMotion && SystemParameters.ClientAreaAnimation;
+
+    /// <summary>Entrada suave: fundido + deslizamiento corto hacia arriba.</summary>
+    public static void Enter(UIElement el, int delayMs = 0, double offset = 14)
+    {
+        if (!AnimationsEnabled) return;
+        var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+        var tt = new TranslateTransform(0, offset);
+        el.RenderTransform = tt;
+        el.Opacity = 0;
+        var begin = TimeSpan.FromMilliseconds(delayMs);
+        var dur = new Duration(TimeSpan.FromMilliseconds(380));
+        el.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(0, 1, dur) { BeginTime = begin, EasingFunction = ease });
+        tt.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(offset, 0, dur) { BeginTime = begin, EasingFunction = ease });
+    }
+
+    /// <summary>Entrada escalonada de los hijos de un panel (máx. 10 elementos animados).</summary>
+    public static void Stagger(Panel panel, int stepMs = 45)
+    {
+        if (!AnimationsEnabled) return;
+        for (var i = 0; i < panel.Children.Count; i++)
+            Enter(panel.Children[i], Math.Min(i, 10) * stepMs);
+    }
+
+    public static TextBlock Eyebrow(string text) => new() { Text = text, Style = Res<Style>("Eyebrow") };
     public static Brush Brush(string key) => Res<Brush>(key);
 
     public static TextBlock H1(string text) => new() { Text = text, Style = Res<Style>("H1") };
@@ -49,11 +80,14 @@ public static class Ui
     /// <summary>Página estándar: título, subtítulo y contenido desplazable.</summary>
     public static (ScrollViewer root, StackPanel body) Page(string title, string subtitle)
     {
-        var body = new StackPanel { Margin = new Thickness(32, 28, 32, 28), MaxWidth = 1100, HorizontalAlignment = HorizontalAlignment.Stretch };
+        var body = new StackPanel { Margin = new Thickness(48, 44, 48, 40), MaxWidth = 960, HorizontalAlignment = HorizontalAlignment.Left };
         body.Children.Add(H1(title));
         var sub = Muted(subtitle);
-        sub.Margin = new Thickness(0, 0, 0, 20);
+        sub.FontSize = 14;
+        sub.Margin = new Thickness(0, 0, 0, 28);
         body.Children.Add(sub);
+        // Animación de entrada al terminar de construir la página.
+        body.Loaded += (_, _) => Stagger(body);
         return (new ScrollViewer { Content = body }, body);
     }
 
@@ -75,7 +109,7 @@ public static class Ui
     /// <summary>Tarjeta de métrica (título + valor grande + detalle).</summary>
     public static Border Metric(string label, out TextBlock value, out TextBlock detail)
     {
-        value = new TextBlock { Text = "—", FontSize = 26, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 4, 0, 2) };
+        value = new TextBlock { Text = "—", FontSize = 30, FontWeight = FontWeights.SemiBold, FontFamily = Res<FontFamily>("DisplayFont"), Margin = new Thickness(0, 6, 0, 2) };
         detail = Muted("");
         var card = Card(Muted(label), value, detail);
         card.Width = 250;

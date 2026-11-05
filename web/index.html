@@ -3,152 +3,277 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AUREVIX OS — Descargas</title>
-<meta name="description" content="AUREVIX OS: una experiencia de Windows 11 personalizada, modular y actualizable. Descarga la última versión.">
+<title>AUREVIX OS</title>
+<meta name="description" content="AUREVIX OS: Windows 11 oficial, minimalista, seguro y actualizable. Descarga AUREVIX Installer.">
+<meta name="theme-color" content="#050506">
 <link rel="icon" type="image/png" href="favicon.png">
 <style>
-  :root{--bg:#0e1116;--surface:#161a21;--alt:#1d222b;--border:#2a303b;--text:#e8eaed;--muted:#9aa3af;--accent:#e2b04a;--accent2:#f0c463;--ok:#4cc38a;--warn:#e8a33d}
-  *{box-sizing:border-box}
-  html{scroll-behavior:smooth}
-  body{margin:0;background:radial-gradient(1200px 500px at 85% -10%,rgba(226,176,74,.14),transparent),var(--bg);color:var(--text);font:16px/1.6 "Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,sans-serif}
-  a{color:var(--accent)}
-  .wrap{max-width:980px;margin:0 auto;padding:0 20px}
-  header{display:flex;align-items:center;justify-content:space-between;padding:22px 0}
-  .brand{display:flex;align-items:center;gap:12px;font-weight:700;letter-spacing:.06em;color:var(--accent);font-size:20px}
-  .brand img{width:34px;height:34px;border-radius:8px}
-  nav a{color:var(--muted);text-decoration:none;margin-left:20px;font-size:14px}
-  nav a:hover{color:var(--text)}
-  .hero{padding:48px 0 28px}
-  .hero h1{font-size:clamp(34px,6vw,56px);line-height:1.08;margin:0 0 14px;font-weight:700;letter-spacing:-.02em}
-  .hero p{color:var(--muted);font-size:18px;max-width:640px;margin:0}
-  .badge{display:inline-block;background:var(--alt);border:1px solid var(--border);border-radius:99px;padding:3px 12px;font-size:13px;color:var(--muted);margin-bottom:18px}
-  .badge b{color:var(--accent)}
-  .channels{display:flex;gap:8px;margin:34px 0 18px;flex-wrap:wrap}
-  .channels button{background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:8px 16px;border-radius:8px;cursor:pointer;font:inherit;font-size:14px}
-  .channels button[aria-pressed=true]{border-color:var(--accent);color:var(--text);background:var(--alt)}
-  .channels button:focus-visible,.btn:focus-visible{outline:2px solid var(--accent2);outline-offset:2px}
-  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
-  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px}
-  .card h2{margin:0 0 6px;font-size:20px}
-  .card .tag{font-size:12px;color:var(--ok);font-weight:600;text-transform:uppercase;letter-spacing:.06em}
-  .card p{color:var(--muted);margin:8px 0 16px;font-size:15px}
-  .btn{display:inline-block;background:var(--accent);color:#14110a;text-decoration:none;font-weight:600;padding:11px 20px;border-radius:9px;border:0;cursor:pointer;font:inherit;font-weight:600}
-  .btn:hover{background:var(--accent2)}
-  .btn.disabled{opacity:.4;pointer-events:none}
-  .hash{font:12px/1.4 ui-monospace,Consolas,monospace;color:var(--muted);word-break:break-all;margin-top:14px}
-  .notes{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px 24px;margin-top:16px}
-  .notes h3{margin:0 0 8px}
-  .notes pre{white-space:pre-wrap;font:inherit;color:var(--muted);margin:0}
-  section{margin-top:56px}
-  section h2{font-size:26px;margin:0 0 14px}
-  ol,ul{color:var(--muted);padding-left:22px}
-  li{margin:6px 0}
-  .legal{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--warn);border-radius:10px;padding:16px 20px;color:var(--muted);font-size:14px;margin-top:20px}
-  .state{color:var(--muted);padding:20px 0}
-  footer{border-top:1px solid var(--border);margin-top:64px;padding:26px 0 40px;color:var(--muted);font-size:13px}
-  @media (max-width:560px){nav{display:none}}
-  @media (prefers-reduced-motion:no-preference){.card{transition:border-color .2s}.card:hover{border-color:var(--accent)}}
+  :root{--bg:#050506;--text:#f5f5f7;--muted:#8b8b94;--line:#1f1f25;--surface:#0e0e11;--accent:#e2b04a}
+  *{box-sizing:border-box;margin:0}
+  html{scroll-behavior:smooth;background:var(--bg)}
+  body{background:var(--bg);color:var(--text);font:15px/1.6 "Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,"Helvetica Neue",sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  a{color:inherit}
+  #orb{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+
+  /* Navegación fina */
+  nav{position:fixed;top:0;left:0;right:0;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:14px 28px;
+      background:linear-gradient(var(--bg),rgba(5,5,6,0));font-size:13px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:600;letter-spacing:.02em;text-decoration:none}
+  .brand img{width:22px;height:22px;border-radius:6px}
+  .links{display:flex;gap:26px;align-items:center}
+  .links a{color:var(--muted);text-decoration:none;transition:color .2s}
+  .links a:hover{color:var(--text)}
+  .pill{display:inline-flex;align-items:center;gap:8px;background:var(--text);color:#050506!important;text-decoration:none;font-weight:600;
+        padding:8px 16px;border-radius:999px;border:0;cursor:pointer;font:inherit;font-weight:600;transition:transform .2s,opacity .2s}
+  .pill:hover{opacity:.9}
+  .pill:active{transform:scale(.97)}
+  .pill:focus-visible,.ghost:focus-visible,.links a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+  .pill.big{font-size:16px;padding:14px 26px}
+  .ghost{color:var(--muted);text-decoration:none;font-size:14px;border-bottom:1px solid var(--line);padding-bottom:2px;transition:color .2s,border-color .2s}
+  .ghost:hover{color:var(--text);border-color:var(--muted)}
+
+  main{position:relative;z-index:1}
+  section{min-height:100vh;display:flex;align-items:center;padding:96px 7vw}
+  .copy{max-width:380px}
+  .right{justify-content:flex-end}
+  .eyebrow{font-size:12px;color:var(--muted);margin-bottom:10px;letter-spacing:.02em}
+  h1{font-size:clamp(44px,7.4vw,104px);line-height:.98;font-weight:600;letter-spacing:-.035em}
+  h2{font-size:clamp(26px,3.2vw,36px);line-height:1.12;font-weight:600;letter-spacing:-.02em;margin-bottom:14px}
+  .lead{color:var(--muted);font-size:16px;max-width:460px;margin-top:22px}
+  p.body{color:var(--muted);font-size:14px}
+  .stats{display:flex;gap:34px;margin-top:26px}
+  .stat b{display:block;font-size:30px;font-weight:600;letter-spacing:-.02em;line-height:1.1}
+  .stat span{font-size:12px;color:var(--muted)}
+
+  .hero{position:relative;flex-direction:column;justify-content:flex-end;align-items:flex-start;padding-bottom:12vh}
+  .hero .row{display:flex;gap:22px;align-items:center;margin-top:34px;flex-wrap:wrap}
+  .scroll{position:absolute;bottom:28px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--muted);letter-spacing:.14em}
+
+  /* Descarga */
+  .download{flex-direction:column;align-items:center;text-align:center;justify-content:center}
+  .download h2{font-size:clamp(34px,5vw,64px);letter-spacing:-.03em}
+  .meta{color:var(--muted);font-size:13px;margin-top:14px}
+  .hash{font:11px/1.5 ui-monospace,Consolas,monospace;color:#5c5c66;word-break:break-all;max-width:560px;margin:10px auto 0}
+  .options{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:18px;overflow:hidden;
+           margin-top:56px;max-width:980px;width:100%;text-align:left}
+  .opt{background:rgba(14,14,17,.86);backdrop-filter:blur(8px);padding:26px}
+  .opt .n{font-size:12px;color:var(--accent)}
+  .opt h3{font-size:16px;font-weight:600;margin:8px 0 6px}
+  .opt p{font-size:13px;color:var(--muted)}
+  .more{display:flex;gap:22px;justify-content:center;margin-top:28px;flex-wrap:wrap}
+  .legal{max-width:620px;margin:40px auto 0;font-size:12px;color:#5c5c66}
+  footer{position:relative;z-index:1;border-top:1px solid var(--line);padding:26px 7vw 34px;color:#5c5c66;font-size:12px;display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;background:var(--bg)}
+
+  /* Aparición suave */
+  .reveal{opacity:0;transform:translateY(18px);transition:opacity .9s cubic-bezier(.2,.7,.2,1),transform .9s cubic-bezier(.2,.7,.2,1)}
+  .reveal.in{opacity:1;transform:none}
+  .reveal.d1{transition-delay:.08s}.reveal.d2{transition-delay:.16s}.reveal.d3{transition-delay:.24s}
+
+  @media (max-width:760px){
+    nav{padding:12px 16px}
+    .links a:not(.pill){display:none}
+    section{padding:88px 16px;align-items:flex-end;padding-bottom:14vh}
+    .right{justify-content:flex-start}
+    .copy{max-width:none;background:linear-gradient(transparent,rgba(5,5,6,.85) 30%);padding-top:40px}
+    .options{grid-template-columns:1fr}
+    .stats{gap:24px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    .reveal{opacity:1;transform:none;transition:none}
+  }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <div class="brand"><img src="favicon.png" alt="" width="34" height="34">AUREVIX</div>
-    <nav><a href="#descargar">Descargar</a><a href="#instalar">Cómo instalar</a><a href="#actualizar">Actualizaciones</a></nav>
-  </header>
+<canvas id="orb" aria-hidden="true"></canvas>
 
-  <div class="hero">
-    <span class="badge" id="latest-badge">Buscando la última versión…</span>
-    <h1>Windows 11, a tu manera.<br>Seguro, modular y actualizable.</h1>
-    <p>AUREVIX OS configura Windows 11 oficial con diagnóstico inicial, perfiles reversibles y una identidad visual propia. Sin trucos, sin desactivar la seguridad.</p>
+<nav aria-label="Principal">
+  <a class="brand" href="#inicio"><img src="favicon.png" alt="" width="22" height="22">AUREVIX</a>
+  <div class="links">
+    <a href="#diagnostico">Sistema</a>
+    <a href="#seguridad">Seguridad</a>
+    <a href="#descargar">Instalar</a>
+    <a class="pill" href="#descargar">Descargar</a>
   </div>
+</nav>
 
-  <div id="descargar">
-    <div class="channels" role="group" aria-label="Canal de versión">
-      <button data-ch="stable" aria-pressed="true">Stable (recomendado)</button>
-      <button data-ch="beta" aria-pressed="false">Beta</button>
-      <button data-ch="developer" aria-pressed="false">Developer</button>
+<main>
+  <section class="hero" id="inicio" data-shape="sphere" data-x=".64">
+    <div class="eyebrow reveal" id="ver">AUREVIX OS</div>
+    <h1 class="reveal d1">Windows 11.<br>Sin ruido.</h1>
+    <p class="lead reveal d2">Windows oficial con una capa propia: minimalista, seguro, reversible y siempre actualizado.</p>
+    <div class="row reveal d3">
+      <a class="pill big" href="#descargar">Descargar AUREVIX</a>
+      <a class="ghost" href="#diagnostico">Descubrir</a>
     </div>
-    <div id="out"><div class="state">Cargando…</div></div>
-  </div>
-
-  <section id="instalar">
-    <h2>Dos formas de instalar</h2>
-    <ol>
-      <li><b style="color:var(--text)">Launcher Installer</b> — si ya tienes Windows 11: ejecútalo y se encarga de todo (Control Center, accesos directos y asistente de primer inicio).</li>
-      <li><b style="color:var(--text)">ISO Builder</b> — para una instalación limpia: descargas la ISO <u>oficial</u> de Windows 11 desde Microsoft, el ISO Builder la convierte en una ISO de AUREVIX OS en tu propio equipo y la grabas en un USB (por ejemplo con Rufus).</li>
-    </ol>
-    <div class="legal"><b>¿Por qué no hay una ISO lista para descargar?</b> La licencia de Windows no permite redistribuir Windows modificado. Por eso la ISO se construye en tu PC a partir de la oficial de Microsoft. Windows se activa con tu propia licencia: AUREVIX no incluye claves ni activadores.</div>
-    <p style="margin-top:16px"><a href="https://www.microsoft.com/software-download/windows11" rel="noopener">Descargar la ISO oficial de Windows 11 →</a></p>
+    <div class="scroll">DESLIZA</div>
   </section>
 
-  <section id="actualizar">
-    <h2>Actualizaciones automáticas</h2>
-    <p style="color:var(--muted)">Si ya tienes AUREVIX instalado, no necesitas volver aquí: cuando publicamos una versión nueva, aparece una pantalla de actualización en tu equipo. Los paquetes están firmados digitalmente y se verifican antes de instalarse; nunca se instala nada sin tu confirmación.</p>
+  <section id="diagnostico" data-shape="ring" data-x=".66">
+    <div class="copy">
+      <div class="eyebrow reveal">Diagnóstico</div>
+      <h2 class="reveal d1">Conoce tu equipo en un minuto.</h2>
+      <p class="body reveal d2">CPU, gráfica, memoria, discos, controladores y Windows Update. Se analiza en tu PC y nada sale de él. Si un dato no es fiable, lo decimos: nunca lo inventamos.</p>
+      <div class="stats reveal d3">
+        <div class="stat"><b>0</b><span>datos enviados</span></div>
+        <div class="stat"><b>4</b><span>niveles de estado</span></div>
+      </div>
+    </div>
   </section>
 
-  <footer>
-    AUREVIX OS se distribuye "tal cual", sin garantía. Pruébalo primero en una máquina virtual. Windows es una marca de Microsoft; AUREVIX no está afiliado a Microsoft.
-    · <a href="https://github.com/s0k1x/sistema-OS-aurevix-OS" rel="noopener">Código en GitHub</a>
-  </footer>
-</div>
+  <section class="right" id="perfiles" data-shape="wave" data-x=".33" data-scale=".72">
+    <div class="copy">
+      <div class="eyebrow reveal">Perfiles</div>
+      <h2 class="reveal d1">Un equipo. Cuatro caracteres.</h2>
+      <p class="body reveal d2">Equilibrado, Gaming, Productividad y Eficiencia. Cada ajuste explica qué hace y se deshace con un clic. Sin trucos copiados de internet.</p>
+      <div class="stats reveal d3">
+        <div class="stat"><b>4</b><span>perfiles</span></div>
+        <div class="stat"><b>100%</b><span>reversible</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="estilo" data-shape="sphere" data-x=".66" data-scale=".8">
+    <div class="copy">
+      <div class="eyebrow reveal">Estilo AUREVIX</div>
+      <h2 class="reveal d1">Windows, pero en calma.</h2>
+      <p class="body reveal d2">Modo oscuro con acento dorado, barra de tareas limpia, Inicio sin anuncios y un Explorador ordenado. Con opciones oficiales de Windows, sin parchear el sistema.</p>
+    </div>
+  </section>
+
+  <section class="right" id="seguridad" data-shape="cube" data-x=".34" data-scale=".85">
+    <div class="copy">
+      <div class="eyebrow reveal">Seguridad</div>
+      <h2 class="reveal d1">Firmado. Verificado. Tuyo.</h2>
+      <p class="body reveal d2">Cada actualización llega firmada y se comprueba antes de instalarse. Defender, Firewall, SmartScreen y UAC siguen activos. El servidor nunca controla tu PC.</p>
+      <div class="stats reveal d3">
+        <div class="stat"><b>P-256</b><span>firma ECDSA</span></div>
+        <div class="stat"><b>SHA-256</b><span>cada paquete</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="download" id="descargar" data-shape="sphere" data-x=".5" data-dim=".22" data-scale="1.25">
+    <div class="eyebrow reveal" id="dl-badge">Buscando la última versión…</div>
+    <h2 class="reveal d1">Empieza aquí.</h2>
+    <div class="reveal d2" style="margin-top:26px"><a class="pill big" id="dl-main" href="#descargar" aria-disabled="true">Descargar AUREVIX Installer</a></div>
+    <div class="meta reveal d2" id="dl-meta">Para Windows 10 y 11 · 64 bits</div>
+    <div class="hash reveal d3" id="dl-hash"></div>
+
+    <div class="options reveal d3">
+      <div class="opt"><div class="n">01</div><h3>Instalar en este Windows</h3><p>Añade AUREVIX sin borrar nada. Tus archivos y programas siguen igual.</p></div>
+      <div class="opt"><div class="n">02</div><h3>Reinstalar limpio</h3><p>Descarga Windows 11 oficial y reinstala el PC desde cero, sin USB. Todo automático.</p></div>
+      <div class="opt"><div class="n">03</div><h3>Crear USB o ISO</h3><p>Enchufa un pendrive: AUREVIX lo detecta y monta dentro Windows 11 con todo listo.</p></div>
+    </div>
+
+    <div class="more reveal">
+      <a class="ghost" id="dl-setup" href="#">Solo Control Center (.exe)</a>
+      <a class="ghost" id="dl-iso" href="#">ISO Builder (avanzado)</a>
+      <a class="ghost" href="https://github.com/s0k1x/sistema-OS-aurevix-OS/releases" rel="noopener">Todas las versiones</a>
+    </div>
+
+    <p class="legal reveal">Windows se descarga siempre desde Microsoft y se activa con tu propia licencia: AUREVIX no distribuye Windows ni incluye claves. Por eso no hay una ISO lista para descargar; el Installer la crea en tu PC en unos minutos.</p>
+  </section>
+</main>
+
+<footer>
+  <span>AUREVIX OS · Versión de pruebas. Úsala primero en una máquina virtual.</span>
+  <span>Windows es una marca de Microsoft. AUREVIX no está afiliado a Microsoft. · <a href="https://github.com/s0k1x/sistema-OS-aurevix-OS" rel="noopener">GitHub</a></span>
+</footer>
 
 <script>
-const SUPABASE_URL = 'https://zttqiphwurnferzlubzy.supabase.co';
-// Clave pública (publishable): solo permite leer las versiones publicadas (RLS).
-const SUPABASE_KEY = 'sb_publishable_ajRvbzV1NHhEGUITm0DGZQ_YdbGjAgL';
-const out = document.getElementById('out');
-const badge = document.getElementById('latest-badge');
+/* ---------- Esfera de partículas que se transforma con el scroll ---------- */
+(() => {
+  const cv = document.getElementById('orb'), ctx = cv.getContext('2d');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const N = innerWidth < 760 ? 1400 : 2600;
+  let W, H, dpr;
+  const resize = () => { dpr = Math.min(devicePixelRatio || 1, 2); W = cv.width = innerWidth * dpr; H = cv.height = innerHeight * dpr; };
+  addEventListener('resize', resize); resize();
 
-const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const mb = b => b ? (b/1048576).toFixed(0) + ' MB' : '';
-const safeUrl = u => /^https:\/\//.test(u || '') ? u : '#';
+  const golden = Math.PI * (3 - Math.sqrt(5));
+  const shapes = {
+    sphere: i => { const y = 1 - (i / (N - 1)) * 2, r = Math.sqrt(1 - y * y), t = golden * i; return [Math.cos(t) * r, y, Math.sin(t) * r]; },
+    ring: i => { const u = (i / N) * Math.PI * 2 * 37, v = (i % 37) / 37 * Math.PI * 2, R = 1, r = .28;
+                 return [(R + r * Math.cos(v)) * Math.cos(u / 37), r * Math.sin(v), (R + r * Math.cos(v)) * Math.sin(u / 37)]; },
+    wave: i => { const s = Math.ceil(Math.sqrt(N)), x = (i % s) / s * 3 - 1.5, z = Math.floor(i / s) / s * 3 - 1.5;
+                 return [x, Math.sin(x * 2.2) * .22 + Math.cos(z * 2.6) * .18, z]; },
+    cube: i => { const f = i % 6, a = (Math.random() * 2 - 1) * .8, b = (Math.random() * 2 - 1) * .8, c = .8;
+                 return [[c,a,b],[-c,a,b],[a,c,b],[a,-c,b],[a,b,c],[a,b,-c]][f]; }
+  };
+  const cache = {};
+  for (const k in shapes) { cache[k] = new Float32Array(N * 3); for (let i = 0; i < N; i++) cache[k].set(shapes[k](i), i * 3); }
+  const pos = new Float32Array(cache.sphere);
+  let target = 'sphere', tx = .64, sx = 1, dim = 1, cxs = .64, scs = 1, dms = 1;
 
-async function latest(channel){
-  const q = `${SUPABASE_URL}/rest/v1/releases?select=*&channel=eq.${channel}&published=eq.true&order=released_at.desc&limit=1`;
-  const r = await fetch(q, {headers:{apikey:SUPABASE_KEY, Authorization:'Bearer '+SUPABASE_KEY}});
-  if(!r.ok) throw new Error('HTTP '+r.status);
-  return (await r.json())[0] || null;
-}
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { const d = e.target.dataset; target = d.shape || 'sphere'; tx = +(d.x || .5); sx = +(d.scale || 1); dim = +(d.dim || 1); } }), { threshold: .45 });
+  document.querySelectorAll('section[data-shape]').forEach(s => io.observe(s));
 
-function render(rel, channel){
-  if(!rel){
-    out.innerHTML = `<div class="state">Todavía no hay versiones publicadas en el canal <b>${esc(channel)}</b>.</div>`;
-    if(channel==='stable') badge.innerHTML = 'Próximamente';
-    return;
+  let rot = 0, last = performance.now();
+  function frame(now) {
+    const dt = Math.min((now - last) / 1000, .05); last = now;
+    if (!reduce) rot += dt * .12;
+    const t = cache[target], k = reduce ? 1 : 1 - Math.pow(.035, dt), k2 = reduce ? 1 : 1 - Math.pow(.08, dt);
+    cxs += (tx - cxs) * k2; scs += (sx - scs) * k2; dms += (dim - dms) * k2;
+    for (let i = 0; i < pos.length; i++) pos[i] += (t[i] - pos[i]) * k;
+
+    ctx.clearRect(0, 0, W, H);
+    const mobile = innerWidth < 760;
+    const cx = W * (mobile ? .5 : cxs), cy = H * (mobile ? .34 : .5);
+    const R = Math.min(W, H) * (mobile ? .34 : .3) * scs;
+    ctx.globalAlpha = mobile ? Math.min(dms, target === 'sphere' && scrollY < innerHeight * .5 ? 1 : .5) : dms;
+    const cr = Math.cos(rot), sr = Math.sin(rot), tilt = .32, ct = Math.cos(tilt), st = Math.sin(tilt);
+    for (let i = 0; i < N; i++) {
+      let x = pos[i * 3], y = pos[i * 3 + 1], z = pos[i * 3 + 2];
+      const x1 = x * cr - z * sr, z1 = x * sr + z * cr;
+      const y2 = y * ct - z1 * st, z2 = y * st + z1 * ct;
+      const p = 2.6 / (2.6 + z2);
+      const depth = (1 - z2) / 2;
+      const a = .12 + depth * .78;
+      const size = (.6 + depth * 1.5) * dpr * p;
+      // Dorado en el frente, blanco frío al fondo.
+      ctx.fillStyle = depth > .55 ? `rgba(226,176,74,${a})` : `rgba(235,236,242,${a * .8})`;
+      ctx.fillRect(cx + x1 * R * p, cy + y2 * R * p, size, size);
+    }
+    requestAnimationFrame(frame);
   }
-  if(channel==='stable') badge.innerHTML = `Última versión estable: <b>${esc(rel.version)}</b> · ${new Date(rel.released_at).toLocaleDateString('es-ES')}`;
-  out.innerHTML = `
-  <div class="cards">
-    <div class="card">
-      <span class="tag">Recomendado</span>
-      <h2>Launcher Installer</h2>
-      <p>Para Windows 11 ya instalado. Un solo ejecutable que lo instala todo. ${mb(rel.installer_size)}</p>
-      <a class="btn" href="${safeUrl(rel.installer_url)}" rel="noopener">Descargar ${esc(rel.version)}</a>
-      <div class="hash">SHA-256: ${esc(rel.installer_sha256)}</div>
-    </div>
-    <div class="card">
-      <span class="tag" style="color:var(--accent)">Instalación limpia</span>
-      <h2>ISO Builder</h2>
-      <p>Crea tu ISO de AUREVIX OS a partir de la ISO oficial de Windows 11 (necesitas descargarla de Microsoft).</p>
-      <a class="btn ${rel.isobuilder_url?'':'disabled'}" href="${safeUrl(rel.isobuilder_url)}" rel="noopener">Descargar ISO Builder</a>
-      <div class="hash">${rel.isobuilder_sha256 ? 'SHA-256: '+esc(rel.isobuilder_sha256) : ''}</div>
-    </div>
-  </div>
-  <div class="notes"><h3>${esc(rel.title)}</h3><pre>${esc(rel.notes)}</pre></div>`;
-}
+  requestAnimationFrame(frame);
+})();
 
-async function load(channel){
-  out.innerHTML = '<div class="state">Cargando…</div>';
-  try { render(await latest(channel), channel); }
-  catch(e){ out.innerHTML = '<div class="state">No se pudo cargar la información de versiones. Inténtalo de nuevo más tarde.</div>'; if(channel==='stable') badge.textContent='Versiones no disponibles'; }
-}
+/* ---------- Aparición de textos ---------- */
+(() => {
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .2 });
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+})();
 
-document.querySelectorAll('.channels button').forEach(b => b.addEventListener('click', () => {
-  document.querySelectorAll('.channels button').forEach(x => x.setAttribute('aria-pressed', x===b));
-  load(b.dataset.ch);
-}));
-load('stable');
+/* ---------- Última versión (Supabase, solo lectura) ---------- */
+(async () => {
+  const URL_ = 'https://zttqiphwurnferzlubzy.supabase.co';
+  const KEY = 'sb_publishable_ajRvbzV1NHhEGUITm0DGZQ_YdbGjAgL'; // clave pública: solo lee versiones publicadas (RLS)
+  const $ = id => document.getElementById(id);
+  const safe = u => /^https:\/\//.test(u || '') ? u : null;
+  const mb = b => b ? Math.round(b / 1048576) + ' MB' : '';
+  try {
+    const r = await fetch(`${URL_}/rest/v1/releases?select=*&channel=eq.stable&published=eq.true&order=released_at.desc&limit=1`,
+      { headers: { apikey: KEY, Authorization: 'Bearer ' + KEY } });
+    if (!r.ok) throw new Error(r.status);
+    const rel = (await r.json())[0];
+    if (!rel) { $('dl-badge').textContent = 'Próximamente'; return; }
+    const date = new Date(rel.released_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+    $('ver').textContent = `AUREVIX OS ${rel.version}`;
+    $('dl-badge').textContent = `Versión ${rel.version} · ${date}`;
+    const main = safe(rel.launcher_url) || safe(rel.installer_url);
+    if (main) { $('dl-main').href = main; $('dl-main').removeAttribute('aria-disabled'); }
+    if (!rel.launcher_url) $('dl-main').textContent = 'Descargar AUREVIX';
+    $('dl-meta').textContent = `Para Windows 10 y 11 · 64 bits · ${mb(rel.launcher_size || rel.installer_size)}`;
+    $('dl-hash').textContent = 'SHA-256 ' + (rel.launcher_sha256 || rel.installer_sha256 || '');
+    if (safe(rel.installer_url)) $('dl-setup').href = rel.installer_url; else $('dl-setup').remove();
+    if (safe(rel.isobuilder_url)) $('dl-iso').href = rel.isobuilder_url; else $('dl-iso').remove();
+  } catch {
+    $('dl-badge').textContent = 'No se pudo cargar la versión';
+    $('dl-main').href = 'https://github.com/s0k1x/sistema-OS-aurevix-OS/releases/latest';
+  }
+})();
 </script>
 </body>
 </html>

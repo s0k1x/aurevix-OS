@@ -56,10 +56,17 @@ jobs:
       - name: Publicar Control Center
         run: dotnet publish src/Aurevix.ControlCenter -c Release -r win-x64 --self-contained -p:Version=${{ steps.meta.outputs.version }} -o out/app
 
+      - name: Publicar AUREVIX Installer (un solo .exe)
+        shell: pwsh
+        run: |
+          dotnet publish src/Aurevix.Installer -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ steps.meta.outputs.version }} -o out/launcher
+          New-Item -ItemType Directory -Force out\installer | Out-Null
+          Copy-Item out\launcher\AurevixInstaller.exe "out\installer\AurevixInstaller-${{ steps.meta.outputs.version }}.exe"
+
       - name: Instalar Inno Setup
         run: choco install innosetup --no-progress -y
 
-      - name: Crear Launcher Installer
+      - name: Crear instalador del Control Center (Inno Setup)
         run: |
           & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DAppVersion=${{ steps.meta.outputs.version }}" "/DSourceDir=..\out\app" "/DOutputDir=..\out\installer" installer\AurevixSetup.iss
           if ($LASTEXITCODE -ne 0) { throw "ISCC falló" }
@@ -104,6 +111,7 @@ jobs:
           body_path: RELEASE_NOTES.md
           prerelease: ${{ steps.meta.outputs.channel != 'stable' }}
           files: |
+            out/installer/AurevixInstaller-${{ steps.meta.outputs.version }}.exe
             out/installer/AurevixSetup-${{ steps.meta.outputs.version }}.exe
             out/installer/AurevixIsoBuilder-${{ steps.meta.outputs.version }}.zip
 
@@ -128,6 +136,7 @@ jobs:
           $manifest = Get-Content out\manifest\manifest.json -Raw | ConvertFrom-Json
           $pkg = $manifest.latest.packages[0]
           $zip = Get-Item "out\installer\AurevixIsoBuilder-$v.zip"
+          $launcher = Get-Item "out\installer\AurevixInstaller-$v.exe"
           $row = @{
             version = $v; channel = $ch; title = $manifest.latest.title; notes = $manifest.latest.notes
             published = $true; released_at = (Get-Date).ToUniversalTime().ToString('o')
@@ -135,6 +144,9 @@ jobs:
             installer_url = $pkg.url; installer_sha256 = $pkg.sha256; installer_size = [long]$pkg.size
             isobuilder_url = "$base/AurevixIsoBuilder-$v.zip"
             isobuilder_sha256 = (Get-FileHash $zip.FullName -Algorithm SHA256).Hash.ToLower()
+            launcher_url = "$base/AurevixInstaller-$v.exe"
+            launcher_sha256 = (Get-FileHash $launcher.FullName -Algorithm SHA256).Hash.ToLower()
+            launcher_size = [long]$launcher.Length
           }
           $h2 = @{ apikey = $env:SERVICE_KEY; Prefer = 'resolution=merge-duplicates' }
           Invoke-RestMethod -Method Post -UserAgent 'aurevix-release-ci' -Headers $h2 -ContentType 'application/json; charset=utf-8' `

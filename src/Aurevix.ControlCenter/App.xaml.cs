@@ -49,6 +49,7 @@ public partial class App : Application
         };
 
         AppServices.Initialize();
+        Views.Ui.ReduceMotion = AppServices.Settings.ReduceMotion;
         AurevixLog.Info($"AUREVIX Control Center {AppServices.CurrentVersion} iniciado (args: {string.Join(' ', args)})");
 
         if (background && !AppServices.Settings.StartWithWindows && AppServices.State.FirstRunCompleted)

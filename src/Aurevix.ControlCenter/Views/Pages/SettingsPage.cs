@@ -18,7 +18,7 @@ public sealed class SettingsPage : UserControl
             Check("Iniciar AUREVIX con Windows (en la bandeja del sistema)", s.StartWithWindows, v => s.StartWithWindows = v),
             Check("Buscar actualizaciones automáticamente", s.CheckUpdatesAutomatically, v => s.CheckUpdatesAutomatically = v),
             Check("Mostrar notificaciones", s.Notifications, v => s.Notifications = v),
-            Check("Reducir movimiento (animaciones mínimas)", s.ReduceMotion, v => s.ReduceMotion = v)));
+            Check("Reducir movimiento (sin animaciones)", s.ReduceMotion, v => { s.ReduceMotion = v; Ui.ReduceMotion = v; })));
 
         body.Children.Add(Ui.Card(Ui.H2("Idioma"),
             Ui.Muted("Idioma de la interfaz. En esta versión solo está disponible el español."),
