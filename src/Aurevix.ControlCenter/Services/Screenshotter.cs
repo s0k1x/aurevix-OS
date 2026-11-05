@@ -70,9 +70,9 @@ public static class Screenshotter
         using (var ctx = dv.RenderOpen())
         {
             ctx.DrawRectangle(w.Background ?? Brushes.Black, null, new Rect(0, 0, width, height));
-            ctx.DrawRectangle(new VisualBrush(el), null, new Rect(0, 0, width, height));
         }
         rtb.Render(dv);
+        rtb.Render(el);
         var enc = new PngBitmapEncoder();
         enc.Frames.Add(BitmapFrame.Create(rtb));
         using var fs = File.Create(path);
