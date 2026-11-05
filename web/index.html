@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AUREVIX OS — Descargas</title>
+<meta name="description" content="AUREVIX OS: una experiencia de Windows 11 personalizada, modular y actualizable. Descarga la última versión.">
+<link rel="icon" type="image/png" href="favicon.png">
+<style>
+  :root{--bg:#0e1116;--surface:#161a21;--alt:#1d222b;--border:#2a303b;--text:#e8eaed;--muted:#9aa3af;--accent:#e2b04a;--accent2:#f0c463;--ok:#4cc38a;--warn:#e8a33d}
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:radial-gradient(1200px 500px at 85% -10%,rgba(226,176,74,.14),transparent),var(--bg);color:var(--text);font:16px/1.6 "Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,sans-serif}
+  a{color:var(--accent)}
+  .wrap{max-width:980px;margin:0 auto;padding:0 20px}
+  header{display:flex;align-items:center;justify-content:space-between;padding:22px 0}
+  .brand{display:flex;align-items:center;gap:12px;font-weight:700;letter-spacing:.06em;color:var(--accent);font-size:20px}
+  .brand img{width:34px;height:34px;border-radius:8px}
+  nav a{color:var(--muted);text-decoration:none;margin-left:20px;font-size:14px}
+  nav a:hover{color:var(--text)}
+  .hero{padding:48px 0 28px}
+  .hero h1{font-size:clamp(34px,6vw,56px);line-height:1.08;margin:0 0 14px;font-weight:700;letter-spacing:-.02em}
+  .hero p{color:var(--muted);font-size:18px;max-width:640px;margin:0}
+  .badge{display:inline-block;background:var(--alt);border:1px solid var(--border);border-radius:99px;padding:3px 12px;font-size:13px;color:var(--muted);margin-bottom:18px}
+  .badge b{color:var(--accent)}
+  .channels{display:flex;gap:8px;margin:34px 0 18px;flex-wrap:wrap}
+  .channels button{background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:8px 16px;border-radius:8px;cursor:pointer;font:inherit;font-size:14px}
+  .channels button[aria-pressed=true]{border-color:var(--accent);color:var(--text);background:var(--alt)}
+  .channels button:focus-visible,.btn:focus-visible{outline:2px solid var(--accent2);outline-offset:2px}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px}
+  .card h2{margin:0 0 6px;font-size:20px}
+  .card .tag{font-size:12px;color:var(--ok);font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+  .card p{color:var(--muted);margin:8px 0 16px;font-size:15px}
+  .btn{display:inline-block;background:var(--accent);color:#14110a;text-decoration:none;font-weight:600;padding:11px 20px;border-radius:9px;border:0;cursor:pointer;font:inherit;font-weight:600}
+  .btn:hover{background:var(--accent2)}
+  .btn.disabled{opacity:.4;pointer-events:none}
+  .hash{font:12px/1.4 ui-monospace,Consolas,monospace;color:var(--muted);word-break:break-all;margin-top:14px}
+  .notes{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px 24px;margin-top:16px}
+  .notes h3{margin:0 0 8px}
+  .notes pre{white-space:pre-wrap;font:inherit;color:var(--muted);margin:0}
+  section{margin-top:56px}
+  section h2{font-size:26px;margin:0 0 14px}
+  ol,ul{color:var(--muted);padding-left:22px}
+  li{margin:6px 0}
+  .legal{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--warn);border-radius:10px;padding:16px 20px;color:var(--muted);font-size:14px;margin-top:20px}
+  .state{color:var(--muted);padding:20px 0}
+  footer{border-top:1px solid var(--border);margin-top:64px;padding:26px 0 40px;color:var(--muted);font-size:13px}
+  @media (max-width:560px){nav{display:none}}
+  @media (prefers-reduced-motion:no-preference){.card{transition:border-color .2s}.card:hover{border-color:var(--accent)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand"><img src="favicon.png" alt="" width="34" height="34">AUREVIX</div>
+    <nav><a href="#descargar">Descargar</a><a href="#instalar">Cómo instalar</a><a href="#actualizar">Actualizaciones</a></nav>
+  </header>
+
+  <div class="hero">
+    <span class="badge" id="latest-badge">Buscando la última versión…</span>
+    <h1>Windows 11, a tu manera.<br>Seguro, modular y actualizable.</h1>
+    <p>AUREVIX OS configura Windows 11 oficial con diagnóstico inicial, perfiles reversibles y una identidad visual propia. Sin trucos, sin desactivar la seguridad.</p>
+  </div>
+
+  <div id="descargar">
+    <div class="channels" role="group" aria-label="Canal de versión">
+      <button data-ch="stable" aria-pressed="true">Stable (recomendado)</button>
+      <button data-ch="beta" aria-pressed="false">Beta</button>
+      <button data-ch="developer" aria-pressed="false">Developer</button>
+    </div>
+    <div id="out"><div class="state">Cargando…</div></div>
+  </div>
+
+  <section id="instalar">
+    <h2>Dos formas de instalar</h2>
+    <ol>
+      <li><b style="color:var(--text)">Launcher Installer</b> — si ya tienes Windows 11: ejecútalo y se encarga de todo (Control Center, accesos directos y asistente de primer inicio).</li>
+      <li><b style="color:var(--text)">ISO Builder</b> — para una instalación limpia: descargas la ISO <u>oficial</u> de Windows 11 desde Microsoft, el ISO Builder la convierte en una ISO de AUREVIX OS en tu propio equipo y la grabas en un USB (por ejemplo con Rufus).</li>
+    </ol>
+    <div class="legal"><b>¿Por qué no hay una ISO lista para descargar?</b> La licencia de Windows no permite redistribuir Windows modificado. Por eso la ISO se construye en tu PC a partir de la oficial de Microsoft. Windows se activa con tu propia licencia: AUREVIX no incluye claves ni activadores.</div>
+    <p style="margin-top:16px"><a href="https://www.microsoft.com/software-download/windows11" rel="noopener">Descargar la ISO oficial de Windows 11 →</a></p>
+  </section>
+
+  <section id="actualizar">
+    <h2>Actualizaciones automáticas</h2>
+    <p style="color:var(--muted)">Si ya tienes AUREVIX instalado, no necesitas volver aquí: cuando publicamos una versión nueva, aparece una pantalla de actualización en tu equipo. Los paquetes están firmados digitalmente y se verifican antes de instalarse; nunca se instala nada sin tu confirmación.</p>
+  </section>
+
+  <footer>
+    AUREVIX OS se distribuye "tal cual", sin garantía. Pruébalo primero en una máquina virtual. Windows es una marca de Microsoft; AUREVIX no está afiliado a Microsoft.
+    · <a href="https://github.com/s0k1x/sistema-OS-aurevix-OS" rel="noopener">Código en GitHub</a>
+  </footer>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://zttqiphwurnferzlubzy.supabase.co';
+// Clave pública (publishable): solo permite leer las versiones publicadas (RLS).
+const SUPABASE_KEY = 'sb_publishable_ajRvbzV1NHhEGUITm0DGZQ_YdbGjAgL';
+const out = document.getElementById('out');
+const badge = document.getElementById('latest-badge');
+
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const mb = b => b ? (b/1048576).toFixed(0) + ' MB' : '';
+const safeUrl = u => /^https:\/\//.test(u || '') ? u : '#';
+
+async function latest(channel){
+  const q = `${SUPABASE_URL}/rest/v1/releases?select=*&channel=eq.${channel}&published=eq.true&order=released_at.desc&limit=1`;
+  const r = await fetch(q, {headers:{apikey:SUPABASE_KEY, Authorization:'Bearer '+SUPABASE_KEY}});
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  return (await r.json())[0] || null;
+}
+
+function render(rel, channel){
+  if(!rel){
+    out.innerHTML = `<div class="state">Todavía no hay versiones publicadas en el canal <b>${esc(channel)}</b>.</div>`;
+    if(channel==='stable') badge.innerHTML = 'Próximamente';
+    return;
+  }
+  if(channel==='stable') badge.innerHTML = `Última versión estable: <b>${esc(rel.version)}</b> · ${new Date(rel.released_at).toLocaleDateString('es-ES')}`;
+  out.innerHTML = `
+  <div class="cards">
+    <div class="card">
+      <span class="tag">Recomendado</span>
+      <h2>Launcher Installer</h2>
+      <p>Para Windows 11 ya instalado. Un solo ejecutable que lo instala todo. ${mb(rel.installer_size)}</p>
+      <a class="btn" href="${safeUrl(rel.installer_url)}" rel="noopener">Descargar ${esc(rel.version)}</a>
+      <div class="hash">SHA-256: ${esc(rel.installer_sha256)}</div>
+    </div>
+    <div class="card">
+      <span class="tag" style="color:var(--accent)">Instalación limpia</span>
+      <h2>ISO Builder</h2>
+      <p>Crea tu ISO de AUREVIX OS a partir de la ISO oficial de Windows 11 (necesitas descargarla de Microsoft).</p>
+      <a class="btn ${rel.isobuilder_url?'':'disabled'}" href="${safeUrl(rel.isobuilder_url)}" rel="noopener">Descargar ISO Builder</a>
+      <div class="hash">${rel.isobuilder_sha256 ? 'SHA-256: '+esc(rel.isobuilder_sha256) : ''}</div>
+    </div>
+  </div>
+  <div class="notes"><h3>${esc(rel.title)}</h3><pre>${esc(rel.notes)}</pre></div>`;
+}
+
+async function load(channel){
+  out.innerHTML = '<div class="state">Cargando…</div>';
+  try { render(await latest(channel), channel); }
+  catch(e){ out.innerHTML = '<div class="state">No se pudo cargar la información de versiones. Inténtalo de nuevo más tarde.</div>'; if(channel==='stable') badge.textContent='Versiones no disponibles'; }
+}
+
+document.querySelectorAll('.channels button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.channels button').forEach(x => x.setAttribute('aria-pressed', x===b));
+  load(b.dataset.ch);
+}));
+load('stable');
+</script>
+</body>
+</html>

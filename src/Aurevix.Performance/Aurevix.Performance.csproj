@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>Aurevix.Performance</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Aurevix.Core\Aurevix.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Catalog\tweaks.json" LogicalName="Aurevix.Performance.tweaks.json" />
+    <EmbeddedResource Include="Catalog\profiles.json" LogicalName="Aurevix.Performance.profiles.json" />
+  </ItemGroup>
+</Project>

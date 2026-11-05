@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>Aurevix.Update</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Aurevix.Core\Aurevix.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Keys\*.public.pem" LogicalName="Aurevix.Update.Keys.%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

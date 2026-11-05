@@ -1,0 +1,126 @@
+[
+  {
+    "id": "gaming.game-mode.on",
+    "category": "gaming",
+    "title": "Activar el Modo de juego de Windows",
+    "description": "Activa el Modo de juego oficial de Windows, que da prioridad al juego en primer plano y evita que Windows Update instale controladores o muestre avisos de reinicio mientras juegas.",
+    "expectedEffect": "Menos interrupciones durante las partidas. La mejora de FPS no está garantizada y depende del juego.",
+    "possibleImpact": "Ninguno conocido; es la opción por defecto en Windows 11.",
+    "risk": "low",
+    "registry": [
+      { "hive": "currentUser", "key": "Software\\Microsoft\\GameBar", "name": "AutoGameModeEnabled", "kind": "dword", "value": "1" }
+    ]
+  },
+  {
+    "id": "gaming.background-recording.off",
+    "category": "gaming",
+    "title": "Desactivar la grabación en segundo plano (Game DVR)",
+    "description": "Desactiva la captura continua de los últimos minutos de juego de la Xbox Game Bar. Equivale a la opción de Configuración > Juegos > Capturas.",
+    "expectedEffect": "Elimina la carga de codificación de vídeo en segundo plano mientras juegas.",
+    "possibleImpact": "No podrás guardar los 'últimos 30 segundos' de una partida hasta que lo reactives.",
+    "risk": "low",
+    "registry": [
+      { "hive": "currentUser", "key": "System\\GameConfigStore", "name": "GameDVR_Enabled", "kind": "dword", "value": "0" },
+      { "hive": "currentUser", "key": "Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR", "name": "AppCaptureEnabled", "kind": "dword", "value": "0" }
+    ]
+  },
+  {
+    "id": "interface.transparency.off",
+    "category": "interface",
+    "title": "Desactivar los efectos de transparencia",
+    "description": "Desactiva la transparencia de la barra de tareas, el menú Inicio y las ventanas. Equivale a Configuración > Personalización > Colores > Efectos de transparencia.",
+    "expectedEffect": "Ligera reducción del trabajo de la GPU en equipos modestos.",
+    "possibleImpact": "Aspecto más plano.",
+    "risk": "low",
+    "registry": [
+      { "hive": "currentUser", "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize", "name": "EnableTransparency", "kind": "dword", "value": "0" }
+    ]
+  },
+  {
+    "id": "interface.transparency.on",
+    "category": "interface",
+    "title": "Activar los efectos de transparencia",
+    "description": "Activa la transparencia de la barra de tareas, el menú Inicio y las ventanas (valor por defecto de Windows 11).",
+    "expectedEffect": "Aspecto visual más moderno.",
+    "possibleImpact": "Uso de GPU algo mayor en equipos modestos.",
+    "risk": "low",
+    "registry": [
+      { "hive": "currentUser", "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize", "name": "EnableTransparency", "kind": "dword", "value": "1" }
+    ]
+  },
+  {
+    "id": "interface.minimize-animation.off",
+    "category": "interface",
+    "title": "Reducir animaciones al minimizar y maximizar",
+    "description": "Desactiva la animación de las ventanas al minimizarlas o maximizarlas.",
+    "expectedEffect": "Sensación de respuesta más rápida en equipos modestos.",
+    "possibleImpact": "Transiciones menos suaves. Requiere cerrar sesión para aplicarse por completo.",
+    "risk": "low",
+    "requiresSignOut": true,
+    "registry": [
+      { "hive": "currentUser", "key": "Control Panel\\Desktop\\WindowMetrics", "name": "MinAnimate", "kind": "string", "value": "0" }
+    ]
+  },
+  {
+    "id": "interface.file-extensions.show",
+    "category": "interface",
+    "title": "Mostrar las extensiones de archivo",
+    "description": "Muestra la extensión de los archivos en el Explorador (por ejemplo .pdf o .exe).",
+    "expectedEffect": "Facilita identificar archivos y ayuda a detectar archivos maliciosos disfrazados (por ejemplo factura.pdf.exe).",
+    "possibleImpact": "Ninguno.",
+    "risk": "low",
+    "registry": [
+      { "hive": "currentUser", "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced", "name": "HideFileExt", "kind": "dword", "value": "0" }
+    ]
+  },
+  {
+    "id": "interface.start-suggestions.off",
+    "category": "interface",
+    "title": "Desactivar sugerencias y contenido promocional en Inicio",
+    "description": "Desactiva las sugerencias de aplicaciones y consejos de Windows. Equivale a las opciones de Configuración > Personalización > Inicio y Notificaciones.",
+    "expectedEffect": "Menú Inicio y notificaciones más limpios.",
+    "possibleImpact": "No verás recomendaciones de Microsoft.",
+    "risk": "low",
+    "registry": [
+      { "hive": "currentUser", "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager", "name": "SystemPaneSuggestionsEnabled", "kind": "dword", "value": "0" },
+      { "hive": "currentUser", "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager", "name": "SubscribedContent-338388Enabled", "kind": "dword", "value": "0" },
+      { "hive": "currentUser", "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager", "name": "SubscribedContent-338389Enabled", "kind": "dword", "value": "0" }
+    ]
+  },
+  {
+    "id": "storage.storage-sense.on",
+    "category": "storage",
+    "title": "Activar el Sensor de almacenamiento",
+    "description": "Activa la función oficial de Windows que libera espacio automáticamente (archivos temporales, papelera antigua) cuando el disco se llena.",
+    "expectedEffect": "Ayuda a mantener espacio libre para Windows Update. No borra documentos personales con la configuración por defecto.",
+    "possibleImpact": "Los archivos de la Papelera con más de 30 días pueden eliminarse.",
+    "risk": "low",
+    "registry": [
+      { "hive": "currentUser", "key": "Software\\Microsoft\\Windows\\CurrentVersion\\StorageSense\\Parameters\\StoragePolicy", "name": "01", "kind": "dword", "value": "1" }
+    ]
+  },
+  {
+    "id": "privacy.advertising-id.off",
+    "category": "privacy",
+    "title": "Desactivar el identificador de publicidad",
+    "description": "Impide que las aplicaciones usen el identificador de publicidad para mostrar anuncios personalizados. Equivale a Configuración > Privacidad y seguridad > General.",
+    "expectedEffect": "Menos seguimiento publicitario entre aplicaciones.",
+    "possibleImpact": "Los anuncios dentro de aplicaciones serán menos relevantes.",
+    "risk": "low",
+    "registry": [
+      { "hive": "currentUser", "key": "Software\\Microsoft\\Windows\\CurrentVersion\\AdvertisingInfo", "name": "Enabled", "kind": "dword", "value": "0" }
+    ]
+  },
+  {
+    "id": "privacy.tailored-experiences.off",
+    "category": "privacy",
+    "title": "Desactivar experiencias personalizadas con datos de diagnóstico",
+    "description": "Impide que Microsoft use los datos de diagnóstico para mostrarte consejos y ofertas personalizadas. Es una opción legal y documentada de Windows; no desactiva Windows Update ni la seguridad.",
+    "expectedEffect": "Menos personalización basada en datos de diagnóstico.",
+    "possibleImpact": "Ninguno funcional.",
+    "risk": "low",
+    "registry": [
+      { "hive": "currentUser", "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Privacy", "name": "TailoredExperiencesWithDiagnosticDataEnabled", "kind": "dword", "value": "0" }
+    ]
+  }
+]

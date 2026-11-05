@@ -1,0 +1,132 @@
+name: Release
+
+# Publica una versión al empujar una etiqueta:  git tag v0.2.0 && git push origin v0.2.0
+#   v1.2.3          -> canal stable
+#   v1.2.3-beta.1   -> canal beta
+#   v1.2.3-dev.1    -> canal developer
+#
+# Secretos necesarios (Settings > Secrets and variables > Actions):
+#   AUREVIX_SIGNING_KEY          clave privada PEM de firma de manifiestos (aurevix-2026-01.private.pem)
+#   SUPABASE_SERVICE_ROLE_KEY    clave service_role del proyecto Aurevix OS
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+env:
+  SUPABASE_URL: https://zttqiphwurnferzlubzy.supabase.co
+  SIGNING_KEY_ID: aurevix-2026-01
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Calcular versión y canal
+        id: meta
+        shell: pwsh
+        run: |
+          $tag = '${{ github.ref_name }}'
+          $version = $tag.TrimStart('v')
+          if ($version -notmatch '^\d+\.\d+\.\d+(-[0-9A-Za-z.]+)?$') { throw "Etiqueta no válida: $tag" }
+          $channel = if ($version -match '-beta') { 'beta' } elseif ($version -match '-dev') { 'developer' } else { 'stable' }
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "channel=$channel" >> $env:GITHUB_OUTPUT
+          "sequence=$([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())" >> $env:GITHUB_OUTPUT
+
+      - name: Pruebas
+        run: dotnet test tests/Aurevix.Tests --configuration Release
+
+      - name: Publicar Control Center
+        run: dotnet publish src/Aurevix.ControlCenter -c Release -r win-x64 --self-contained -p:Version=${{ steps.meta.outputs.version }} -o out/app
+
+      - name: Instalar Inno Setup
+        run: choco install innosetup --no-progress -y
+
+      - name: Crear Launcher Installer
+        run: |
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DAppVersion=${{ steps.meta.outputs.version }}" "/DSourceDir=..\out\app" "/DOutputDir=..\out\installer" installer\AurevixSetup.iss
+          if ($LASTEXITCODE -ne 0) { throw "ISCC falló" }
+        shell: pwsh
+
+      - name: Crear paquete del ISO Builder
+        shell: pwsh
+        run: |
+          $v = '${{ steps.meta.outputs.version }}'
+          New-Item -ItemType Directory -Force out\isobuilder | Out-Null
+          Copy-Item iso-builder\* out\isobuilder -Recurse
+          Copy-Item "out\installer\AurevixSetup-$v.exe" out\isobuilder\
+          Compress-Archive -Path out\isobuilder\* -DestinationPath "out\installer\AurevixIsoBuilder-$v.zip" -Force
+
+      - name: Generar y firmar el manifiesto
+        shell: pwsh
+        env:
+          AUREVIX_SIGNING_KEY: ${{ secrets.AUREVIX_SIGNING_KEY }}
+        run: |
+          $v = '${{ steps.meta.outputs.version }}'
+          $ch = '${{ steps.meta.outputs.channel }}'
+          $url = "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/AurevixSetup-$v.exe"
+          New-Item -ItemType Directory -Force out\manifest | Out-Null
+          dotnet run --project tools/Aurevix.ReleaseTool -c Release -- manifest `
+            --channel $ch --version $v --sequence ${{ steps.meta.outputs.sequence }} `
+            --installer "out\installer\AurevixSetup-$v.exe" --installer-url $url `
+            --notes RELEASE_NOTES.md --out out\manifest\manifest.json
+          if ($LASTEXITCODE -ne 0) { throw 'manifest falló' }
+          dotnet run --project tools/Aurevix.ReleaseTool -c Release -- sign `
+            --manifest out\manifest\manifest.json --key env:AUREVIX_SIGNING_KEY --key-id $env:SIGNING_KEY_ID
+          if ($LASTEXITCODE -ne 0) { throw 'firma falló' }
+          dotnet run --project tools/Aurevix.ReleaseTool -c Release -- verify `
+            --manifest out\manifest\manifest.json --public src\Aurevix.Update\Keys\$env:SIGNING_KEY_ID.public.pem --key-id $env:SIGNING_KEY_ID
+          if ($LASTEXITCODE -ne 0) { throw 'la firma generada no verifica con la clave pública incrustada' }
+
+      - name: Crear GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: AUREVIX OS ${{ steps.meta.outputs.version }}
+          body_path: RELEASE_NOTES.md
+          prerelease: ${{ steps.meta.outputs.channel != 'stable' }}
+          files: |
+            out/installer/AurevixSetup-${{ steps.meta.outputs.version }}.exe
+            out/installer/AurevixIsoBuilder-${{ steps.meta.outputs.version }}.zip
+
+      - name: Publicar manifiesto y versión en Supabase
+        shell: pwsh
+        env:
+          SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          $v = '${{ steps.meta.outputs.version }}'
+          $ch = '${{ steps.meta.outputs.channel }}'
+          $base = "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}"
+          $h = @{ Authorization = "Bearer $env:SERVICE_KEY"; apikey = $env:SERVICE_KEY; 'x-upsert' = 'true' }
+
+          # 1) Manifiesto y firma en Storage (lo leen los clientes ya instalados)
+          foreach ($f in 'manifest.json', 'manifest.json.sig') {
+            Invoke-RestMethod -Method Post -Headers $h -ContentType 'application/octet-stream' `
+              -InFile "out\manifest\$f" -Uri "$env:SUPABASE_URL/storage/v1/object/releases/manifests/$ch/$f" | Out-Null
+          }
+
+          # 2) Fila en la tabla releases (la lee la web de descargas)
+          $manifest = Get-Content out\manifest\manifest.json -Raw | ConvertFrom-Json
+          $pkg = $manifest.latest.packages[0]
+          $zip = Get-Item "out\installer\AurevixIsoBuilder-$v.zip"
+          $row = @{
+            version = $v; channel = $ch; title = $manifest.latest.title; notes = $manifest.latest.notes
+            published = $true; released_at = (Get-Date).ToUniversalTime().ToString('o')
+            manifest_sequence = [long]$manifest.sequence; rollout_percent = [int]$manifest.latest.rolloutPercent
+            installer_url = $pkg.url; installer_sha256 = $pkg.sha256; installer_size = [long]$pkg.size
+            isobuilder_url = "$base/AurevixIsoBuilder-$v.zip"
+            isobuilder_sha256 = (Get-FileHash $zip.FullName -Algorithm SHA256).Hash.ToLower()
+          }
+          $h2 = @{ Authorization = "Bearer $env:SERVICE_KEY"; apikey = $env:SERVICE_KEY; Prefer = 'resolution=merge-duplicates' }
+          Invoke-RestMethod -Method Post -Headers $h2 -ContentType 'application/json; charset=utf-8' `
+            -Uri "$env:SUPABASE_URL/rest/v1/releases?on_conflict=channel,version" `
+            -Body ([Text.Encoding]::UTF8.GetBytes(($row | ConvertTo-Json -Depth 5))) | Out-Null
+          Write-Host "Versión $v publicada en el canal $ch."
