@@ -7,7 +7,7 @@ name: Release
 #
 # Secretos necesarios (Settings > Secrets and variables > Actions):
 #   AUREVIX_SIGNING_KEY          clave privada PEM de firma de manifiestos (aurevix-2026-01.private.pem)
-#   SUPABASE_SERVICE_ROLE_KEY    clave service_role del proyecto Aurevix OS
+#   SUPABASE_SERVICE_ROLE_KEY    clave secreta (sb_secret_...) del proyecto Aurevix OS
 
 on:
   push:
@@ -105,7 +105,8 @@ jobs:
           $v = '${{ steps.meta.outputs.version }}'
           $ch = '${{ steps.meta.outputs.channel }}'
           $base = "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}"
-          $h = @{ Authorization = "Bearer $env:SERVICE_KEY"; apikey = $env:SERVICE_KEY; 'x-upsert' = 'true' }
+          # Claves nuevas de Supabase (sb_secret_...): van solo en la cabecera apikey.
+          $h = @{ apikey = $env:SERVICE_KEY; 'x-upsert' = 'true' }
 
           # 1) Manifiesto y firma en Storage (lo leen los clientes ya instalados)
           foreach ($f in 'manifest.json', 'manifest.json.sig') {
@@ -125,7 +126,7 @@ jobs:
             isobuilder_url = "$base/AurevixIsoBuilder-$v.zip"
             isobuilder_sha256 = (Get-FileHash $zip.FullName -Algorithm SHA256).Hash.ToLower()
           }
-          $h2 = @{ Authorization = "Bearer $env:SERVICE_KEY"; apikey = $env:SERVICE_KEY; Prefer = 'resolution=merge-duplicates' }
+          $h2 = @{ apikey = $env:SERVICE_KEY; Prefer = 'resolution=merge-duplicates' }
           Invoke-RestMethod -Method Post -Headers $h2 -ContentType 'application/json; charset=utf-8' `
             -Uri "$env:SUPABASE_URL/rest/v1/releases?on_conflict=channel,version" `
             -Body ([Text.Encoding]::UTF8.GetBytes(($row | ConvertTo-Json -Depth 5))) | Out-Null
