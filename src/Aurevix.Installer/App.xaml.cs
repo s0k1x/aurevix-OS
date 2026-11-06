@@ -19,6 +19,20 @@ public partial class App : Application
             MessageBox.Show($"Error inesperado: {ex.Exception.Message}\n\nRegistro: {LogDir}", "AUREVIX Installer");
             ex.Handled = true;
         };
+        // Autoprueba del motor de ISOs (solo la usa el CI en un Windows real).
+        var st = Array.FindIndex(e.Args, a => a.Equals("--selftest-iso", StringComparison.OrdinalIgnoreCase));
+        if (st >= 0 && st + 1 < e.Args.Length)
+        {
+            var outDir = e.Args[st + 1];
+            Dispatcher.InvokeAsync(async () =>
+            {
+                try { await Engine.SelfTest.IsoAsync(outDir); File.WriteAllText(Path.Combine(outDir, "selftest-iso.txt"), "OK"); }
+                catch (Exception ex) { Directory.CreateDirectory(outDir); File.WriteAllText(Path.Combine(outDir, "selftest-iso.txt"), "FAIL\n" + ex); }
+                Shutdown();
+            });
+            return;
+        }
+
         var w = new MainWindow();
         w.Show();
         var idx = Array.FindIndex(e.Args, a => a.Equals("--render-screenshots", StringComparison.OrdinalIgnoreCase));

@@ -243,14 +243,10 @@ public sealed class MediaEngine
                Directory.EnumerateFiles(dir, "oscdimg.exe", SearchOption.AllDirectories).FirstOrDefault();
     }
 
-    /// <summary>Instala Windows ADK (solo Deployment Tools) con winget, fuente oficial de Microsoft.</summary>
-    public Task<ShellResult> InstallAdkAsync(CancellationToken ct) =>
-        Shell.RunAsync("winget", "install --id Microsoft.WindowsADK --exact --source winget --accept-package-agreements --accept-source-agreements " +
-                                 "--override \"/features OptionId.DeploymentTools /quiet /norestart\"", ct);
-
     public async Task<string> BuildIsoAsync(string isoRoot, string aurevixSetup, string outputIso, IProgress<Step> progress, CancellationToken ct)
     {
-        var oscdimg = FindOscdimg() ?? throw new InvalidOperationException("Falta oscdimg (Windows ADK).");
+        // oscdimg (Windows ADK) si ya está instalado; si no, IMAPI2, el motor de ISOs que trae el propio Windows.
+        var oscdimg = FindOscdimg();
         var work = Path.Combine(WorkRoot, "iso-work");
         if (Directory.Exists(work)) Directory.Delete(work, true);
         Directory.CreateDirectory(work);
@@ -267,8 +263,20 @@ public sealed class MediaEngine
             progress.Report(new Step("Generando la ISO de AUREVIX OS…", 0.6));
             var etfs = Path.Combine(work, @"boot\etfsboot.com");
             var efi = Path.Combine(work, @"efi\microsoft\boot\efisys.bin");
-            r = await Shell.RunAsync(oscdimg, $"-m -o -u2 -udfver102 -lAUREVIX_OS -bootdata:2#p0,e,b\"{etfs}\"#pEF,e,b\"{efi}\" \"{work}\" \"{outputIso}\"", ct);
-            if (!r.Ok) throw new InvalidOperationException("oscdimg no pudo crear la ISO.");
+            if (File.Exists(outputIso)) File.Delete(outputIso);
+            var built = false;
+            if (oscdimg is not null)
+            {
+                r = await Shell.RunAsync(oscdimg, $"-m -o -u2 -udfver102 -lAUREVIX_OS -bootdata:2#p0,e,b\"{etfs}\"#pEF,e,b\"{efi}\" \"{work}\" \"{outputIso}\"", ct);
+                built = r.Ok && File.Exists(outputIso);
+            }
+            if (!built)
+            {
+                var isoProgress = new Progress<double>(p => progress.Report(new Step($"Generando la ISO de AUREVIX OS… {p:P0}", 0.6 + 0.35 * p)));
+                await ImapiIsoWriter.BuildAsync(work, outputIso, "AUREVIX_OS", etfs, efi, isoProgress, ct);
+            }
+            if (!File.Exists(outputIso) || new FileInfo(outputIso).Length < 1_000_000_000)
+                throw new InvalidOperationException("La ISO generada no es válida. Prueba con la opción de USB o vuelve a intentarlo.");
             var hash = await UpdateClient.ComputeSha256Async(outputIso, ct);
             await File.WriteAllTextAsync(outputIso + ".sha256", $"{hash}  {Path.GetFileName(outputIso)}", ct);
             progress.Report(new Step("ISO lista.", 1));
