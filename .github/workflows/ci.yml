@@ -43,8 +43,14 @@ jobs:
           $letter = ($img | Get-Volume).DriveLetter
           $wim = Get-Item "${letter}:\sources\install.wim"
           Write-Host "install.wim dentro de la ISO: $($wim.Length) bytes"
+          $missing = @()
+          foreach ($f in 'setup.exe', 'autounattend.xml', 'sources\$OEM$\$1\AUREVIX\AurevixSetup.exe', 'sources\$OEM$\$$\Setup\Scripts\SetupComplete.cmd') {
+            if (-not (Test-Path -LiteralPath "${letter}:\$f")) { $missing += $f }
+          }
           Dismount-DiskImage -ImagePath $iso | Out-Null
+          if ($missing.Count -gt 0) { Write-Host "FALTA en la ISO: $($missing -join ', ')"; exit 1 }
           if ($wim.Length -ne 4500000000) { exit 1 }
+          Write-Host "Archivos de AUREVIX fusionados dentro de la ISO: OK"
       - name: Publicar Control Center
         run: dotnet publish src/Aurevix.ControlCenter -c Release -r win-x64 --self-contained -o out/app
       - uses: actions/upload-artifact@v4

@@ -8,18 +8,19 @@ using Aurevix.Update;
 
 namespace Aurevix.Installer.Engine;
 
-public sealed record UsbDisk(int Number, string Name, long SizeBytes)
+public sealed record UsbDisk(int Number, string Name, long SizeBytes, string Letters = "")
 {
-    public string Display => $"{Name} · {SizeBytes / 1e9:0.#} GB";
+    public string Display => $"{Name} · {SizeBytes / 1e9:0.#} GB" + (Letters.Length > 0 ? $" · unidad {Letters}" : "");
 }
 
-public sealed record Step(string Text, double? Fraction = null);
+/// <summary>Paso de una operación. <c>Fraction</c> es el avance del paso actual (0-1); <c>Detail</c>, la línea de apoyo (GB, velocidad…).</summary>
+public sealed record Step(string Text, double? Fraction = null, string? Detail = null);
 
 /// <summary>
 /// Motor del AUREVIX Installer:
 ///   - Descarga la ISO oficial de Windows 11 desde Microsoft (enlace obtenido con Fido).
 ///   - Descarga el instalador de AUREVIX verificado (manifiesto firmado + SHA-256).
-///   - Prepara un USB arrancable (FAT32 + install.wim dividido) o una ISO (oscdimg).
+///   - Prepara un USB arrancable (FAT32 + install.wim dividido) o una ISO (IMAPI2, el motor de Windows).
 ///   - Lanza una reinstalación limpia con el Windows Setup oficial.
 /// Nunca modifica install.wim ni componentes protegidos de Windows.
 /// </summary>
@@ -89,10 +90,10 @@ public sealed class MediaEngine
     {
         if (File.Exists(IsoCachePath) && new FileInfo(IsoCachePath).Length > 3_000_000_000)
         {
-            progress.Report(new Step("Usando la ISO de Windows 11 ya descargada."));
+            progress.Report(new Step("Usando la ISO de Windows 11 ya descargada", 1, "Ya la tenías descargada: no hace falta volver a bajarla"));
             return IsoCachePath;
         }
-        progress.Report(new Step("Pidiendo a Microsoft la ISO oficial de Windows 11…"));
+        progress.Report(new Step("Pidiendo a Microsoft la ISO oficial de Windows 11"));
         var url = await GetWindowsIsoUrlAsync(ct);
         var partial = IsoCachePath + ".partial";
 
@@ -109,18 +110,24 @@ public sealed class MediaEngine
                 var total = (resp.Content.Headers.ContentLength ?? 0) + have;
                 await using var src = await resp.Content.ReadAsStreamAsync(ct);
                 await using var dst = new FileStream(partial, have > 0 ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.None, 1 << 20);
-                var buf = new byte[1 << 20];
-                long done = have; int n; var last = DateTime.MinValue;
+                var buf = new byte[4 << 20];
+                long done = have; int n;
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                long lastBytes = done; var lastMs = 0L; double speed = 0;
                 while ((n = await src.ReadAsync(buf, ct)) > 0)
                 {
                     await dst.WriteAsync(buf.AsMemory(0, n), ct);
                     done += n;
-                    if ((DateTime.UtcNow - last).TotalMilliseconds > 250 && total > 0)
+                    if (sw.ElapsedMilliseconds - lastMs > 500 && total > 0)
                     {
-                        last = DateTime.UtcNow;
-                        progress.Report(new Step($"Descargando Windows 11 de Microsoft… {done / 1e9:0.0} de {total / 1e9:0.0} GB", (double)done / total));
+                        var inst = (done - lastBytes) / ((sw.ElapsedMilliseconds - lastMs) / 1000.0);
+                        speed = speed == 0 ? inst : speed * 0.8 + inst * 0.2;
+                        lastBytes = done; lastMs = sw.ElapsedMilliseconds;
+                        progress.Report(new Step("Descargando Windows 11 de Microsoft", (double)done / total,
+                            $"{Eta.Bytes(done)} de {Eta.Bytes(total)} · {Eta.Speed(speed)}"));
                     }
                 }
+                if (total > 0 && done < total) throw new IOException("La descarga terminó antes de tiempo.");
                 break;
             }
             catch (Exception ex) when (ex is HttpRequestException or IOException && attempt < 5 && !ct.IsCancellationRequested)
@@ -178,12 +185,14 @@ public sealed class MediaEngine
     public async Task<IReadOnlyList<UsbDisk>> ListUsbDisksAsync(CancellationToken ct = default)
     {
         var r = await Shell.PowerShellAsync(
-            "@(Get-Disk | Where-Object { $_.BusType -eq 'USB' -and -not $_.IsBoot -and -not $_.IsSystem -and $_.Size -gt 0 } | " +
-            "Select-Object Number, FriendlyName, Size) | ConvertTo-Json -Compress", ct);
+            "@(Get-Disk | Where-Object { $_.BusType -eq 'USB' -and -not $_.IsBoot -and -not $_.IsSystem -and $_.Size -gt 0 } | ForEach-Object { " +
+            "$l = (Get-Partition -DiskNumber $_.Number -ErrorAction SilentlyContinue | Where-Object DriveLetter | ForEach-Object { \"$($_.DriveLetter):\" }) -join ', '; " +
+            "[pscustomobject]@{ Number = $_.Number; FriendlyName = $_.FriendlyName; Size = $_.Size; Letters = $l } }) | ConvertTo-Json -Compress", ct);
         if (!r.Ok || string.IsNullOrWhiteSpace(r.Output)) return [];
         using var doc = JsonDocument.Parse(r.Output);
         var items = doc.RootElement.ValueKind == JsonValueKind.Array ? doc.RootElement.EnumerateArray().ToList() : [doc.RootElement];
-        return items.Select(e => new UsbDisk(e.GetProperty("Number").GetInt32(), e.GetProperty("FriendlyName").GetString() ?? "USB", e.GetProperty("Size").GetInt64())).ToList();
+        return items.Select(e => new UsbDisk(e.GetProperty("Number").GetInt32(), e.GetProperty("FriendlyName").GetString() ?? "USB", e.GetProperty("Size").GetInt64(),
+            e.TryGetProperty("Letters", out var l) ? l.GetString() ?? "" : "")).ToList();
     }
 
     /// <summary>BORRA el USB indicado y crea en él un instalador de AUREVIX OS (UEFI + BIOS).</summary>
@@ -208,84 +217,162 @@ public sealed class MediaEngine
         if (!r.Ok || letter.Length != 1) throw new InvalidOperationException($"No se pudo preparar el USB: {r.Error}");
         var usb = letter + @":\";
 
-        progress.Report(new Step("Copiando Windows 11 al USB…", 0.1));
-        r = await Shell.RunAsync("robocopy.exe", $"\"{isoRoot}.\" \"{usb}.\" /E /XF install.wim /R:2 /W:2 /NFL /NDL /NJH /NJS /NP", ct);
+        progress.Report(new Step("Copiando Windows 11 al USB", 0.06));
+        var wim = Path.Combine(isoRoot, @"sources\install.wim");
+        var expected = Directory.EnumerateFiles(isoRoot, "*", SearchOption.AllDirectories)
+            .Where(f => !f.Equals(wim, StringComparison.OrdinalIgnoreCase)).Sum(f => new FileInfo(f).Length);
+        r = await RunWithCopyProgressAsync("robocopy.exe", $"\"{isoRoot}.\" \"{usb}.\" /E /XF install.wim /R:2 /W:2 /NFL /NDL /NJH /NJS /NP",
+            usb, expected, progress, "Copiando Windows 11 al USB", 0.06, 0.55, ct);
         if (r.ExitCode >= 8) throw new InvalidOperationException("Falló la copia de archivos al USB.");
 
-        var wim = Path.Combine(isoRoot, @"sources\install.wim");
         if (File.Exists(wim))
         {
             // FAT32 no admite archivos de más de 4 GB: DISM divide la imagen sin modificarla (install.swm). Windows Setup la admite.
-            progress.Report(new Step("Dividiendo la imagen de Windows para FAT32 (DISM)…", 0.55));
-            r = await Shell.RunAsync("dism.exe", $"/Split-Image /ImageFile:\"{wim}\" /SWMFile:\"{usb}sources\\install.swm\" /FileSize:3800", ct);
+            progress.Report(new Step("Preparando la imagen de Windows para el USB", 0.55));
+            r = await Shell.RunAsync("dism.exe", $"/Split-Image /ImageFile:\"{wim}\" /SWMFile:\"{usb}sources\\install.swm\" /FileSize:3800", ct, line =>
+            {
+                var m = System.Text.RegularExpressions.Regex.Match(line, @"(\d{1,3})(?:[.,]\d)?%");
+                if (m.Success && int.TryParse(m.Groups[1].Value, out var pct))
+                    progress.Report(new Step("Preparando la imagen de Windows para el USB", 0.55 + 0.35 * Math.Clamp(pct, 0, 100) / 100.0, $"{pct} %"));
+            });
             if (!r.Ok) throw new InvalidOperationException("DISM no pudo dividir la imagen de Windows.");
         }
 
-        progress.Report(new Step("Añadiendo AUREVIX y la instalación automática en español…", 0.9));
+        progress.Report(new Step("Añadiendo AUREVIX y la instalación automática en español", 0.92));
         AddAurevixFiles(usb, aurevixSetup);
 
         // Arranque BIOS (equipos antiguos). Los equipos UEFI arrancan desde \efi\boot.
         var bootsect = Path.Combine(isoRoot, @"boot\bootsect.exe");
         if (File.Exists(bootsect)) await Shell.RunAsync(bootsect, $"/nt60 {letter}: /mbr", ct);
 
+        progress.Report(new Step("Comprobando que el USB está completo", 0.97));
+        VerifyUsb(usb, wim, aurevixSetup);
         progress.Report(new Step("USB listo.", 1));
+    }
+
+    /// <summary>Comprueba que el USB tiene todo lo necesario para arrancar e instalar (archivos de arranque, imagen completa y AUREVIX).</summary>
+    private static void VerifyUsb(string usb, string sourceWim, string aurevixSetup)
+    {
+        foreach (var f in new[] { "setup.exe", "autounattend.xml", @"sources\boot.wim", @"efi\boot\bootx64.efi", @"sources\$OEM$\$1\AUREVIX\AurevixSetup.exe" })
+            if (!File.Exists(Path.Combine(usb, f)))
+                throw new InvalidOperationException($"Falta {f} en el USB. Vuelve a crearlo; si se repite, prueba otro pendrive.");
+        if (new FileInfo(Path.Combine(usb, @"sources\$OEM$\$1\AUREVIX\AurevixSetup.exe")).Length != new FileInfo(aurevixSetup).Length)
+            throw new InvalidOperationException("El instalador de AUREVIX no se copió entero al USB. Prueba otro pendrive.");
+        if (File.Exists(sourceWim))
+        {
+            var parts = Directory.GetFiles(Path.Combine(usb, "sources"), "install*.swm");
+            var sum = parts.Sum(f => new FileInfo(f).Length);
+            if (parts.Length == 0 || sum < new FileInfo(sourceWim).Length * 0.98)
+                throw new InvalidOperationException("La imagen de Windows del USB está incompleta. Prueba otro pendrive.");
+        }
+    }
+
+    /// <summary>Ejecuta una copia larga y va midiendo cuánto ha crecido el destino para dar progreso real.</summary>
+    private static async Task<ShellResult> RunWithCopyProgressAsync(string file, string args, string destRoot, long expected,
+        IProgress<Step> progress, string text, double from, double to, CancellationToken ct)
+    {
+        var run = Shell.RunAsync(file, args, ct);
+        var drive = new DriveInfo(destRoot);
+        var baseUsed = drive.TotalSize - drive.AvailableFreeSpace;
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        long lastBytes = 0; var lastMs = 0L; double speed = 0;
+        while (!run.IsCompleted)
+        {
+            await Task.WhenAny(run, Task.Delay(700, ct));
+            var used = Math.Max(0, drive.TotalSize - drive.AvailableFreeSpace - baseUsed);
+            var secs = (sw.ElapsedMilliseconds - lastMs) / 1000.0;
+            if (secs > 0) { var inst = (used - lastBytes) / secs; speed = speed == 0 ? inst : speed * 0.7 + inst * 0.3; }
+            lastBytes = used; lastMs = sw.ElapsedMilliseconds;
+            var f = expected > 0 ? Math.Clamp((double)used / expected, 0, 1) : 0;
+            progress.Report(new Step(text, from + (to - from) * f, $"{Eta.Bytes(used)} de {Eta.Bytes(expected)}" + (speed > 0 ? $" · {Eta.Speed(speed)}" : "")));
+        }
+        return await run;
+    }
+
+    // ------------------------------------------------------------------ Espacio y caché
+
+    public const long WindowsIsoBytes = 8_000_000_000;
+
+    public bool IsoCached => File.Exists(IsoCachePath) && new FileInfo(IsoCachePath).Length > 3_000_000_000;
+
+    /// <summary>Lanza un error claro, antes de empezar, si la unidad de <paramref name="path"/> no tiene sitio.</summary>
+    public static void RequireFreeSpace(string path, long bytes, string what)
+    {
+        var root = Path.GetPathRoot(Path.GetFullPath(path))!;
+        var free = new DriveInfo(root).AvailableFreeSpace;
+        if (free < bytes)
+            throw new InvalidOperationException($"Falta espacio en {root}: {what} necesita unos {bytes / 1e9:0} GB libres y hay {free / 1e9:0.0} GB. Libera espacio y vuelve a intentarlo.");
+    }
+
+    public static long CacheBytes()
+    {
+        try { return Directory.Exists(WorkRoot) ? Directory.EnumerateFiles(WorkRoot, "*", SearchOption.AllDirectories).Where(f => !f.Contains(@"\logs\")).Sum(f => new FileInfo(f).Length) : 0; }
+        catch { return 0; }
+    }
+
+    /// <summary>Borra la ISO de Windows descargada y los archivos temporales (no el registro).</summary>
+    public static void ClearCache()
+    {
+        foreach (var f in new[] { "Win11_Oficial_Espanol_x64.iso", "Win11_Oficial_Espanol_x64.iso.partial", "Fido.ps1" })
+            try { File.Delete(Path.Combine(WorkRoot, f)); } catch { }
+        foreach (var d in new[] { "aurevix", "iso-overlay", "iso-work" })
+            try { Directory.Delete(Path.Combine(WorkRoot, d), true); } catch { }
     }
 
     // ------------------------------------------------------------------ ISO
 
-    public static string? FindOscdimg()
-    {
-        var pf86 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
-        var dir = Path.Combine(pf86, @"Windows Kits\10\Assessment and Deployment Kit\Deployment Tools");
-        if (!Directory.Exists(dir)) return null;
-        return Directory.EnumerateFiles(dir, "oscdimg.exe", SearchOption.AllDirectories)
-            .FirstOrDefault(p => p.Contains("amd64", StringComparison.OrdinalIgnoreCase)) ??
-               Directory.EnumerateFiles(dir, "oscdimg.exe", SearchOption.AllDirectories).FirstOrDefault();
-    }
-
+    /// <summary>
+    /// Crea la ISO de AUREVIX OS leyendo Windows directamente de la ISO montada (sin copiarlo antes) y añadiendo
+    /// los archivos de AUREVIX encima. Devuelve el SHA-256 de la ISO resultante.
+    /// </summary>
     public async Task<string> BuildIsoAsync(string isoRoot, string aurevixSetup, string outputIso, IProgress<Step> progress, CancellationToken ct)
     {
-        // oscdimg (Windows ADK) si ya está instalado; si no, IMAPI2, el motor de ISOs que trae el propio Windows.
-        var oscdimg = FindOscdimg();
-        var work = Path.Combine(WorkRoot, "iso-work");
-        if (Directory.Exists(work)) Directory.Delete(work, true);
-        Directory.CreateDirectory(work);
+        var overlay = Path.Combine(WorkRoot, "iso-overlay");
+        if (Directory.Exists(overlay)) Directory.Delete(overlay, true);
+        Directory.CreateDirectory(overlay);
         try
         {
-            progress.Report(new Step("Copiando Windows 11…", 0.1));
-            var r = await Shell.RunAsync("robocopy.exe", $"\"{isoRoot}.\" \"{work}\" /E /R:2 /W:2 /NFL /NDL /NJH /NJS /NP", ct);
-            if (r.ExitCode >= 8) throw new InvalidOperationException("Falló la copia de archivos.");
-            await Shell.RunAsync("attrib.exe", $"-R \"{work}\\*\" /S /D", ct);
-
-            progress.Report(new Step("Añadiendo AUREVIX…", 0.5));
-            AddAurevixFiles(work, aurevixSetup);
-
-            progress.Report(new Step("Generando la ISO de AUREVIX OS…", 0.6));
-            var etfs = Path.Combine(work, @"boot\etfsboot.com");
-            var efi = Path.Combine(work, @"efi\microsoft\boot\efisys.bin");
+            progress.Report(new Step("Añadiendo AUREVIX", 0.01));
+            AddAurevixFiles(overlay, aurevixSetup);
             if (File.Exists(outputIso)) File.Delete(outputIso);
-            var built = false;
-            if (oscdimg is not null)
+
+            var imapi = new Progress<(long done, long total)>(p =>
             {
-                r = await Shell.RunAsync(oscdimg, $"-m -o -u2 -udfver102 -lAUREVIX_OS -bootdata:2#p0,e,b\"{etfs}\"#pEF,e,b\"{efi}\" \"{work}\" \"{outputIso}\"", ct);
-                built = r.Ok && File.Exists(outputIso);
-            }
-            if (!built)
-            {
-                var isoProgress = new Progress<double>(p => progress.Report(new Step($"Generando la ISO de AUREVIX OS… {p:P0}", 0.6 + 0.35 * p)));
-                await ImapiIsoWriter.BuildAsync(work, outputIso, "AUREVIX_OS", etfs, efi, isoProgress, ct);
-            }
+                var f = p.total > 0 ? Math.Clamp((double)p.done / p.total, 0, 1) : 0;
+                progress.Report(new Step("Generando la ISO de AUREVIX OS", 0.02 + 0.88 * f, $"{Eta.Bytes(p.done)} de {Eta.Bytes(p.total)}"));
+            });
+            await ImapiIsoWriter.BuildAsync(isoRoot, overlay, outputIso, "AUREVIX_OS",
+                Path.Combine(isoRoot, @"boot\etfsboot.com"), Path.Combine(isoRoot, @"efi\microsoft\boot\efisys.bin"), imapi, ct);
+
             if (!File.Exists(outputIso) || new FileInfo(outputIso).Length < 1_000_000_000)
                 throw new InvalidOperationException("La ISO generada no es válida. Prueba con la opción de USB o vuelve a intentarlo.");
-            var hash = await UpdateClient.ComputeSha256Async(outputIso, ct);
+
+            var hash = await HashFileAsync(outputIso, new Progress<double>(f =>
+                progress.Report(new Step("Verificando la ISO (SHA-256)", 0.9 + 0.1 * f))), ct);
             await File.WriteAllTextAsync(outputIso + ".sha256", $"{hash}  {Path.GetFileName(outputIso)}", ct);
             progress.Report(new Step("ISO lista.", 1));
             return hash;
         }
         finally
         {
-            try { Directory.Delete(work, true); } catch { }
+            try { Directory.Delete(overlay, true); } catch { }
         }
+    }
+
+    private static async Task<string> HashFileAsync(string path, IProgress<double> progress, CancellationToken ct)
+    {
+        await using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 1 << 20, FileOptions.SequentialScan | FileOptions.Asynchronous);
+        using var sha = SHA256.Create();
+        var buf = new byte[4 << 20];
+        long done = 0; int n; var last = Environment.TickCount64;
+        while ((n = await fs.ReadAsync(buf, ct)) > 0)
+        {
+            sha.TransformBlock(buf, 0, n, null, 0);
+            done += n;
+            if (Environment.TickCount64 - last > 400) { last = Environment.TickCount64; progress.Report((double)done / fs.Length); }
+        }
+        sha.TransformFinalBlock([], 0, 0);
+        return Convert.ToHexString(sha.Hash!).ToLowerInvariant();
     }
 
     // ------------------------------------------------------------------ Reinstalación limpia

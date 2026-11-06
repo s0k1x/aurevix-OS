@@ -2,9 +2,12 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Controls.Primitives;
+using Ellipse = System.Windows.Shapes.Ellipse;
 using System.Windows.Threading;
 using Aurevix.ControlCenter.Views;
 using Aurevix.Core.Logging;
+using Aurevix.Installer.Controls;
 using Aurevix.Installer.Engine;
 
 namespace Aurevix.Installer;
@@ -14,9 +17,13 @@ namespace Aurevix.Installer;
 ///   1. Instalar AUREVIX en este Windows (sin borrar nada).
 ///   2. Reinstalar este PC limpio con AUREVIX (Windows Setup oficial, sin USB).
 ///   3. Crear un USB de instalación (detecta el pendrive al enchufarlo) o una ISO.
+/// Cada operación muestra porcentaje, tiempo restante aproximado y los pasos que van quedando.
 /// </summary>
 public sealed class MainWindow : Window
 {
+    private static readonly string AppVersion = (System.Reflection.CustomAttributeExtensions
+        .GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>(typeof(MainWindow).Assembly)?.InformationalVersion ?? "").Split('+')[0];
+
     private readonly MediaEngine _engine = new();
     private readonly ContentControl _host = new();
     private CancellationTokenSource? _cts;
@@ -25,11 +32,29 @@ public sealed class MainWindow : Window
     public MainWindow()
     {
         Title = "AUREVIX Installer";
-        Width = 960; Height = 680; MinWidth = 760; MinHeight = 560;
+        Width = 1000; Height = 720; MinWidth = 780; MinHeight = 600;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
         Background = Ui.Brush("Bg");
         Icon = new System.Windows.Media.Imaging.BitmapImage(new Uri("pack://application:,,,/Assets/aurevix.ico"));
-        Content = _host;
+
+        var footer = new TextBlock
+        {
+            Text = $"AUREVIX Installer {AppVersion}  ·  Windows se descarga de Microsoft y se activa con tu licencia",
+            Style = Ui.Res<Style>("Muted"), FontSize = 12, Margin = new Thickness(0, 6, 0, 16), HorizontalAlignment = HorizontalAlignment.Center, TextWrapping = TextWrapping.NoWrap
+        };
+        var root = new Grid();
+        root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        root.Children.Add(new Ellipse
+        {
+            Width = 900, Height = 900, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, -520, -380, 0), IsHitTestVisible = false,
+            Fill = new RadialGradientBrush(Color.FromArgb(0x22, 0x8D, 0xE0, 0x3C), Color.FromArgb(0x00, 0x8D, 0xE0, 0x3C))
+        });
+        Grid.SetRow(footer, 1);
+        root.Children.Add(_host);
+        root.Children.Add(footer);
+        Content = root;
+
         Closing += (_, e) =>
         {
             if (_cts is not null && MessageBox.Show("Hay una operación en curso. ¿Cancelarla y salir?", "AUREVIX Installer", MessageBoxButton.YesNo) != MessageBoxResult.Yes)
@@ -41,62 +66,48 @@ public sealed class MainWindow : Window
 
     // ------------------------------------------------------------------ Navegación
 
-    private void Show(params UIElement[] content)
+    private void Present(params UIElement[] content)
     {
         _usbTimer?.Stop();
-        var sp = new StackPanel { Margin = new Thickness(56, 48, 56, 40), MaxWidth = 820, HorizontalAlignment = HorizontalAlignment.Left };
-        var brand = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 36) };
-        brand.Children.Add(new Image { Source = new System.Windows.Media.Imaging.BitmapImage(new Uri("pack://application:,,,/Assets/aurevix.ico")), Width = 22, Height = 22, Margin = new Thickness(0, 0, 10, 0) });
-        brand.Children.Add(new TextBlock { Text = "AUREVIX Installer", FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center });
-        sp.Children.Add(brand);
-        foreach (var c in content) sp.Children.Add(c);
-        _host.Content = new ScrollViewer { Content = sp };
-        Ui.Stagger(sp);
+        var column = new StackPanel { MaxWidth = 760, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(40, 40, 40, 28) };
+        var brand = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 44) };
+        brand.Children.Add(new Image { Source = new System.Windows.Media.Imaging.BitmapImage(new Uri("pack://application:,,,/Assets/aurevix.ico")), Width = 24, Height = 24, Margin = new Thickness(0, 0, 10, 0) });
+        brand.Children.Add(new TextBlock { Text = "AUREVIX", FontWeight = FontWeights.SemiBold, FontSize = 15, VerticalAlignment = VerticalAlignment.Center });
+        brand.Children.Add(new TextBlock { Text = "  Installer", Foreground = Ui.Brush("TextMuted"), FontSize = 15, VerticalAlignment = VerticalAlignment.Center });
+        column.Children.Add(brand);
+        foreach (var c in content) column.Children.Add(c);
+        _host.Content = new ScrollViewer { Content = column };
+        Ui.Stagger(column);
     }
-
-    private static Border Option(string eyebrow, string title, string text, Action onClick)
-    {
-        var card = Ui.Card(Ui.Eyebrow(eyebrow), Ui.H2(title), Ui.Muted(text));
-        card.Cursor = System.Windows.Input.Cursors.Hand;
-        card.Focusable = true;
-        card.MouseLeftButtonUp += (_, _) => onClick();
-        card.KeyUp += (_, e) => { if (e.Key is System.Windows.Input.Key.Enter or System.Windows.Input.Key.Space) onClick(); };
-        card.MouseEnter += (_, _) => card.BorderBrush = Ui.Brush("TextMuted");
-        card.MouseLeave += (_, _) => card.BorderBrush = Ui.Brush("BorderBrushAx");
-        return card;
-    }
-
-    private void Home() => Show(
-        Ui.H1("¿Qué quieres hacer?"),
-        Spaced(Ui.Muted("AUREVIX OS es Windows 11 oficial con una capa propia: diagnóstico, perfiles, estilo minimalista y actualizaciones firmadas."), 28),
-        Option("SIN BORRAR NADA", "Instalar AUREVIX en este Windows",
-            "Añade AUREVIX Control Center y el asistente de bienvenida. Tus archivos y programas siguen igual.", InstallHere),
-        Option("INSTALACIÓN LIMPIA · SIN USB", "Reinstalar este PC con AUREVIX OS",
-            "Descarga Windows 11 oficial de Microsoft, reinstala Windows desde cero y deja AUREVIX listo. Borra programas y archivos de la unidad del sistema.", CleanInstallIntro),
-        Option("PARA OTRO PC O PARA GUARDAR", "Crear un USB o una ISO de AUREVIX OS",
-            "Enchufa un pendrive de 8 GB o más y AUREVIX monta dentro Windows 11 oficial con todo preparado. También puedes crear solo la ISO.", MediaIntro),
-        Spaced(Ui.Muted("Windows se descarga siempre de los servidores oficiales de Microsoft y se activa con tu propia licencia."), 12));
 
     private static T Spaced<T>(T el, double bottom) where T : FrameworkElement { el.Margin = new Thickness(0, 0, 0, bottom); return el; }
 
+    private static TextBlock Heading(string text) { var t = Ui.H1(text); t.FontSize = 38; t.Margin = new Thickness(0, 0, 0, 10); return t; }
+
+    private void Home() => Present(
+        Ui.Eyebrow("BIENVENIDO"),
+        Heading("¿Qué quieres hacer?"),
+        Spaced(Ui.Muted("AUREVIX OS es Windows 11 oficial con una capa propia: diagnóstico, perfiles, estilo minimalista y actualizaciones firmadas."), 30),
+        Kit.OptionCard("\uE896", "SIN BORRAR NADA  ·  UNOS 2 MIN", "Instalar AUREVIX en este Windows",
+            "Añade AUREVIX Control Center y el asistente de bienvenida. Tus archivos y programas siguen igual.", InstallHere),
+        Kit.OptionCard("\uE777", "INSTALACIÓN LIMPIA  ·  UNOS 45-90 MIN", "Reinstalar este PC con AUREVIX OS",
+            "Descarga Windows 11 oficial de Microsoft, reinstala Windows desde cero y deja AUREVIX listo. Borra programas y archivos de la unidad del sistema.", CleanInstallIntro),
+        Kit.OptionCard("\uE88E", "PARA OTRO PC O PARA GUARDAR  ·  UNOS 15-40 MIN", "Crear un USB o una ISO de AUREVIX OS",
+            "Enchufa un pendrive de 8 GB o más y AUREVIX monta dentro Windows 11 oficial con todo preparado. También puedes crear solo la ISO.", MediaIntro));
+
     // ------------------------------------------------------------------ Progreso común
 
-    private (TextBlock text, ProgressBar bar) ProgressPage(string title, string note)
+    private ProgressView Progress(string title, string note, params StageSpec[] stages)
     {
-        var text = Ui.Text("Preparando…");
-        var bar = new ProgressBar { IsIndeterminate = true, Margin = new Thickness(0, 18, 0, 10) };
-        var cancel = Ui.Button("Cancelar", () => _cts?.Cancel());
-        Show(Ui.H1(title), Spaced(Ui.Muted(note), 28), text, bar,
-            Ui.Row(cancel, Ui.Button("Ver registro", () => OpenFolder(App.LogDir))));
-        return (text, bar);
+        var view = new ProgressView(stages);
+        Present(Ui.Eyebrow("EN CURSO"), Heading(title), Spaced(Ui.Muted(note), 34), view.Root,
+            Ui.Row(Ui.Button("Cancelar", () =>
+            {
+                if (_cts is not null && MessageBox.Show("¿Cancelar la operación? Podrás volver a empezar cuando quieras.", "AUREVIX Installer", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+                    _cts.Cancel();
+            }), Ui.Button("Ver registro", () => OpenFolder(App.LogDir))));
+        return view;
     }
-
-    private static IProgress<Step> Reporter(TextBlock text, ProgressBar bar) => new Progress<Step>(s =>
-    {
-        text.Text = s.Text;
-        bar.IsIndeterminate = s.Fraction is null;
-        if (s.Fraction is { } f) bar.Value = f * 100;
-    });
 
     private async Task RunAsync(Func<CancellationToken, Task> work, Action onDone)
     {
@@ -110,49 +121,86 @@ public sealed class MainWindow : Window
         catch (OperationCanceledException)
         {
             _cts = null;
-            Done("Cancelado", "No se ha hecho ningún cambio adicional.", ok: false);
+            Done("Cancelado", "No se ha hecho ningún cambio más. Puedes volver a empezar cuando quieras.", ok: false);
         }
         catch (MicrosoftBlockedException ex)
         {
             _cts = null;
             AurevixLog.Warn(ex.Detail);
-            Show(Ui.H1("Microsoft no ha permitido la descarga"),
+            Present(Kit.ResultBadge(false), Heading("Microsoft no ha permitido la descarga"),
                 Spaced(Ui.Muted(ex.Message + " Puedes esperar un rato y reintentar, o descargar la ISO tú mismo desde la web de Microsoft " +
-                                "y elegirla con «Usar mi propia ISO»."), 20),
+                                "y elegirla con «Usar mi propia ISO»."), 24),
                 Ui.Row(Ui.Button("Abrir la web de Microsoft", () => OpenUrl("https://www.microsoft.com/software-download/windows11"), primary: true),
-                       Ui.Button("Volver", Home)));
+                       Ui.Button("Volver al inicio", Home)));
         }
         catch (Exception ex)
         {
             _cts = null;
             AurevixLog.Error("Operación fallida", ex);
-            Done("Algo ha fallado", ex.Message, ok: false);
+            Fail("Algo ha fallado", ex.Message);
         }
     }
 
     private void Done(string title, string text, bool ok, params UIElement[] extra)
     {
-        var items = new List<UIElement>
-        {
-            new TextBlock { Text = ok ? "✓" : "!", FontSize = 40, Foreground = ok ? Ui.Brush("Ok") : Ui.Brush("Review"), Margin = new Thickness(0, 0, 0, 8) },
-            Ui.H1(title), Spaced(Ui.Muted(text), 24)
-        };
+        var items = new List<UIElement> { Kit.ResultBadge(ok), Heading(title), Spaced(Ui.Muted(text), 26) };
         items.AddRange(extra);
-        items.Add(Ui.Row(Ui.Button("Volver al inicio", Home), Ui.Button("Ver registro", () => OpenFolder(App.LogDir))));
-        Show(items.ToArray());
+        items.Add(Ui.Row(Ui.Button("Volver al inicio", Home, primary: extra.Length == 0), Ui.Button("Ver registro", () => OpenFolder(App.LogDir))));
+        Present(items.ToArray());
+    }
+
+    private void Fail(string title, string text)
+    {
+        Present(Kit.ResultBadge(false), Heading(title), Spaced(Ui.Muted(text), 26),
+            Ui.Row(Ui.Button("Volver al inicio", Home, primary: true),
+                   Ui.Button("Copiar detalles", () =>
+                   {
+                       try { Clipboard.SetText($"{title}\n{text}\n\n--- registro ---\n{LogTail()}"); } catch { }
+                   }),
+                   Ui.Button("Ver registro", () => OpenFolder(App.LogDir))));
+    }
+
+    private static string LogTail()
+    {
+        try
+        {
+            var file = new DirectoryInfo(App.LogDir).EnumerateFiles().OrderByDescending(f => f.LastWriteTimeUtc).FirstOrDefault();
+            if (file is null) return "";
+            using var fs = new FileStream(file.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var r = new StreamReader(fs);
+            return string.Join("\n", r.ReadToEnd().Split('\n').TakeLast(60));
+        }
+        catch { return ""; }
+    }
+
+    private UIElement CleanupRow()
+    {
+        var size = MediaEngine.CacheBytes();
+        if (size < 500_000_000) return new Border { Height = 0 };
+        var row = Ui.Row(Ui.Button($"Liberar espacio · borrar la ISO de Windows descargada ({Eta.Bytes(size)})", () =>
+        {
+            MediaEngine.ClearCache();
+            Home();
+        }));
+        row.Margin = new Thickness(0, 0, 0, 14);
+        return row;
     }
 
     // ------------------------------------------------------------------ 1. Instalar aquí
 
     private void InstallHere()
     {
-        var (text, bar) = ProgressPage("Instalando AUREVIX", "Descargamos la última versión verificada y la instalamos en este Windows.");
+        var v = Progress("Instalando AUREVIX", "Descargamos la última versión verificada y la instalamos en este Windows.",
+            new StageSpec("Descargar AUREVIX", 15), new StageSpec("Instalar en este Windows", 60));
         _ = RunAsync(async ct =>
         {
-            var setup = await _engine.DownloadAurevixAsync(Reporter(text, bar), ct);
-            text.Text = "Abriendo el instalador de AUREVIX…";
+            v.SetStage(0);
+            var setup = await _engine.DownloadAurevixAsync(v.Reporter, ct);
+            v.SetStage(1);
+            v.Reporter.Report(new Step("Abriendo el instalador de AUREVIX"));
             var p = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(setup) { UseShellExecute = true });
             if (p is not null) await p.WaitForExitAsync(ct);
+            v.Complete();
         }, () => Done("AUREVIX instalado", "Se abrirá el asistente de bienvenida. Puedes cerrar esta ventana.", ok: true,
             Ui.Row(Ui.Button("Cerrar", Close, primary: true))));
     }
@@ -164,7 +212,7 @@ public sealed class MainWindow : Window
         var check = await MediaEngine.CheckCleanInstallAsync();
         var confirm = new TextBox
         {
-            FontSize = 16, Padding = new Thickness(12, 8, 12, 8), Width = 260, HorizontalAlignment = HorizontalAlignment.Left,
+            FontSize = 16, Padding = new Thickness(14, 9, 14, 9), Width = 260, HorizontalAlignment = HorizontalAlignment.Left,
             Background = Ui.Brush("SurfaceAlt"), Foreground = Ui.Brush("Text"), BorderBrush = Ui.Brush("BorderBrushAx"), CaretBrush = Ui.Brush("Text")
         };
         var go = Ui.Button("Reinstalar ahora", () => _ = CleanInstall());
@@ -172,18 +220,18 @@ public sealed class MainWindow : Window
         go.IsEnabled = false;
         confirm.TextChanged += (_, _) => go.IsEnabled = confirm.Text.Trim() == "BORRAR" && check.Blockers.Count == 0;
 
-        var issues = new StackPanel();
-        foreach (var b in check.Blockers) issues.Children.Add(Ui.Text("✕ " + b));
-        foreach (var w in check.Warnings) issues.Children.Add(Ui.Muted("⚠ " + w));
+        var issues = new StackPanel { Margin = new Thickness(0, 0, 0, 14) };
+        foreach (var b in check.Blockers) issues.Children.Add(Spaced(Ui.Text("✕  " + b), 6));
+        foreach (var w in check.Warnings) issues.Children.Add(Spaced(Ui.Muted("⚠  " + w), 6));
 
-        Show(Ui.Eyebrow("INSTALACIÓN LIMPIA"),
-            Ui.H1("Reinstalar este PC con AUREVIX OS"),
+        Present(Ui.Eyebrow("INSTALACIÓN LIMPIA  ·  UNOS 45-90 MIN"),
+            Heading("Reinstalar este PC con AUREVIX OS"),
             Spaced(Ui.Muted("Se descargará Windows 11 oficial de Microsoft (unos 7 GB) y se reinstalará con el instalador oficial de Windows. " +
-                            "El equipo se reiniciará solo varias veces. Al terminar verás el asistente de AUREVIX."), 20),
+                            "El equipo se reiniciará solo varias veces. Al terminar verás el asistente de AUREVIX."), 24),
             Ui.Card(Ui.H2("Se borrará"),
-                Ui.Muted("• Todos los programas instalados"),
-                Ui.Muted("• Tus archivos de la unidad del sistema (Escritorio, Documentos, Descargas…)"),
-                Ui.Muted("• Los ajustes de Windows"),
+                Ui.Muted("•  Todos los programas instalados"),
+                Ui.Muted("•  Tus archivos de la unidad del sistema (Escritorio, Documentos, Descargas…)"),
+                Ui.Muted("•  Los ajustes de Windows"),
                 Spaced(Ui.Muted("Haz una copia de seguridad antes (OneDrive, un disco externo…). Otras unidades (D:, E:…) no se tocan."), 0)),
             issues,
             Spaced(Ui.Text("Para confirmar escribe BORRAR:"), 8),
@@ -194,16 +242,22 @@ public sealed class MainWindow : Window
 
     private Task CleanInstall()
     {
-        var (text, bar) = ProgressPage("Preparando la reinstalación", "No apagues el equipo. Cuando todo esté listo, Windows Setup tomará el control.");
-        string? iso = null;
+        var v = Progress("Preparando la reinstalación", "No apagues el equipo. Cuando todo esté listo, Windows Setup tomará el control.",
+            new StageSpec("Descargar AUREVIX", 15), new StageSpec("Obtener Windows 11", 600),
+            new StageSpec("Preparar la instalación", 20), new StageSpec("Iniciar Windows Setup", 30));
         return RunAsync(async ct =>
         {
-            var rep = Reporter(text, bar);
-            var setup = await _engine.DownloadAurevixAsync(rep, ct);
-            iso = await _engine.DownloadWindowsIsoAsync(rep, ct);
-            rep.Report(new Step("Montando la ISO de Windows…"));
+            MediaEngine.RequireFreeSpace(MediaEngine.WorkRoot, _engine.IsoCached ? 1_000_000_000 : MediaEngine.WindowsIsoBytes + 1_000_000_000, "La descarga de Windows 11");
+            v.SetStage(0);
+            var setup = await _engine.DownloadAurevixAsync(v.Reporter, ct);
+            v.SetStage(1);
+            var iso = await _engine.DownloadWindowsIsoAsync(v.Reporter, ct);
+            v.SetStage(2);
+            v.Reporter.Report(new Step("Montando la ISO de Windows"));
             var root = await _engine.MountAsync(iso, ct);
-            await _engine.StartCleanInstallAsync(root, setup, rep, ct);
+            v.SetStage(3);
+            await _engine.StartCleanInstallAsync(root, setup, v.Reporter, ct);
+            v.Complete();
         }, () => Done("Windows Setup en marcha", "Sigue las indicaciones de Windows Setup. El equipo se reiniciará y, al terminar, se abrirá AUREVIX.", ok: true));
     }
 
@@ -211,101 +265,181 @@ public sealed class MainWindow : Window
 
     private void MediaIntro()
     {
-        var usbList = new StackPanel();
-        var empty = Ui.Muted("Enchufa un pendrive de 8 GB o más… lo detectaremos automáticamente.");
-        UsbDisk? selected = null;
+        var kind = new ChoiceGroup();   // 0 = USB, 1 = ISO
+        var src = new ChoiceGroup();    // 0 = descargar, 1 = ISO propia
+        var disks = new ChoiceGroup();
+        var diskList = Array.Empty<UsbDisk>();
         string? ownIso = null;
 
-        var useUsb = new RadioButton { Content = "Crear un USB de instalación", IsChecked = true, GroupName = "kind", Margin = new Thickness(0, 4, 0, 4) };
-        var useIso = new RadioButton { Content = "Crear solo la ISO (para grabarla después o usarla en una máquina virtual)", GroupName = "kind", Margin = new Thickness(0, 4, 0, 4) };
-        var srcAuto = new RadioButton { Content = "Descargar Windows 11 oficial de Microsoft automáticamente (español)", IsChecked = true, GroupName = "src", Margin = new Thickness(0, 4, 0, 4) };
-        var srcOwn = new RadioButton { Content = "Usar mi propia ISO de Windows 11…", GroupName = "src", Margin = new Thickness(0, 4, 0, 4) };
-        srcOwn.Checked += (_, _) =>
-        {
-            var dlg = new Microsoft.Win32.OpenFileDialog { Filter = "Imagen ISO|*.iso", Title = "ISO oficial de Windows 11" };
-            if (dlg.ShowDialog(this) == true) { ownIso = dlg.FileName; srcOwn.Content = "Usar mi ISO: " + Path.GetFileName(ownIso); }
-            else srcAuto.IsChecked = true;
-        };
+        var summary = Ui.Muted("");
+        var create = Ui.Button("Crear USB", () => { }, primary: true);
 
-        var create = Ui.Button("Crear", () =>
+        var kindGrid = new UniformGrid { Columns = 2 };
+        var tUsb = kind.Add("USB de instalación", "Para instalar en otro PC. Listo para arrancar.");
+        var tIso = kind.Add("Solo la ISO", "Un archivo para guardar o usar en una máquina virtual.");
+        tUsb.Margin = new Thickness(0, 0, 6, 10); tIso.Margin = new Thickness(6, 0, 0, 10);
+        kindGrid.Children.Add(tUsb); kindGrid.Children.Add(tIso);
+
+        var usbList = new StackPanel();
+        var pulse = new Ellipse { Width = 8, Height = 8, Fill = Ui.Brush("Accent"), Margin = new Thickness(0, 0, 12, 0), VerticalAlignment = VerticalAlignment.Center };
+        if (Ui.AnimationsEnabled)
+            pulse.BeginAnimation(OpacityProperty, new System.Windows.Media.Animation.DoubleAnimation(1, 0.25, TimeSpan.FromMilliseconds(900)) { AutoReverse = true, RepeatBehavior = System.Windows.Media.Animation.RepeatBehavior.Forever });
+        var empty = new Border
         {
-            var iso = srcOwn.IsChecked == true ? ownIso : null;
-            if (useUsb.IsChecked == true)
+            Padding = new Thickness(18, 16, 18, 16), CornerRadius = new CornerRadius(14), BorderBrush = Ui.Brush("BorderBrushAx"), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 0, 10),
+            Child = new StackPanel { Orientation = Orientation.Horizontal, Children = { pulse, new TextBlock { Text = "Enchufa un pendrive de 8 GB o más: lo detectamos solos.", Foreground = Ui.Brush("TextMuted") } } }
+        };
+        var usbPanel = new StackPanel { Children = { Spaced(Ui.Eyebrow("PENDRIVE"), 8), empty, usbList } };
+
+        var tAuto = src.Add("Descargar de Microsoft", "Windows 11 oficial en español. Si ya lo descargaste antes, se reutiliza.", _engine.IsoCached ? "Ya descargado" : null);
+        var tOwn = src.Add("Usar mi propia ISO", "Elige una ISO oficial de Windows 11 que ya tengas.");
+
+        void Update()
+        {
+            var usb = kind.Selected == 0;
+            usbPanel.Visibility = usb ? Visibility.Visible : Visibility.Collapsed;
+            create.Content = usb ? "Crear USB" : "Crear ISO";
+            var haveIso = src.Selected == 1 || _engine.IsoCached;
+            var time = (usb, haveIso) switch
             {
-                if (selected is null) { MessageBox.Show("Elige primero un pendrive.", "AUREVIX Installer"); return; }
-                if (MessageBox.Show($"Se BORRARÁ todo el contenido de:\n\n{selected.Display}\n\n¿Continuar?", "Crear USB",
-                        MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
-                _ = CreateUsb(selected, iso);
+                (true, true) => "unos 10-15 min",
+                (true, false) => "entre 20 y 45 min, según tu conexión",
+                (false, true) => "unos 5-10 min",
+                _ => "entre 15 y 35 min, según tu conexión"
+            };
+            summary.Text = $"Tiempo aproximado: {time}." + (haveIso ? "" : " Descarga unos 7 GB de Windows desde Microsoft.") +
+                           (usb ? " Se borrará el contenido del pendrive." : $" Necesita unos 9 GB libres en Descargas.");
+            create.IsEnabled = !usb || (disks.Selected >= 0 && disks.Selected < diskList.Length);
+        }
+        kind.Changed += _ => Update();
+        disks.Changed += _ => Update();
+        src.Changed += i =>
+        {
+            if (i == 1)
+            {
+                var dlg = new Microsoft.Win32.OpenFileDialog { Filter = "Imagen ISO|*.iso", Title = "ISO oficial de Windows 11" };
+                if (dlg.ShowDialog(this) == true) { ownIso = dlg.FileName; Kit.SetTileText(tOwn, Path.GetFileName(ownIso)); }
+                else { src.Select(0, raise: false); }
+            }
+            Update();
+        };
+        kind.Select(0, raise: false);
+        src.Select(0, raise: false);
+
+        create.Click += (_, _) =>
+        {
+            var iso = src.Selected == 1 ? ownIso : null;
+            if (kind.Selected == 0)
+            {
+                if (disks.Selected < 0 || disks.Selected >= diskList.Length) return;
+                var d = diskList[disks.Selected];
+                if (d.SizeBytes < 8_000_000_000) { MessageBox.Show("Ese pendrive es demasiado pequeño: hacen falta 8 GB como mínimo.", "AUREVIX Installer"); return; }
+                if (MessageBox.Show($"Se BORRARÁ todo el contenido de:\n\n{d.Display}\n\nComprueba que es el pendrive correcto. Esta acción no se puede deshacer.\n\n¿Continuar?",
+                        "Crear USB", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+                _ = CreateUsb(d, iso);
             }
             else _ = CreateIso(iso);
-        }, primary: true);
+        };
 
-        var usbCard = Ui.Card(Ui.H2("Pendrive"), empty, usbList);
-        useIso.Checked += (_, _) => usbCard.Visibility = Visibility.Collapsed;
-        useUsb.Checked += (_, _) => usbCard.Visibility = Visibility.Visible;
-
-        Show(Ui.Eyebrow("USB O ISO"),
-            Ui.H1("Crear AUREVIX OS"),
-            Spaced(Ui.Muted("Instalación en español casi automática: solo elegirás el disco, aceptarás la licencia de Microsoft y crearás tu cuenta."), 20),
-            Ui.Card(useUsb, useIso), usbCard, Ui.Card(Ui.H2("Windows 11"), srcAuto, srcOwn),
+        Present(Ui.Eyebrow("USB O ISO"),
+            Heading("Crear AUREVIX OS"),
+            Spaced(Ui.Muted("Instalación en español casi automática: solo elegirás el disco, aceptarás la licencia de Microsoft y crearás tu cuenta."), 26),
+            Spaced(Ui.Eyebrow("QUÉ QUIERES CREAR"), 8), kindGrid,
+            usbPanel,
+            Spaced(Ui.Eyebrow("WINDOWS 11"), 8), tAuto, tOwn,
+            Spaced(summary, 14),
             Ui.Row(create, Ui.Button("Volver", Home)));
+        Update();
 
-        // Detección en vivo de pendrives (cada 2 s).
+        // Detección en vivo de pendrives (cada 3 s); solo se redibuja si cambia algo.
         async Task RefreshAsync()
         {
-            var disks = await _engine.ListUsbDisksAsync();
-            empty.Visibility = disks.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
-            var keep = selected is not null && disks.Any(d => d.Number == selected.Number) ? selected.Number : (int?)null;
-            if (keep is null) selected = null;
+            var list = (await _engine.ListUsbDisksAsync()).ToArray();
+            if (list.Select(d => $"{d.Number}{d.Letters}{d.SizeBytes}").SequenceEqual(diskList.Select(d => $"{d.Number}{d.Letters}{d.SizeBytes}"))) return;
+            var keep = disks.Selected >= 0 && disks.Selected < diskList.Length ? diskList[disks.Selected].Number : (int?)null;
+            diskList = list;
             usbList.Children.Clear();
-            foreach (var d in disks)
-            {
-                var rb = new RadioButton { Content = d.Display, GroupName = "usb", Margin = new Thickness(0, 4, 0, 4), IsChecked = d.Number == keep };
-                rb.Checked += (_, _) => selected = d;
-                usbList.Children.Add(rb);
-            }
-            if (disks.Count == 1 && selected is null) { selected = disks[0]; ((RadioButton)usbList.Children[0]).IsChecked = true; }
+            disks.Clear();
+            foreach (var d in diskList)
+                usbList.Children.Add(disks.Add(d.Name, $"{d.SizeBytes / 1e9:0.#} GB" + (d.Letters.Length > 0 ? $"  ·  unidad {d.Letters}" : "") + (d.SizeBytes < 8_000_000_000 ? "  ·  demasiado pequeño (mínimo 8 GB)" : "")));
+            empty.Visibility = diskList.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
+            var idx = keep is null ? (diskList.Length == 1 ? 0 : -1) : Array.FindIndex(diskList, d => d.Number == keep);
+            if (idx >= 0) disks.Select(idx, raise: false);
+            Update();
         }
         _ = RefreshAsync();
-        _usbTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+        _usbTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
         _usbTimer.Tick += async (_, _) => await RefreshAsync();
         _usbTimer.Start();
     }
 
-    private async Task<string> GetIsoAsync(string? ownIso, IProgress<Step> rep, CancellationToken ct) =>
-        ownIso ?? await _engine.DownloadWindowsIsoAsync(rep, ct);
+    private async Task<string> GetIsoAsync(string? ownIso, IProgress<Step> rep, CancellationToken ct)
+    {
+        if (ownIso is null) return await _engine.DownloadWindowsIsoAsync(rep, ct);
+        rep.Report(new Step("Usando tu ISO de Windows", 1, Path.GetFileName(ownIso)));
+        return ownIso;
+    }
 
     private Task CreateUsb(UsbDisk disk, string? ownIso)
     {
-        var (text, bar) = ProgressPage("Creando el USB de AUREVIX OS", "Puede tardar entre 15 y 40 minutos según tu conexión y el pendrive. No lo desenchufes.");
-        string? iso = null;
+        var v = Progress("Creando el USB de AUREVIX OS", "No desenchufes el pendrive ni apagues el equipo hasta que termine.",
+            new StageSpec("Descargar AUREVIX", 15),
+            new StageSpec(ownIso is null ? "Obtener Windows 11" : "Usar tu ISO de Windows", ownIso is null && !_engine.IsoCached ? 600 : 10),
+            new StageSpec("Preparar la ISO", 15), new StageSpec("Crear y comprobar el USB", 480));
         return RunAsync(async ct =>
         {
-            var rep = Reporter(text, bar);
-            var setup = await _engine.DownloadAurevixAsync(rep, ct);
-            iso = await GetIsoAsync(ownIso, rep, ct);
-            rep.Report(new Step("Montando la ISO de Windows…"));
+            if (ownIso is null) MediaEngine.RequireFreeSpace(MediaEngine.WorkRoot, _engine.IsoCached ? 500_000_000 : MediaEngine.WindowsIsoBytes + 500_000_000, "La descarga de Windows 11");
+            v.SetStage(0);
+            var setup = await _engine.DownloadAurevixAsync(v.Reporter, ct);
+            v.SetStage(1);
+            var iso = await GetIsoAsync(ownIso, v.Reporter, ct);
+            v.SetStage(2);
+            v.Reporter.Report(new Step("Montando la ISO de Windows"));
             var root = await _engine.MountAsync(iso, ct);
-            try { await _engine.WriteUsbAsync(disk, root, setup, rep, ct); }
+            try
+            {
+                v.SetStage(3);
+                await _engine.WriteUsbAsync(disk, root, setup, v.Reporter, ct);
+            }
             finally { await _engine.DismountAsync(iso); }
-        }, () => Done("USB listo", "Enchúfalo en el PC donde quieras instalar AUREVIX OS, arranca desde el USB (F12, F11 o Esc al encender, según la marca) y sigue los pasos.", ok: true));
+            v.Complete();
+        }, () => Done("USB listo", "Comprobado: tiene los archivos de arranque, Windows completo y AUREVIX. Enchúfalo en el PC donde quieras instalar AUREVIX OS, " +
+                                   "arranca desde el USB (F12, F11 o Esc al encender, según la marca) y sigue los pasos.", ok: true, CleanupRow()));
     }
 
     private Task CreateIso(string? ownIso)
     {
-        var output = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads", $"AUREVIX_OS_{DateTime.Now:yyyyMMdd}.iso");
-        var (text, bar) = ProgressPage("Creando la ISO de AUREVIX OS", $"Se guardará en {output}.");
+        var downloads = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+        var output = Path.Combine(downloads, $"AUREVIX_OS_{DateTime.Now:yyyyMMdd}.iso");
+        if (File.Exists(output)) output = Path.Combine(downloads, $"AUREVIX_OS_{DateTime.Now:yyyyMMdd_HHmm}.iso");
+        string? hash = null;
+        var v = Progress("Creando la ISO de AUREVIX OS", $"Se guardará en {output}",
+            new StageSpec("Descargar AUREVIX", 15),
+            new StageSpec(ownIso is null ? "Obtener Windows 11" : "Usar tu ISO de Windows", ownIso is null && !_engine.IsoCached ? 600 : 10),
+            new StageSpec("Preparar la ISO", 15), new StageSpec("Crear y verificar la ISO", 300));
         return RunAsync(async ct =>
         {
-            var rep = Reporter(text, bar);
-            var setup = await _engine.DownloadAurevixAsync(rep, ct);
-            var iso = await GetIsoAsync(ownIso, rep, ct);
-            rep.Report(new Step("Montando la ISO de Windows…"));
+            Directory.CreateDirectory(downloads);
+            MediaEngine.RequireFreeSpace(downloads, MediaEngine.WindowsIsoBytes + 1_000_000_000, "La ISO resultante");
+            if (ownIso is null) MediaEngine.RequireFreeSpace(MediaEngine.WorkRoot, _engine.IsoCached ? 500_000_000 : MediaEngine.WindowsIsoBytes + 500_000_000, "La descarga de Windows 11");
+            v.SetStage(0);
+            var setup = await _engine.DownloadAurevixAsync(v.Reporter, ct);
+            v.SetStage(1);
+            var iso = await GetIsoAsync(ownIso, v.Reporter, ct);
+            v.SetStage(2);
+            v.Reporter.Report(new Step("Montando la ISO de Windows"));
             var root = await _engine.MountAsync(iso, ct);
-            try { await _engine.BuildIsoAsync(root, setup, output, rep, ct); }
+            try
+            {
+                v.SetStage(3);
+                hash = await _engine.BuildIsoAsync(root, setup, output, v.Reporter, ct);
+            }
             finally { await _engine.DismountAsync(iso); }
-        }, () => Done("ISO lista", $"Guardada en {output} (con su .sha256). Es para tu uso: no la compartas, la licencia de Windows no lo permite.", ok: true,
-            Ui.Row(Ui.Button("Abrir carpeta", () => OpenFolder(Path.GetDirectoryName(output)!), primary: true))));
+            v.Complete();
+        }, () => Done("ISO lista", "Es para tu uso: no la compartas, la licencia de Windows no lo permite.", ok: true,
+            Ui.Card(Ui.Muted("Archivo"), Ui.Text(output), Spaced(Ui.Muted("SHA-256 (también guardado en un .sha256 junto a la ISO)"), 0), Ui.Text(hash ?? "", 12)),
+            Ui.Row(Ui.Button("Abrir carpeta", () => OpenFolder(downloads), primary: true)),
+            CleanupRow()));
     }
 
     // ------------------------------------------------------------------ Capturas (workflow de GitHub Actions)
@@ -317,10 +451,27 @@ public sealed class MainWindow : Window
         Home(); await Task.Delay(1200); Save(Path.Combine(dir, "inst-01-inicio.png"));
         MediaIntro(); await Task.Delay(5000); Save(Path.Combine(dir, "inst-02-usb-iso.png"));
         CleanInstallIntro(); await Task.Delay(5000); Save(Path.Combine(dir, "inst-03-reinstalar.png"));
-        var (text, bar) = ProgressPage("Creando el USB de AUREVIX OS", "Puede tardar entre 15 y 40 minutos según tu conexión y el pendrive. No lo desenchufes.");
-        text.Text = "Descargando Windows 11 de Microsoft… 3,1 de 6,9 GB"; bar.IsIndeterminate = false; bar.Value = 45;
-        await Task.Delay(800); Save(Path.Combine(dir, "inst-04-progreso.png"));
+
+        var v = Progress("Creando el USB de AUREVIX OS", "No desenchufes el pendrive ni apagues el equipo hasta que termine.",
+            new StageSpec("Descargar AUREVIX", 15), new StageSpec("Obtener Windows 11", 600),
+            new StageSpec("Preparar la ISO", 15), new StageSpec("Crear y comprobar el USB", 480));
+        v.SetStage(0); v.Reporter.Report(new Step("Descargando AUREVIX", 1)); v.SetStage(1);
+        for (var i = 0; i < 26; i++)
+        {
+            var f = 0.40 + i * 0.004;
+            v.Reporter.Report(new Step("Descargando Windows 11 de Microsoft", f, $"{f * 6.9:0.0} de 6,9 GB · 38 MB/s"));
+            await Task.Delay(250);
+        }
+        await Task.Delay(300); Save(Path.Combine(dir, "inst-04-progreso.png"));
         _usbTimer?.Stop();
+
+        Done("ISO lista", "Es para tu uso: no la compartas, la licencia de Windows no lo permite.", ok: true,
+            Ui.Card(Ui.Muted("Archivo"), Ui.Text(@"C:\Users\Tu\Downloads\AUREVIX_OS_20261106.iso"), Spaced(Ui.Muted("SHA-256"), 0), Ui.Text("3f9a…c21d", 12)),
+            Ui.Row(Ui.Button("Abrir carpeta", () => { }, primary: true)));
+        await Task.Delay(900); Save(Path.Combine(dir, "inst-05-listo.png"));
+
+        Fail("Algo ha fallado", "Falta espacio en C:\\: La descarga de Windows 11 necesita unos 9 GB libres y hay 4,2 GB. Libera espacio y vuelve a intentarlo.");
+        await Task.Delay(900); Save(Path.Combine(dir, "inst-06-error.png"));
     }
 
     private void Save(string path)
