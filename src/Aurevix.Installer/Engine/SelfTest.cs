@@ -25,6 +25,7 @@ public static class SelfTest
 
         var fakeSetup = Path.Combine(outDir, "AurevixSetup.exe");
         await File.WriteAllBytesAsync(fakeSetup, new byte[123_456]);
+        Directory.CreateDirectory(overlay);
         MediaEngine.AddAurevixFiles(overlay, fakeSetup);
 
         var iso = Path.Combine(outDir, "selftest.iso");
