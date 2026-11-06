@@ -6,11 +6,24 @@ namespace Aurevix.Installer;
 
 public partial class App : Application
 {
+    private System.Threading.Mutex? _mutex;
     public static string LogDir { get; } = Path.Combine(Engine.MediaEngine.WorkRoot, "logs");
 
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        // Una sola ventana a la vez: dos instaladores a la vez podrían pisarse al escribir el USB.
+        var selftest = e.Args.Any(a => a.Equals("--selftest-iso", StringComparison.OrdinalIgnoreCase));
+        if (!selftest)
+        {
+            _mutex = new System.Threading.Mutex(true, @"Local\Aurevix.Installer.SingleInstance", out var first);
+            if (!first)
+            {
+                MessageBox.Show("AUREVIX Installer ya está abierto.", "AUREVIX Installer");
+                Shutdown();
+                return;
+            }
+        }
         AurevixLog.Initialize(LogDir);
         AurevixLog.Info("AUREVIX Installer iniciado.");
         DispatcherUnhandledException += (_, ex) =>
