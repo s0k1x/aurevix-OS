@@ -1,10 +1,7 @@
-## AUREVIX OS 0.4.0 — Parte del sistema
+## AUREVIX OS 0.4.1 — Corrección del instalador
 
-- **Sin avisos de permisos**: AUREVIX Core Service crea los puntos de restauración, bloquea programas en el Firewall, mide FPS con PresentMon e **instala las actualizaciones** (verifica la firma y el SHA-256 él mismo y vuelve a abrir AUREVIX al terminar). Solo las exclusiones de Defender siguen pidiendo confirmación, a propósito.
-- **88 ajustes** organizados en categorías propias: Modos de juego AUREVIX (Fluidez, Puntería, Respuesta Online, equipos potentes y modestos), Planes de energía AUREVIX (sobremesa, portátil, Ryzen de doble CCD), ajuste de CPU AMD/Intel, servicios ligeros, ratón/teclado/USB, gráfica híbrida y más.
-- **Herramientas**: memoria virtual fija, procesos de fondo de Windows en baja prioridad, prioridad para red y discos, Hyper-V, uso compartido, SFC/DISM/CHKDSK, modo MSI de la GPU y restaurar planes de energía.
-- **Red**: optimización de adaptadores (ahorro de energía, EEE, moderación de interrupciones), MTU y QoS por juego.
-- **Game Boost**: temporizador de 0,5 ms mientras juegas, núcleos reservados para el juego (opcional), vaciado de memoria en espera, GPU de alto rendimiento y prioridad por juego.
-- Navegación reorganizada en Rendimiento y Sistema; botones y diseño más limpios.
+- **Crear ISO ya no necesita Windows ADK ni winget**: AUREVIX Installer usa el motor de ISOs que trae Windows (IMAPI2), con arranque BIOS y UEFI y soporte para el archivo de Windows de más de 4 GB. Corrige el error «No se pudo instalar Windows ADK automáticamente».
+- **Apps**: si winget tiene el catálogo dañado (error 0x8A15000F), AUREVIX lo repara solo y vuelve a intentarlo.
+- **Desplegables oscuros y legibles** en todo el Control Center.
 
-Versión de pruebas: úsala primero en una máquina virtual.
+Incluye todo lo de la 0.4.0: sin avisos de permisos, catálogo de 88 ajustes con nombres propios, nuevas Herramientas y Game Boost mejorado.
