@@ -138,7 +138,7 @@ public sealed class ProgressView
             case Phase.Active:
                 var dot = new Ellipse { Width = 9, Height = 9, Fill = Ui.Brush("Accent"), HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(2, 5, 0, 0) };
                 if (Ui.AnimationsEnabled)
-                    dot.BeginAnimation(OpacityProperty, new DoubleAnimation(1, 0.3, TimeSpan.FromMilliseconds(900)) { AutoReverse = true, RepeatBehavior = RepeatBehavior.Forever });
+                    dot.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(1, 0.3, TimeSpan.FromMilliseconds(900)) { AutoReverse = true, RepeatBehavior = RepeatBehavior.Forever });
                 _icons[i].Content = dot;
                 _labels[i].Foreground = Ui.Brush("Text");
                 _labels[i].FontWeight = FontWeights.SemiBold;
