@@ -6,7 +6,7 @@ Un único `AurevixInstaller-x.y.z.exe` (pide permisos de administrador) con tres
 |---|---|---|
 | **1. Instalar en este Windows** | Descarga la última versión verificada de AUREVIX (manifiesto firmado + SHA-256) y abre su instalador. | No |
 | **2. Reinstalar este PC con AUREVIX OS** | Descarga la ISO **oficial** de Windows 11 en español de Microsoft, la monta y lanza el **Windows Setup oficial** con `setup.exe /auto clean /unattend /postoobe`. AUREVIX se instala al final. Sin USB. | **Sí**: programas, ajustes y archivos de la unidad del sistema. Exige escribir `BORRAR`, cargador conectado y 25 GB libres; avisa si hay BitLocker. |
-| **3. Crear USB o ISO** | Detecta los pendrives al enchufarlos (cada 2 s, solo discos USB que no sean de sistema). Formatea en FAT32, copia Windows, divide `install.wim` con DISM (FAT32 no admite >4 GB) y añade AUREVIX. O bien genera una ISO con `oscdimg` (instala Windows ADK con winget si falta). | El pendrive elegido, tras confirmación |
+| **3. Crear USB o ISO** | Detecta los pendrives al enchufarlos (cada 2 s, solo discos USB que no sean de sistema). Formatea en FAT32, copia Windows, divide `install.wim` con DISM (FAT32 no admite >4 GB) y añade AUREVIX. O bien genera una ISO con el motor integrado de Windows (IMAPI2: UDF y arranque BIOS + UEFI); usa `oscdimg` solo si Windows ADK ya está instalado. No descarga nada extra ni depende de winget. | El pendrive elegido, tras confirmación |
 
 La ISO se obtiene con **Fido** (GPL-3.0, autor de Rufus; incluido sin modificar en `third_party/fido`, verificado por SHA-256), que solo pide a Microsoft su enlace oficial. Si Microsoft limita la descarga automática, el Installer lo explica y permite usar una ISO descargada a mano.
 

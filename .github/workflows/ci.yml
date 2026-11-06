@@ -30,6 +30,21 @@ jobs:
         run: dotnet build src/Aurevix.Service --configuration Release
       - name: Compilar AUREVIX Installer
         run: dotnet build src/Aurevix.Installer --configuration Release
+      - name: Autoprueba del motor de ISOs (IMAPI2, archivo de 4,5 GB, arranque BIOS + UEFI)
+        shell: pwsh
+        run: |
+          dotnet publish src/Aurevix.Installer -c Release -r win-x64 --self-contained -o out/inst-test
+          $dir = Join-Path $env:RUNNER_TEMP 'isotest'
+          Start-Process -FilePath out/inst-test/AurevixInstaller.exe -ArgumentList '--selftest-iso', $dir -Wait
+          Get-Content (Join-Path $dir 'selftest-iso.txt')
+          if ((Get-Content (Join-Path $dir 'selftest-iso.txt') -First 1) -ne 'OK') { exit 1 }
+          $iso = Join-Path $dir 'selftest.iso'
+          $img = Mount-DiskImage -ImagePath $iso -PassThru
+          $letter = ($img | Get-Volume).DriveLetter
+          $wim = Get-Item "${letter}:\sources\install.wim"
+          Write-Host "install.wim dentro de la ISO: $($wim.Length) bytes"
+          Dismount-DiskImage -ImagePath $iso | Out-Null
+          if ($wim.Length -ne 4500000000) { exit 1 }
       - name: Publicar Control Center
         run: dotnet publish src/Aurevix.ControlCenter -c Release -r win-x64 --self-contained -o out/app
       - uses: actions/upload-artifact@v4

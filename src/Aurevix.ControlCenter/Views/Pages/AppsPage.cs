@@ -93,19 +93,40 @@ public sealed class AppsPage : UserControl
         _status.Text = "Actualización terminada.";
     }
 
+    /// <summary>0x8A15000F: «Faltan los datos requeridos por el origen» (catálogo de winget dañado o sin descargar).</summary>
+    private const int SourceDataMissing = -1978335217;
+    private static bool _repaired;
+
     private static async Task<int> WingetAsync(string args)
     {
         try
         {
-            AurevixLog.Info($"winget {args}");
-            using var p = Process.Start(new ProcessStartInfo("winget", args) { UseShellExecute = false, CreateNoWindow = true })!;
-            await p.WaitForExitAsync();
-            return p.ExitCode;
+            var code = await RunAsync("winget", args);
+            if (code == SourceDataMissing && !_repaired)
+            {
+                // Reparación automática: vuelve a registrar «App Installer» y descarga de nuevo el catálogo. Sin permisos de administrador.
+                _repaired = true;
+                AurevixLog.Warn("winget: catálogo dañado; reparando App Installer y el origen.");
+                await RunAsync("powershell.exe", "-NoProfile -NonInteractive -Command \"Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe -ErrorAction SilentlyContinue\"");
+                await RunAsync("winget", "source update --disable-interactivity");
+                code = await RunAsync("winget", args);
+                if (code == SourceDataMissing)
+                    MessageBox.Show("El catálogo de winget de este equipo está dañado y no se pudo reparar solo.\n\nAbre Microsoft Store, busca «Instalador de aplicación» (App Installer) y pulsa Actualizar. Después vuelve a intentarlo.", "Apps");
+            }
+            return code;
         }
         catch (Exception ex)
         {
             MessageBox.Show($"No se pudo ejecutar winget: {ex.Message}\nInstala «App Installer» desde Microsoft Store.", "Apps");
             return -1;
         }
+    }
+
+    private static async Task<int> RunAsync(string file, string args)
+    {
+        AurevixLog.Info($"{file} {args}");
+        using var p = Process.Start(new ProcessStartInfo(file, args) { UseShellExecute = false, CreateNoWindow = true })!;
+        await p.WaitForExitAsync();
+        return p.ExitCode;
     }
 }

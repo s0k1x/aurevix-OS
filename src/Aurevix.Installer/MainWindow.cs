@@ -298,13 +298,6 @@ public sealed class MainWindow : Window
         return RunAsync(async ct =>
         {
             var rep = Reporter(text, bar);
-            if (MediaEngine.FindOscdimg() is null)
-            {
-                rep.Report(new Step("Instalando la herramienta oficial de Microsoft para crear ISOs (Windows ADK)…"));
-                var r = await _engine.InstallAdkAsync(ct);
-                if (MediaEngine.FindOscdimg() is null)
-                    throw new InvalidOperationException("No se pudo instalar Windows ADK automáticamente. Instálalo con «winget install Microsoft.WindowsADK» (Deployment Tools) y reintenta.");
-            }
             var setup = await _engine.DownloadAurevixAsync(rep, ct);
             var iso = await GetIsoAsync(ownIso, rep, ct);
             rep.Report(new Step("Montando la ISO de Windows…"));
