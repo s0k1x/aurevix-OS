@@ -69,8 +69,8 @@ public sealed class MainWindow : Window
     private void Present(params UIElement[] content)
     {
         _usbTimer?.Stop();
-        var column = new StackPanel { MaxWidth = 760, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(40, 40, 40, 28) };
-        var brand = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 44) };
+        var column = new StackPanel { MaxWidth = 760, HorizontalAlignment = HorizontalAlignment.Stretch, Margin = new Thickness(40, 32, 40, 20) };
+        var brand = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 30) };
         brand.Children.Add(new Image { Source = new System.Windows.Media.Imaging.BitmapImage(new Uri("pack://application:,,,/Assets/aurevix.ico")), Width = 24, Height = 24, Margin = new Thickness(0, 0, 10, 0) });
         brand.Children.Add(new TextBlock { Text = "AUREVIX", FontWeight = FontWeights.SemiBold, FontSize = 15, VerticalAlignment = VerticalAlignment.Center });
         brand.Children.Add(new TextBlock { Text = "  Installer", Foreground = Ui.Brush("TextMuted"), FontSize = 15, VerticalAlignment = VerticalAlignment.Center });
@@ -87,7 +87,7 @@ public sealed class MainWindow : Window
     private void Home() => Present(
         Ui.Eyebrow("BIENVENIDO"),
         Heading("¿Qué quieres hacer?"),
-        Spaced(Ui.Muted("AUREVIX OS es Windows 11 oficial con una capa propia: diagnóstico, perfiles, estilo minimalista y actualizaciones firmadas."), 30),
+        Spaced(Ui.Muted("AUREVIX OS es Windows 11 oficial con una capa propia: diagnóstico, perfiles, estilo minimalista y actualizaciones firmadas."), 22),
         Kit.OptionCard("\uE896", "SIN BORRAR NADA  ·  UNOS 2 MIN", "Instalar AUREVIX en este Windows",
             "Añade AUREVIX Control Center y el asistente de bienvenida. Tus archivos y programas siguen igual.", InstallHere),
         Kit.OptionCard("\uE777", "INSTALACIÓN LIMPIA  ·  UNOS 45-90 MIN", "Reinstalar este PC con AUREVIX OS",
@@ -207,9 +207,10 @@ public sealed class MainWindow : Window
 
     // ------------------------------------------------------------------ 2. Reinstalación limpia
 
-    private async void CleanInstallIntro()
+    private void CleanInstallIntro()
     {
-        var check = await MediaEngine.CheckCleanInstallAsync();
+        var blockers = 0;
+        var checkDone = false;
         var confirm = new TextBox
         {
             FontSize = 16, Padding = new Thickness(14, 9, 14, 9), Width = 260, HorizontalAlignment = HorizontalAlignment.Left,
@@ -218,11 +219,10 @@ public sealed class MainWindow : Window
         var go = Ui.Button("Reinstalar ahora", () => _ = CleanInstall());
         go.Style = Ui.Res<Style>("Danger");
         go.IsEnabled = false;
-        confirm.TextChanged += (_, _) => go.IsEnabled = confirm.Text.Trim() == "BORRAR" && check.Blockers.Count == 0;
+        void UpdateGo() => go.IsEnabled = checkDone && blockers == 0 && confirm.Text.Trim() == "BORRAR";
+        confirm.TextChanged += (_, _) => UpdateGo();
 
-        var issues = new StackPanel { Margin = new Thickness(0, 0, 0, 14) };
-        foreach (var b in check.Blockers) issues.Children.Add(Spaced(Ui.Text("✕  " + b), 6));
-        foreach (var w in check.Warnings) issues.Children.Add(Spaced(Ui.Muted("⚠  " + w), 6));
+        var issues = new StackPanel { Margin = new Thickness(0, 0, 0, 14), Children = { Ui.Muted("Comprobando que tu equipo está listo…") } };
 
         Present(Ui.Eyebrow("INSTALACIÓN LIMPIA  ·  UNOS 45-90 MIN"),
             Heading("Reinstalar este PC con AUREVIX OS"),
@@ -238,6 +238,28 @@ public sealed class MainWindow : Window
             confirm,
             Ui.Row(go, Ui.Button("Volver", Home)));
         confirm.Focus();
+
+        // La comprobación (espacio, cargador, BitLocker) tarda unos segundos: la pantalla ya se ve mientras tanto.
+        _ = Task.Run(async () =>
+        {
+            MediaEngine.Precheck check;
+            try { check = await MediaEngine.CheckCleanInstallAsync(); }
+            catch (Exception ex)
+            {
+                AurevixLog.Error("Comprobación previa", ex);
+                check = new MediaEngine.Precheck(["No se pudo comprobar tu equipo. Mira el registro o inténtalo de nuevo."], []);
+            }
+            await Dispatcher.InvokeAsync(() =>
+            {
+                issues.Children.Clear();
+                foreach (var b in check.Blockers) issues.Children.Add(Spaced(Ui.Text("✕  " + b), 6));
+                foreach (var w in check.Warnings) issues.Children.Add(Spaced(Ui.Muted("⚠  " + w), 6));
+                if (check.Blockers.Count == 0 && check.Warnings.Count == 0) issues.Children.Add(Ui.Muted("✓  Tu equipo está listo: hay espacio y corriente."));
+                blockers = check.Blockers.Count;
+                checkDone = true;
+                UpdateGo();
+            });
+        });
     }
 
     private Task CleanInstall()
@@ -450,7 +472,7 @@ public sealed class MainWindow : Window
         Ui.ReduceMotion = true;
         Home(); await Task.Delay(1200); Save(Path.Combine(dir, "inst-01-inicio.png"));
         MediaIntro(); await Task.Delay(5000); Save(Path.Combine(dir, "inst-02-usb-iso.png"));
-        CleanInstallIntro(); await Task.Delay(5000); Save(Path.Combine(dir, "inst-03-reinstalar.png"));
+        CleanInstallIntro(); await Task.Delay(9000); Save(Path.Combine(dir, "inst-03-reinstalar.png"));
 
         var v = Progress("Creando el USB de AUREVIX OS", "No desenchufes el pendrive ni apagues el equipo hasta que termine.",
             new StageSpec("Descargar AUREVIX", 15), new StageSpec("Obtener Windows 11", 600),

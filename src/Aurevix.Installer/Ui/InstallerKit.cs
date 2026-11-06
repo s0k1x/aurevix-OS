@@ -296,7 +296,7 @@ public static class Kit
     {
         var icon = new Border
         {
-            Width = 48, Height = 48, CornerRadius = new CornerRadius(14), Background = Ui.Brush("SurfaceAlt"), BorderBrush = Ui.Brush("BorderBrushAx"), BorderThickness = new Thickness(1),
+            Width = 44, Height = 44, CornerRadius = new CornerRadius(13), Background = Ui.Brush("SurfaceAlt"), BorderBrush = Ui.Brush("BorderBrushAx"), BorderThickness = new Thickness(1),
             VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 2, 20, 0), Child = Glyph(glyph, 20)
         };
         var eb = Ui.Eyebrow(eyebrow); eb.Margin = new Thickness(0, 0, 0, 3);
@@ -313,9 +313,9 @@ public static class Kit
 
         var card = new Border
         {
-            Child = grid, Padding = new Thickness(24, 22, 24, 22), CornerRadius = new CornerRadius(18), BorderThickness = new Thickness(1),
+            Child = grid, Padding = new Thickness(22, 17, 22, 17), CornerRadius = new CornerRadius(18), BorderThickness = new Thickness(1),
             BorderBrush = Ui.Brush("BorderBrushAx"), Background = new SolidColorBrush(Color.FromArgb(0xE6, 0x0E, 0x0E, 0x11)),
-            Cursor = Cursors.Hand, Focusable = true, Margin = new Thickness(0, 0, 0, 14), FocusVisualStyle = null
+            Cursor = Cursors.Hand, Focusable = true, Margin = new Thickness(0, 0, 0, 12), FocusVisualStyle = null
         };
         card.MouseLeftButtonUp += (_, _) => onClick();
         card.KeyUp += (_, e) => { if (e.Key is Key.Enter or Key.Space) onClick(); };
