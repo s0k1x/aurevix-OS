@@ -24,11 +24,30 @@ public static class ImapiIsoWriter
         IProgress<(long done, long total)>? progress, CancellationToken ct) =>
         RunSta(() => Build(sourceDir, overlayDir, outputIso, volumeLabel, biosBoot, uefiBoot, progress, ct));
 
+    // Todos los flujos de archivo que IMAPI mantiene abiertos: hay que soltarlos al terminar o la ISO de Windows
+    // montada quedaría «en uso» y no se podría desmontar (ni borrar las carpetas temporales).
+    [ThreadStatic] private static List<object>? _held;
+
     private static void Build(string sourceDir, string? overlayDir, string outputIso, string volumeLabel, string? biosBoot, string? uefiBoot,
+        IProgress<(long done, long total)>? progress, CancellationToken ct)
+    {
+        _held = [];
+        try { BuildCore(sourceDir, overlayDir, outputIso, volumeLabel, biosBoot, uefiBoot, progress, ct); }
+        finally
+        {
+            foreach (var o in _held) { try { Marshal.FinalReleaseComObject(o); } catch { } }
+            _held = null;
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+        }
+    }
+
+    private static void BuildCore(string sourceDir, string? overlayDir, string outputIso, string volumeLabel, string? biosBoot, string? uefiBoot,
         IProgress<(long done, long total)>? progress, CancellationToken ct)
     {
         var fsiType = Type.GetTypeFromProgID("IMAPI2FS.MsftFileSystemImage") ?? throw new InvalidOperationException("IMAPI2 no está disponible en este Windows.");
         dynamic image = Activator.CreateInstance(fsiType)!;
+        _held!.Add(image);
         image.ChooseImageDefaultsForMediaType(MediaDvdPlusRDualLayer);
         image.FreeMediaBlocks = 0; // sin límite de capacidad: la ISO de Windows 11 puede pasar de 8,5 GB con AUREVIX
         image.FileSystemsToCreate = FsiFileSystemUdf;
@@ -41,6 +60,7 @@ public static class ImapiIsoWriter
             if (file is null || !File.Exists(file)) continue;
             var bootType = Type.GetTypeFromProgID("IMAPI2FS.BootOptions")!;
             dynamic boot = Activator.CreateInstance(bootType)!;
+            _held!.Add(boot);
             boot.AssignBootImage(OpenComStream(file));
             boot.PlatformId = platform;
             boot.Emulation = EmulationNone;
@@ -55,10 +75,11 @@ public static class ImapiIsoWriter
         ct.ThrowIfCancellationRequested();
 
         dynamic result = image.CreateResultImage();
+        _held!.Add(result);
         var isoStream = (IStream)result.ImageStream;
+        _held.Add(isoStream);
         long total = (long)result.TotalBlocks * (long)result.BlockSize;
         WriteStream(isoStream, outputIso, total, progress, ct);
-        Marshal.FinalReleaseComObject(isoStream);
         AurevixLog.Info($"ISO creada con IMAPI2: {outputIso} ({total / 1_000_000} MB)");
     }
 
@@ -71,6 +92,7 @@ public static class ImapiIsoWriter
             dynamic? child = null;
             try { child = target[name]; } catch (COMException) { }
             if (child is null) { target.AddDirectory(name); child = target[name]; }
+            _held?.Add(child!);
             Merge(child, sub);
         }
         foreach (var file in Directory.GetFiles(dir))
@@ -109,7 +131,12 @@ public static class ImapiIsoWriter
     [DllImport("shlwapi.dll", CharSet = CharSet.Unicode, PreserveSig = false)]
     private static extern IStream SHCreateStreamOnFileEx(string file, int mode, int attributes, bool create, IStream? template);
 
-    private static IStream OpenComStream(string file) => SHCreateStreamOnFileEx(file, 0x20 /* STGM_READ | SHARE_DENY_WRITE */, 0, false, null);
+    private static IStream OpenComStream(string file)
+    {
+        var stream = SHCreateStreamOnFileEx(file, 0x20 /* STGM_READ | SHARE_DENY_WRITE */, 0, false, null);
+        _held?.Add(stream);
+        return stream;
+    }
 
     /// <summary>IMAPI2 es COM: se ejecuta en un hilo STA propio para no depender del hilo que llama.</summary>
     private static Task RunSta(Action action)
