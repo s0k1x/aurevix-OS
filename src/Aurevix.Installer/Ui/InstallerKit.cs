@@ -63,6 +63,22 @@ public sealed class ThinProgress : Grid
 public sealed record StageSpec(string Label, double DefaultSeconds);
 
 /// <summary>
+/// Progreso que se aplica al instante cuando se informa desde el hilo de la interfaz (a diferencia de <see cref="Progress{T}"/>,
+/// que lo encola). Así un aviso del paso anterior nunca llega después de cambiar de paso y no falsea el tiempo restante.
+/// </summary>
+internal sealed class UiProgress : IProgress<Step>
+{
+    private readonly System.Windows.Threading.Dispatcher _dispatcher = Application.Current.Dispatcher;
+    private readonly Action<Step> _handler;
+    public UiProgress(Action<Step> handler) => _handler = handler;
+    public void Report(Step value)
+    {
+        if (_dispatcher.CheckAccess()) _handler(value);
+        else _dispatcher.BeginInvoke(_handler, value);
+    }
+}
+
+/// <summary>
 /// Pantalla de progreso: porcentaje grande, tiempo restante aproximado, barra fina y lista de pasos
 /// (hecho · en curso · pendiente). El tiempo se calcula con la velocidad real de los últimos segundos.
 /// </summary>
@@ -90,7 +106,7 @@ public sealed class ProgressView
         _icons = new ContentControl[_stages.Length];
         _labels = new TextBlock[_stages.Length];
         _details = new TextBlock[_stages.Length];
-        Reporter = new Progress<Step>(OnStep);
+        Reporter = new UiProgress(OnStep);
 
         _percent.Margin = new Thickness(0, 0, 0, 0);
         var right = new StackPanel { VerticalAlignment = VerticalAlignment.Bottom, Margin = new Thickness(0, 0, 0, 14), Children = { _eta, _status } };
