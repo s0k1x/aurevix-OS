@@ -27,7 +27,7 @@ public sealed class AppearancePage : UserControl
         body.Children.Add(Ui.Card(
             Ui.Eyebrow(applied ? "ACTIVO" : "RECOMENDADO"),
             Ui.H2("Estilo AUREVIX"),
-            Ui.Muted("Windows minimalista en un clic: modo oscuro con acento verde lima, fondo y pantalla de bloqueo AUREVIX, " +
+            Ui.Muted("Windows minimalista en un clic: tema claro con acento verde y un toque de cristal, fondo y pantalla de bloqueo AUREVIX, " +
                      "barra de tareas limpia (iconos centrados, búsqueda solo icono, sin Vista de tareas ni widgets), " +
                      "menú Inicio sin recomendaciones y Explorador que abre en «Este equipo» sin recientes. Todo es reversible."),
             Ui.Row(
@@ -38,7 +38,7 @@ public sealed class AppearancePage : UserControl
         body.Children.Add(Ui.Card(
             Ui.Eyebrow(AurevixShell.IsAvailable ? (shellOn ? "ACTIVADO" : "DESACTIVADO") : "NO DISPONIBLE EN ESTE EQUIPO"),
             Ui.H2("AUREVIX Shell"),
-            Ui.Muted("Barra de tareas en negro grafito con indicadores verde lima y menú Inicio redondeado a juego, desde que enciendes el equipo. " +
+            Ui.Muted("Barra de tareas, menú Inicio y Configuración con los colores AUREVIX (claros u oscuros según tu tema) e indicadores verdes, desde que enciendes el equipo, sin que tengas que hacer nada. " +
                      "Es un componente propio de AUREVIX: solo cambia el aspecto en memoria, no modifica archivos de Windows."),
             Ui.Muted("Si algún juego con anticheat se queja o algo se ve raro, desactívalo: Windows 11 vuelve a verse como siempre al momento."),
             Ui.Row(
@@ -54,8 +54,8 @@ public sealed class AppearancePage : UserControl
         body.Children.Add(Ui.Card(Ui.H2("Tema de color"),
             Ui.Muted("Cambia el modo de color de Windows y de las aplicaciones."),
             Ui.Row(
-                Ui.Button("Modo oscuro AUREVIX", () => ApplyReg("Modo oscuro", [Dw(Personalize, "AppsUseLightTheme", 0), Dw(Personalize, "SystemUsesLightTheme", 0)]), primary: true),
-                Ui.Button("Modo claro", () => ApplyReg("Modo claro", [Dw(Personalize, "AppsUseLightTheme", 1), Dw(Personalize, "SystemUsesLightTheme", 1)])))));
+                Ui.Button("Claro (predeterminado)", () => ApplyReg("Modo claro", [Dw(Personalize, "AppsUseLightTheme", 1), Dw(Personalize, "SystemUsesLightTheme", 1)]), primary: true),
+                Ui.Button("Oscuro", () => ApplyReg("Modo oscuro", [Dw(Personalize, "AppsUseLightTheme", 0), Dw(Personalize, "SystemUsesLightTheme", 0)])))));
 
         body.Children.Add(Ui.Card(Ui.H2("Modo visual"),
             Ui.Muted("Ligero: sin transparencias ni animaciones de ventana (equipos modestos). Elegante: transparencias y animaciones de Windows 11."),
@@ -81,7 +81,7 @@ public sealed class AppearancePage : UserControl
         var wallRow = Ui.Wrap();
         foreach (var w in walls) wallRow.Children.Add(WallpaperTile(w));
         body.Children.Add(Ui.Card(Ui.H2("Fondos AUREVIX"),
-            walls.Count == 0 ? Ui.Muted("No se encontraron fondos instalados.") : Ui.Muted("Pulsa un fondo para ponerlo en el escritorio. Aurora es el predeterminado de AUREVIX OS."),
+            walls.Count == 0 ? Ui.Muted("No se encontraron fondos instalados.") : Ui.Muted("Pulsa un fondo para ponerlo en el escritorio. Daylight es el predeterminado de AUREVIX OS; los cuatro primeros son claros y los otros cuatro oscuros."),
             wallRow,
             Ui.Row(Ui.Button("Restaurar fondo original", RestoreWallpaper))));
 

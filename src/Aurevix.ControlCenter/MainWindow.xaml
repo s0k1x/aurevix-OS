@@ -14,14 +14,14 @@
         <Ellipse Grid.ColumnSpan="2" Width="900" Height="900" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-520,-380,0" IsHitTestVisible="False">
             <Ellipse.Fill>
                 <RadialGradientBrush>
-                    <GradientStop Color="#228DE03C" Offset="0" />
+                    <GradientStop Color="{StaticResource GlowColor}" Offset="0" />
                     <GradientStop Color="#008DE03C" Offset="1" />
                 </RadialGradientBrush>
             </Ellipse.Fill>
         </Ellipse>
 
         <!-- Barra lateral -->
-        <Border Grid.Column="0" Background="#CC050506" BorderBrush="{StaticResource BorderBrushAx}" BorderThickness="0,0,1,0">
+        <Border Grid.Column="0" Background="{StaticResource Sidebar}" BorderBrush="{StaticResource BorderBrushAx}" BorderThickness="0,0,1,0">
             <DockPanel>
                 <StackPanel DockPanel.Dock="Top" Margin="24,26,16,18" Orientation="Horizontal">
                     <Image Source="pack://application:,,,/Assets/aurevix.ico" Width="28" Height="28" Margin="0,0,12,0" RenderOptions.BitmapScalingMode="HighQuality" />

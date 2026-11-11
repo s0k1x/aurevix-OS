@@ -50,6 +50,7 @@ public partial class App : Application
             ex.Handled = true;
         };
 
+        Views.Ui.ApplyTheme();
         Views.Ui.EnableDarkTitleBars();
         AppServices.Initialize();
         Views.Ui.ReduceMotion = AppServices.Settings.ReduceMotion;
@@ -63,6 +64,19 @@ public partial class App : Application
             {
                 try { await Screenshotter.RenderDesktopAsync(ddir); }
                 catch (Exception ex) { Directory.CreateDirectory(ddir); File.WriteAllText(System.IO.Path.Combine(ddir, "error-desktop.txt"), ex.ToString()); }
+                Shutdown();
+            });
+            return;
+        }
+
+        var allIdx = Array.FindIndex(e.Args, a => a.Equals("--render-installed", StringComparison.OrdinalIgnoreCase));
+        if (allIdx >= 0 && allIdx + 1 < e.Args.Length)
+        {
+            var adir = e.Args[allIdx + 1];
+            Dispatcher.InvokeAsync(async () =>
+            {
+                try { await Screenshotter.RenderInstalledAsync(adir); }
+                catch (Exception ex) { Directory.CreateDirectory(adir); File.WriteAllText(System.IO.Path.Combine(adir, "error-todo.txt"), ex.ToString()); }
                 Shutdown();
             });
             return;

@@ -27,6 +27,8 @@
     <SolidColorBrush x:Key="Review" Color="{StaticResource ReviewColor}" />
     <SolidColorBrush x:Key="Attention" Color="{StaticResource AttentionColor}" />
     <SolidColorBrush x:Key="Unavailable" Color="{StaticResource UnavailableColor}" />
+    <SolidColorBrush x:Key="Sidebar" Color="#CC050506" />
+    <Color x:Key="GlowColor">#228DE03C</Color>
 
     <FontFamily x:Key="UiFont">Segoe UI Variable Text, Segoe UI</FontFamily>
     <FontFamily x:Key="DisplayFont">Segoe UI Variable Display, Segoe UI</FontFamily>

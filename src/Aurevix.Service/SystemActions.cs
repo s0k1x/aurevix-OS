@@ -94,7 +94,26 @@ public sealed class SystemActions(string root) : ISystemActions
     private const string ShellIconsKey = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Icons";
     /// <summary>Índice de imageres/shell32 que Windows usa para cada tipo → icono AUREVIX.</summary>
     private static readonly (string Index, string Icon)[] ShellIconMap =
-        [("3", "folder"), ("4", "folder-open"), ("7", "usb"), ("8", "drive"), ("9", "network"), ("11", "disc")];
+        [("0", "file"), ("1", "file-text"), ("2", "app"), ("3", "folder"), ("4", "folder-open"), ("7", "usb"), ("8", "drive"),
+         ("9", "network-drive"), ("10", "network-drive"), ("11", "disc"), ("12", "drive"), ("15", "pc"), ("16", "printer"),
+         ("17", "network"), ("29", "shortcut"), ("34", "desktop"), ("38", "file-font"), ("43", "favorites"), ("47", "lock")];
+
+    /// <summary>La unidad de Windows (C:) usa el icono SSD de AUREVIX; al restaurar solo se borra si es el nuestro.</summary>
+    private static void SetSystemDriveIcon(string? icon, string? ourDir = null)
+    {
+        var letter = Path.GetPathRoot(Environment.SystemDirectory)?.TrimEnd('\\', ':');
+        if (string.IsNullOrEmpty(letter)) return;
+        var keyPath = $@"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\DriveIcons\{letter}\DefaultIcon";
+        if (icon is not null)
+        {
+            if (!File.Exists(icon)) return;
+            using var k = Microsoft.Win32.Registry.LocalMachine.CreateSubKey(keyPath, true);
+            if (k.GetValue("") is null or string { Length: 0 }) k.SetValue("", icon + ",0");
+            return;
+        }
+        using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(keyPath, true);
+        if (key?.GetValue("") is string v && ourDir is not null && v.StartsWith(ourDir, StringComparison.OrdinalIgnoreCase)) key.DeleteValue("", false);
+    }
 
     public (bool ok, string message) SetShellIcons(bool on)
     {
@@ -110,11 +129,13 @@ public sealed class SystemActions(string root) : ISystemActions
                     var file = Path.Combine(dir, icon + ".ico");
                     if (File.Exists(file)) key.SetValue(index, file + ",0", Microsoft.Win32.RegistryValueKind.String);
                 }
+                SetSystemDriveIcon(Path.Combine(dir, "ssd.ico"));
                 return (true, "Iconos AUREVIX activados para carpetas y unidades.");
             }
             // Solo se borran los valores que apuntan a los iconos de AUREVIX.
             foreach (var (index, _) in ShellIconMap)
                 if (key.GetValue(index) is string v && v.StartsWith(dir, StringComparison.OrdinalIgnoreCase)) key.DeleteValue(index, false);
+            SetSystemDriveIcon(null, dir);
             return (true, "Iconos de Windows restaurados.");
         }
         catch (Exception ex)

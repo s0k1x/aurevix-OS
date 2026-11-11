@@ -18,6 +18,18 @@ public static class Ui
     /// Barra de título oscura, del color del fondo de AUREVIX, en todas las ventanas de la app (API oficial de DWM).
     /// En Windows 10 solo se oscurece; el color exacto y el borde necesitan Windows 11.
     /// </summary>
+    /// <summary>El Control Center sigue el tema de Windows (claro por defecto en AUREVIX).</summary>
+    public static bool IsLight { get; private set; }
+
+    public static void ApplyTheme()
+    {
+        IsLight = Microsoft.Win32.Registry.GetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize", "AppsUseLightTheme", 1) is not int v || v != 0;
+        if (!IsLight) return;
+        var dicts = Application.Current.Resources.MergedDictionaries;
+        dicts.Clear();
+        dicts.Add(new ResourceDictionary { Source = new Uri("pack://application:,,,/Themes/AurevixLight.xaml") });
+    }
+
     public static void EnableDarkTitleBars()
     {
         EventManager.RegisterClassHandler(typeof(Window), FrameworkElement.LoadedEvent, new RoutedEventHandler((s, _) =>
@@ -25,7 +37,8 @@ public static class Ui
             if (s is not Window w) return;
             var hwnd = new System.Windows.Interop.WindowInteropHelper(w).Handle;
             if (hwnd == IntPtr.Zero) return;
-            int on = 1, caption = 0x00060505, border = 0x00282222; // COLORREF 0x00BBGGRR
+            int on = IsLight ? 0 : 1;
+            int caption = IsLight ? 0x00F0F5F3 : 0x00060505, border = IsLight ? 0x00D4E2DC : 0x00282222; // COLORREF 0x00BBGGRR
             DwmSetWindowAttribute(hwnd, 20, ref on, sizeof(int));       // DWMWA_USE_IMMERSIVE_DARK_MODE
             DwmSetWindowAttribute(hwnd, 35, ref caption, sizeof(int));  // DWMWA_CAPTION_COLOR
             DwmSetWindowAttribute(hwnd, 34, ref border, sizeof(int));   // DWMWA_BORDER_COLOR
@@ -124,7 +137,7 @@ public static class Ui
     {
         Background = color, CornerRadius = new CornerRadius(10), Padding = new Thickness(10, 2, 10, 3),
         Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Top,
-        Child = new TextBlock { Text = text, FontSize = 12, FontWeight = FontWeights.SemiBold, Foreground = new SolidColorBrush(Color.FromRgb(0x10, 0x12, 0x16)) }
+        Child = new TextBlock { Text = text, FontSize = 12, FontWeight = FontWeights.SemiBold, Foreground = IsLight ? Brushes.White : new SolidColorBrush(Color.FromRgb(0x10, 0x12, 0x16)) }
     };
 
     /// <summary>Tarjeta de métrica (título + valor grande + detalle).</summary>

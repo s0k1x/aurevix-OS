@@ -26,6 +26,7 @@
     <Content Include="Assets\Icons\*.ico" CopyToOutputDirectory="PreserveNewest" />
     <!-- AUREVIX Shell (nativo): lo compila src/Aurevix.Shell/build.ps1 en out/shell; si existe, se copia junto a la app. -->
     <Content Include="..\..\out\shell\AurevixShell.dll" Link="shell\AurevixShell.dll" CopyToOutputDirectory="PreserveNewest" Condition="Exists('..\..\out\shell\AurevixShell.dll')" />
+    <Content Include="..\Aurevix.Shell\start-logo.png" Link="shell\start-logo.png" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <!-- WinForms se usa SOLO para el icono de la bandeja; evita conflictos de nombres con WPF. -->
   <ItemGroup>

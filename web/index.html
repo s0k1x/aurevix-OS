@@ -16,7 +16,7 @@
   img{max-width:100%}
 
   nav{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:14px 28px;
-      background:linear-gradient(rgba(5,5,6,.92),rgba(5,5,6,0));font-size:13px}
+      background:rgba(5,5,6,.78);-webkit-backdrop-filter:saturate(1.4) blur(14px);backdrop-filter:saturate(1.4) blur(14px);border-bottom:1px solid rgba(255,255,255,.05);font-size:13px}
   .brand{display:flex;align-items:center;gap:10px;font-weight:600;letter-spacing:.02em;text-decoration:none}
   .brand img{width:20px;height:20px}
   .links{display:flex;gap:26px;align-items:center}
@@ -43,7 +43,7 @@
   .grad{background:linear-gradient(92deg,#fff 30%,var(--accent2) 70%,var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent}
 
   /* ---------- Hero ---------- */
-  .hero{min-height:100vh;padding-top:120px;padding-bottom:60px;display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:4vw;align-items:center;max-width:1440px;margin:0 auto}
+  .hero{min-height:100vh;padding-top:120px;padding-bottom:60px;display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:4vw;align-items:center;max-width:1640px;margin:0 auto}
   .hero .row{display:flex;gap:22px;align-items:center;margin-top:34px;flex-wrap:wrap}
   .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:30px}
   .chip{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:5px 12px;background:rgba(14,14,17,.6)}
@@ -108,6 +108,30 @@
   .dock .d img{filter:drop-shadow(0 2px 4px rgba(0,0,0,.6))}
   .dock .tray{margin-left:10px;padding-left:12px;border-left:1px solid #26262d;font-size:11px;color:#c9c9d0;display:flex;gap:12px;align-items:center;height:30px}
   @keyframes press{0%,46%{background:transparent}49%,88%{background:#1d1d22}92%,100%{background:transparent}}
+
+  /* Escena en tema claro (predeterminado de AUREVIX OS) */
+  .stage.light .win{background:rgba(250,250,252,.94);border-color:#dcdee3;box-shadow:0 30px 80px -24px rgba(40,50,70,.35)}
+  .stage.light .win .tb{border-color:#e6e7eb;color:#6b6f7a}
+  .stage.light .win .side{border-color:#e6e7eb;color:#4a4e58}
+  .stage.light .win .side span.on{background:#e9ebef;color:#111}
+  .stage.light .win .side span.on::before{background:#4e9a1e}
+  .stage.light .win .main h4{color:#111}
+  .stage.light .tile,.stage.light .spark{background:#fff;border-color:#e3e5ea;color:#6b6f7a}
+  .stage.light .tile b{color:#111}
+  .stage.light .start{background:rgba(248,248,250,.97);border-color:#dcdee3;box-shadow:0 30px 80px -10px rgba(40,50,70,.35)}
+  .stage.light .start .search{background:#fff;border-color:#dcdee3;color:#8a8e98}
+  .stage.light .start .lbl,.stage.light .start .user{color:#22252c}
+  .stage.light .start .app{color:#4a4e58}
+  .stage.light .start .user{border-color:#e6e7eb}
+  .stage.light .dock{background:rgba(246,246,248,.94);border-color:#dcdee3;box-shadow:0 20px 50px -18px rgba(40,50,70,.4)}
+  .stage.light .dock .d.run::after{background:#4e9a1e}
+  .stage.light .dock .tray{border-color:#dcdee3;color:#22252c}
+  .stage.light .dock .d.st{animation-name:pressL}
+  @keyframes pressL{0%,46%{background:transparent}49%,88%{background:#e3e5ea}92%,100%{background:transparent}}
+  .themes{position:absolute;right:14px;top:14px;z-index:5;display:flex;gap:4px;padding:4px;border-radius:999px;background:rgba(5,5,6,.6);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.08)}
+  .themes button{font:inherit;font-size:12px;color:#c9c9d0;background:none;border:0;border-radius:999px;padding:5px 12px;cursor:pointer}
+  .themes button[aria-pressed="true"]{background:#f5f5f7;color:#050506;font-weight:600}
+  .themes button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
   /* ---------- Franja ---------- */
   .band{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:22px 0;overflow:hidden;white-space:nowrap;position:relative}
@@ -187,22 +211,28 @@
   @keyframes pulse{to{opacity:.3}}
 
   /* ---------- Iconos ---------- */
-  .icons{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-top:40px}
+  .icons{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px;margin-top:40px}
   .icons figure{margin:0;border:1px solid var(--line);border-radius:20px;background:radial-gradient(120% 90% at 50% 0%,#141418,#09090b);padding:26px 10px 16px;text-align:center;
                 transition:transform .4s cubic-bezier(.2,.7,.2,1),border-color .3s}
   .icons figure:hover{transform:translateY(-4px);border-color:#2e2e36}
-  .icons img{width:96px;height:96px;display:block;margin:0 auto;filter:drop-shadow(0 12px 18px rgba(0,0,0,.6));animation:bob 6s ease-in-out infinite}
+  .icons img{width:84px;height:84px;display:block;margin:0 auto;filter:drop-shadow(0 12px 18px rgba(0,0,0,.6));animation:bob 6s ease-in-out infinite}
   .icons figure:nth-child(odd) img{animation-delay:-3s}
   .icons figcaption{font-size:13px;color:var(--muted);margin-top:12px}
+  @media (min-width:1100px){
+    .icons{grid-template-columns:repeat(14,1fr);gap:10px}
+    .icons figure{padding:18px 4px 12px;border-radius:16px}
+    .icons img{width:58px;height:58px}
+    .icons figcaption{font-size:11px;margin-top:8px;line-height:1.25}
+  }
   @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
 
   /* ---------- Fondos ---------- */
-  .walls{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:40px}
+  .walls{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:40px}
   .wall{position:relative;aspect-ratio:16/10;border-radius:18px;overflow:hidden;border:1px solid var(--line)}
-  .wall img{width:110%;height:110%;object-fit:cover;display:block;animation:kb 18s ease-in-out infinite alternate}
-  .wall:nth-child(2) img{animation-delay:-6s}.wall:nth-child(3) img{animation-delay:-12s}
+  .wall img{width:100%;height:100%;max-width:none;object-fit:cover;display:block;animation:kb 18s ease-in-out infinite alternate}
+  .wall:nth-child(3n+2) img{animation-delay:-6s}.wall:nth-child(3n) img{animation-delay:-12s}
   .wall span{position:absolute;left:14px;bottom:12px;font-size:12px;background:rgba(5,5,6,.55);backdrop-filter:blur(8px);padding:4px 10px;border-radius:999px}
-  @keyframes kb{from{transform:translate(0,0) scale(1)}to{transform:translate(-8%,-6%) scale(1.04)}}
+  @keyframes kb{from{transform:scale(1.1) translate(1.5%,1%)}to{transform:scale(1.1) translate(-2.5%,-2%)}}
 
   /* ---------- Seguridad ---------- */
   .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:40px}
@@ -243,16 +273,23 @@
     .split.flip .copy{order:0}
     .bento{grid-template-columns:1fr 1fr}
     .card,.card.wide{grid-column:span 1}
+    #dock2{transform:translateX(-50%) scale(.8)!important;transform-origin:50% 100%}
     .stats{grid-template-columns:1fr 1fr}
-    .icons{grid-template-columns:repeat(3,1fr)}
+    .walls{grid-template-columns:1fr 1fr}
   }
   @media (max-width:640px){
     nav{padding:12px 16px}
     .links a:not(.pill){display:none}
     section{padding:80px 16px}
-    .bento,.walls,.options{grid-template-columns:1fr}
+    .bento,.options{grid-template-columns:1fr}
+    .walls{grid-template-columns:1fr 1fr;gap:10px}
+    .wall span{font-size:11px;left:8px;bottom:8px}
     .toggles{grid-template-columns:1fr}
-    .icons{grid-template-columns:repeat(2,1fr)}
+    #dock2{transform:translateX(-50%) scale(.62)!important;transform-origin:50% 100%}
+    .icons{grid-template-columns:repeat(3,1fr);gap:8px}
+    .icons figure{padding:16px 6px 10px;border-radius:16px}
+    .icons img{width:58px;height:58px}
+    .icons figcaption{font-size:11px}
     .vrow{grid-template-columns:1fr;gap:8px}
     .vrow .t span{white-space:normal}
     .inst .in{padding:20px}
@@ -274,7 +311,7 @@
   <div class="links">
     <a href="#rendimiento">Rendimiento</a>
     <a href="#funciones">Funciones</a>
-    <a href="#iconos">Iconos</a>
+    <a href="#fondos">Fondos</a>
     <a href="#seguridad">Seguridad</a>
     <a href="#versiones">Versiones</a>
     <a class="pill" href="#descargar">Descargar</a>
@@ -286,20 +323,22 @@
     <div>
       <div class="eyebrow reveal" id="ver">AUREVIX OS</div>
       <h1 class="reveal d1">Un sistema nuevo.<br><span class="grad">Tus programas de siempre.</span></h1>
-      <p class="lead reveal d2">Windows 11 oficial con otra cara y más rendimiento. Barra de tareas, menú Inicio, Configuración e iconos rediseñados, y todo lo que no usas, fuera.</p>
+      <p class="lead reveal d2">Windows 11 oficial con otra cara y más rendimiento. Tema claro, fondos propios, barra de tareas flotante con efecto cristal y menú Inicio rediseñado, y todo lo que no usas, fuera.</p>
       <div class="row reveal d3">
         <a class="pill big" href="#descargar">Descargar AUREVIX</a>
         <a class="ghost" href="#funciones">Qué incluye</a>
       </div>
       <div class="chips reveal d3">
         <span class="chip"><b>100 %</b> compatible con Windows</span>
+        <span class="chip"><b>8</b> fondos propios y efecto cristal</span>
         <span class="chip"><b>88</b> ajustes de rendimiento</span>
         <span class="chip"><b>Un clic</b> para volver a Windows 11</span>
       </div>
     </div>
 
-    <div class="device reveal d2" id="device" role="img" aria-label="Escritorio de AUREVIX OS: fondo Aurora, barra de tareas tipo dock, menú Inicio y AUREVIX Control Center">
-      <div class="stage" id="stage">
+    <div class="device reveal d2" id="device" role="img" aria-label="Escritorio de AUREVIX OS en tema claro: fondo Daylight, barra de tareas tipo dock, menú Inicio y AUREVIX Control Center">
+      <div class="themes" role="group" aria-label="Tema del escritorio de ejemplo"><button type="button" data-t="light" aria-pressed="true">Claro</button><button type="button" data-t="dark" aria-pressed="false">Oscuro</button></div>
+      <div class="stage light" id="stage">
         <canvas id="aurora" width="1200" height="750"></canvas>
         <div class="notch"><span class="art"></span><span class="song">Midnight Drive · Lumen</span><span class="eq"><i></i><i></i><i></i><i></i></span></div>
 
@@ -373,7 +412,7 @@
       <div class="bento">
         <article class="card wide reveal">
           <h3>AUREVIX Shell</h3>
-          <p>Barra de tareas tipo dock, menú Inicio, Configuración e iconos con el diseño AUREVIX desde que enciendes. Componente propio, sin tocar archivos de Windows.</p>
+          <p>Barra de tareas flotante con efecto cristal y logo AUREVIX, menú Inicio y Configuración con el diseño AUREVIX desde que enciendes. Componente propio, sin tocar archivos de Windows.</p>
           <div class="viz"><div class="dock" id="dock2" style="position:absolute;bottom:14px;transform:translateX(-50%) scale(.92)"></div></div>
         </article>
         <article class="card wide reveal d1">
@@ -442,34 +481,21 @@
     </div>
   </section>
 
-  <section id="iconos">
-    <div class="wrap">
-      <div class="eyebrow reveal">Iconos</div>
-      <h2 class="reveal d1">Iconos rediseñados, a juego con el sistema.</h2>
-      <p class="body reveal d2">Carpetas, unidades, Este equipo, la Papelera y la Red con el estilo AUREVIX: grafito, luz cenital y un detalle verde lima. Se aplican con el Estilo AUREVIX y se quitan con «Restablecer aspecto de Windows 11».</p>
-      <div class="icons reveal d2">
-        <figure><img src="img/icons/folder.png" alt="" width="128" height="128"><figcaption>Carpeta</figcaption></figure>
-        <figure><img src="img/icons/folder-open.png" alt="" width="128" height="128"><figcaption>Carpeta abierta</figcaption></figure>
-        <figure><img src="img/icons/pc.png" alt="" width="128" height="128"><figcaption>Este equipo</figcaption></figure>
-        <figure><img src="img/icons/drive.png" alt="" width="128" height="128"><figcaption>Disco</figcaption></figure>
-        <figure><img src="img/icons/usb.png" alt="" width="128" height="128"><figcaption>USB</figcaption></figure>
-        <figure><img src="img/icons/disc.png" alt="" width="128" height="128"><figcaption>CD y DVD</figcaption></figure>
-        <figure><img src="img/icons/bin-empty.png" alt="" width="128" height="128"><figcaption>Papelera</figcaption></figure>
-        <figure><img src="img/icons/bin-full.png" alt="" width="128" height="128"><figcaption>Papelera llena</figcaption></figure>
-        <figure><img src="img/icons/network.png" alt="" width="128" height="128"><figcaption>Red</figcaption></figure>
-        <figure><img src="img/icons/user.png" alt="" width="128" height="128"><figcaption>Tu carpeta</figcaption></figure>
-      </div>
-    </div>
-  </section>
 
   <section id="fondos">
     <div class="wrap">
       <div class="eyebrow reveal">Fondos</div>
-      <h2 class="reveal d1">Tres fondos en 4K, hechos para AUREVIX.</h2>
+      <h2 class="reveal d1">Ocho fondos en 4K: cuatro claros y cuatro oscuros.</h2>
+      <p class="body reveal d2">Daylight es el predeterminado. Todos se eligen en un clic desde Apariencia.</p>
       <div class="walls reveal d2">
-        <div class="wall"><img src="img/fondo-aurora.webp" width="1920" height="1080" alt="Fondo Aurora: una cinta de luz verde lima sobre negro" loading="lazy"><span>Aurora</span></div>
-        <div class="wall"><img src="img/fondo-tide.webp" width="1920" height="1080" alt="Fondo Tide: una cinta de luz azul sobre negro" loading="lazy"><span>Tide</span></div>
-        <div class="wall"><img src="img/fondo-dusk.webp" width="1920" height="1080" alt="Fondo Dusk: una cinta de luz naranja y rosa sobre negro" loading="lazy"><span>Dusk</span></div>
+        <div class="wall"><img src="img/fondo-daylight.webp" width="1920" height="1080" alt="Fondo Daylight" loading="lazy"><span>Daylight · predeterminado</span></div>
+        <div class="wall"><img src="img/fondo-mist.webp" width="1920" height="1080" alt="Fondo Mist" loading="lazy"><span>Mist · claro</span></div>
+        <div class="wall"><img src="img/fondo-sand.webp" width="1920" height="1080" alt="Fondo Sand" loading="lazy"><span>Sand · claro</span></div>
+        <div class="wall"><img src="img/fondo-glacier.webp" width="1920" height="1080" alt="Fondo Glacier" loading="lazy"><span>Glacier · claro</span></div>
+        <div class="wall"><img src="img/fondo-aurora.webp" width="1920" height="1080" alt="Fondo Aurora" loading="lazy"><span>Aurora · oscuro</span></div>
+        <div class="wall"><img src="img/fondo-tide.webp" width="1920" height="1080" alt="Fondo Tide" loading="lazy"><span>Tide · oscuro</span></div>
+        <div class="wall"><img src="img/fondo-dusk.webp" width="1920" height="1080" alt="Fondo Dusk" loading="lazy"><span>Dusk · oscuro</span></div>
+        <div class="wall"><img src="img/fondo-nebula.webp" width="1920" height="1080" alt="Fondo Nebula" loading="lazy"><span>Nebula · oscuro</span></div>
       </div>
     </div>
   </section>
@@ -565,7 +591,15 @@ for (const [k, n] of apps) sg.insertAdjacentHTML('beforeend', k.startsWith('img:
   ? `<div class="app"><img src="img/icons/${k.slice(4)}.png" alt="" width="38" height="38">${n}</div>`
   : `<div class="app"><div class="ic" style="background:${glyphBg[k]}">${I[k]}</div>${n}</div>`);
 document.getElementById('band').innerHTML = (b => b + b)(['<span><b>Windows 11</b>oficial de Microsoft</span>', '<span><b>AUREVIX Shell</b>barra, Inicio y Configuración</span>', '<span><b>88</b>ajustes reversibles</span>',
-  '<span><b>Game Boost</b>prioridad automática</span>', '<span><b>Nusa</b>isla de música</span>', '<span><b>0</b>datos enviados</span>', '<span><b>Firmado</b>cada actualización</span>'].join(''));
+  '<span><b>Game Boost</b>prioridad automática</span>', '<span><b>Nusa</b>isla de música</span>', '<span><b>Cristal</b>barra e Inicio</span>', '<span><b>8</b>fondos en 4K</span>', '<span><b>0</b>datos enviados</span>', '<span><b>Firmado</b>cada actualización</span>'].join(''));
+
+let redraw = false;
+document.querySelectorAll('.themes button').forEach(b => b.addEventListener('click', () => {
+  const light = b.dataset.t === 'light';
+  document.getElementById('stage').classList.toggle('light', light);
+  document.querySelectorAll('.themes button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  redraw = true;
+}));
 
 /* ---------- Escena: escala la pantalla de 1200x750 al ancho disponible ---------- */
 const device = document.getElementById('device'), stage = document.getElementById('stage');
@@ -583,15 +617,19 @@ const vio = new IntersectionObserver(es => es.forEach(e => e.isIntersecting ? vi
     [.78, .09, .55, .4, 70, 'rgba(141,224,60,', .30], [.70, .07, .72, 2.1, 46, 'rgba(47,191,113,', .34],
     [.62, .06, .95, 3.6, 22, 'rgba(141,224,60,', .55], [.60, .05, 1.05, 4.4, 5, 'rgba(233,255,176,', .9]];
   let t = 0, last = performance.now();
+  const lightCol = { 'rgba(141,224,60,': 'rgba(120,205,60,', 'rgba(47,191,113,': 'rgba(70,190,130,', 'rgba(233,255,176,': 'rgba(255,255,255,' };
   function draw(now) {
     const dt = Math.min((now - last) / 1000, .05); last = now;
-    if (visible.has(cv) || t === 0) {
+    if (visible.has(cv) || t === 0 || redraw) {
+      redraw = false;
       if (!reduce) t += dt * .12;
-      ctx.fillStyle = '#050506'; ctx.fillRect(0, 0, W, H);
+      const light = stage.classList.contains('light');
+      ctx.fillStyle = light ? '#f2f4ef' : '#050506'; ctx.fillRect(0, 0, W, H);
       const g = ctx.createRadialGradient(W * .64, H * 1.05, 0, W * .64, H * 1.05, W * .7);
-      g.addColorStop(0, 'rgba(141,224,60,.20)'); g.addColorStop(1, 'rgba(141,224,60,0)'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-      ctx.globalCompositeOperation = 'lighter';
-      for (const [cy, amp, fr, ph, wd, col, k] of ribbons) {
+      g.addColorStop(0, light ? 'rgba(141,224,60,.35)' : 'rgba(141,224,60,.20)'); g.addColorStop(1, 'rgba(141,224,60,0)'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      ctx.globalCompositeOperation = light ? 'source-over' : 'lighter';
+      for (const [cy, amp, fr, ph, wd, col0, k] of ribbons) {
+        const col = light ? lightCol[col0] : col0;
         for (let pass = 0; pass < 2; pass++) {
           ctx.beginPath();
           for (let x = 0; x <= W; x += 8) {

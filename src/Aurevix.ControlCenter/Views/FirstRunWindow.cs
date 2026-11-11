@@ -193,7 +193,7 @@ public sealed class FirstRunWindow : Window
             Ui.Muted("Así se ve AUREVIX OS. Todo se puede desactivar después en Apariencia, y «Restablecer aspecto de Windows 11» lo deja como estaba."),
             Ui.Card(
                 Ui.Text("Qué cambia"),
-                Ui.Muted("• Fondo Aurora, modo oscuro y ventanas en negro grafito con acento verde lima"),
+                Ui.Muted("• Tema claro con fondo Daylight, iconos AUREVIX y acento verde (el modo oscuro, en Apariencia)"),
                 Ui.Muted("• Barra de tareas limpia: iconos centrados, sin widgets, Copilot ni Vista de tareas"),
                 Ui.Muted("• Inicio sin recomendaciones ni anuncios; pantalla de bloqueo sin sugerencias"),
                 Ui.Muted("• Explorador: abre en «Este equipo», extensiones visibles, sin archivos recientes")),

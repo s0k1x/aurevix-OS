@@ -89,21 +89,58 @@ jobs:
           Start-Process ms-settings:personalization; Start-Sleep 6; Shot 'shell-03-config-antes'
           Get-Process SystemSettings -ErrorAction SilentlyContinue | Stop-Process -Force; Start-Sleep 2
           $res = Join-Path $dir 'resultado.txt'
-          $p = Start-Process out/cc/AurevixControlCenter.exe -ArgumentList '--shell-test', "`"$res`"" -PassThru
-          $p.WaitForExit(60000) | Out-Null
+          # Como en un PC normal: sin permisos de administrador. Lo que lanza el Explorador hereda su nivel (medio);
+          # lo que lanza el runner directamente es de administrador y Windows no deja que la barra de tareas se conecte a él.
+          $cc = (Resolve-Path out/cc/AurevixControlCenter.exe).Path
+          function AsUser($argsLine, $name) {
+            $cmd = Join-Path $env:TEMP "$name.cmd"
+            Set-Content -Path $cmd -Value "@echo off`r`nstart `"`" `"$cc`" $argsLine" -Encoding ascii
+            Start-Process explorer.exe -ArgumentList "`"$cmd`""
+          }
+          AsUser "--shell-test `"$res`"" 'shelltest'
+          for ($i = 0; $i -lt 70 -and -not (Test-Path $res); $i++) { Start-Sleep 1 }
+          Start-Sleep 9
           Get-Content $res -ErrorAction SilentlyContinue
           Start-Sleep 3; Shot 'shell-04-despues'
           # El Control Center normal aplica también menú Inicio y Configuración en segundo plano.
-          $bg = Start-Process out/cc/AurevixControlCenter.exe -ArgumentList '--background' -PassThru
-          Start-Sleep 6
+          AsUser '--background' 'bg'
+          Start-Sleep 10
           StartMenu; Start-Sleep 4; Shot 'shell-05-inicio-despues'; StartMenu; Start-Sleep 1
           Start-Process ms-settings:personalization; Start-Sleep 9; Shot 'shell-06-config-despues'
           Copy-Item (Join-Path $env:TEMP 'aurevix-shell.log') $dir -ErrorAction SilentlyContinue
           Get-ChildItem "$env:LOCALAPPDATA\Packages" -Recurse -Filter aurevix-shell.log -ErrorAction SilentlyContinue | ForEach-Object { Copy-Item $_.FullName (Join-Path $dir ("log-" + $_.Directory.Parent.Name + ".log")) }
           Get-ChildItem "$env:LOCALAPPDATA\Aurevix\logs" -ErrorAction SilentlyContinue | Select-Object -Last 1 | ForEach-Object { Copy-Item $_.FullName (Join-Path $dir 'controlcenter.log') }
           Get-ChildItem $dir | Format-Table Name, Length
+          Get-Process AurevixControlCenter -IncludeUserName -ErrorAction SilentlyContinue | Format-Table Id, UserName, StartTime
           Get-Content (Join-Path $dir 'aurevix-shell.log') -ErrorAction SilentlyContinue
           Get-Content (Join-Path $dir 'controlcenter.log') -ErrorAction SilentlyContinue
+      - name: Todo instalado (estilo completo + Shell)
+        shell: pwsh
+        run: |
+          Get-Process AurevixControlCenter -ErrorAction SilentlyContinue | Stop-Process -Force
+          # Diagnóstico: guarda la estructura de la barra de tareas, Inicio y Configuración.
+          Set-Content out\cc\shell\dump.flag '1'
+          Get-Process StartMenuExperienceHost, SystemSettings -ErrorAction SilentlyContinue | Stop-Process -Force
+          $dir = Join-Path $PWD 'shell\todo'
+          New-Item -ItemType Directory -Force $dir | Out-Null
+          $cc = (Resolve-Path out/cc/AurevixControlCenter.exe).Path
+          $cmd = Join-Path $env:TEMP 'todo.cmd'
+          Set-Content -Path $cmd -Value "@echo off`r`nstart `"`" `"$cc`" --render-installed `"$dir`"" -Encoding ascii
+          Start-Process explorer.exe -ArgumentList "`"$cmd`""
+          for ($i = 0; $i -lt 240 -and -not (Test-Path (Join-Path $dir 'todo-info.txt')) -and -not (Test-Path (Join-Path $dir 'error-todo.txt')); $i++) { Start-Sleep 1 }
+          Get-ChildItem $dir | Format-Table Name, Length
+          Get-Content (Join-Path $dir 'todo-info.txt'), (Join-Path $dir 'error-todo.txt') -ErrorAction SilentlyContinue
+          Copy-Item (Join-Path $env:TEMP 'aurevix-shell.log') (Join-Path $dir 'aurevix-shell.log') -ErrorAction SilentlyContinue
+          Get-Process StartMenuExperienceHost, SystemSettings -ErrorAction SilentlyContinue | Stop-Process -Force
+          Start-Sleep 2
+          Get-ChildItem out\cc\shell -Filter 'aurevix-tree-*.log' -ErrorAction SilentlyContinue | Copy-Item -Destination $dir -ErrorAction SilentlyContinue
+          foreach ($t in @($env:TEMP, "$env:SystemRoot\Temp", 'C:\Users\runneradmin\AppData\Local\Temp', 'D:\a\_temp')) {
+            Get-ChildItem $t -Filter 'aurevix-*.log' -ErrorAction SilentlyContinue | Copy-Item -Destination $dir -ErrorAction SilentlyContinue
+          }
+          Get-ChildItem C:\Users -Recurse -Depth 6 -Filter 'aurevix-tree-explorer*' -ErrorAction SilentlyContinue | Select-Object -First 3 | ForEach-Object { $_.FullName; Copy-Item $_.FullName $dir -ErrorAction SilentlyContinue }
+          Get-ChildItem "$env:LOCALAPPDATA\Packages" -Recurse -Filter 'aurevix-tree-*.log' -ErrorAction SilentlyContinue | Copy-Item -Destination $dir -ErrorAction SilentlyContinue
+          Get-ChildItem $dir -Filter 'aurevix-tree-*.log' | Format-Table Name, Length
+          exit 0
       - name: Añadir a la rama ci-capturas
         shell: pwsh
         run: |
@@ -118,40 +155,4 @@ jobs:
           Copy-Item $tmp shell -Recurse
           git add -A
           git commit -m "Prueba AUREVIX Shell $env:GITHUB_SHA"
-          git push origin ci-capturas
-
-  desktop:
-    # Windows 11 real (ARM64): escritorio antes y después del Estilo AUREVIX.
-    runs-on: windows-11-arm
-    needs: [screenshots, shell]
-    timeout-minutes: 25
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 8.0.x
-      - name: Compilar (ARM64)
-        run: dotnet build src/Aurevix.ControlCenter -c Release -r win-arm64 -o out/cc
-      - name: Capturar escritorio
-        shell: pwsh
-        run: |
-          $dir = Join-Path $PWD 'escritorio'
-          New-Item -ItemType Directory -Force $dir | Out-Null
-          $p = Start-Process out/cc/AurevixControlCenter.exe -ArgumentList '--render-desktop', "`"$dir`"" -PassThru
-          if (-not $p.WaitForExit(600000)) { $p.Kill(); Write-Warning 'tiempo agotado' }
-          Get-ChildItem $dir | Format-Table Name, Length
-      - name: Añadir a la rama ci-capturas
-        shell: pwsh
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          $tmp = Join-Path $env:RUNNER_TEMP 'esc'
-          Copy-Item escritorio $tmp -Recurse
-          git reset -q --hard; git clean -ffdxq
-          git fetch origin ci-capturas --depth 1
-          git checkout -B ci-capturas origin/ci-capturas
-          Copy-Item "$tmp\*" . -Recurse -Force
-          git add -A
-          git commit -m "Escritorio Windows 11 $env:GITHUB_SHA"
           git push origin ci-capturas
