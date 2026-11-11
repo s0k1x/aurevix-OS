@@ -30,7 +30,7 @@ https://zttqiphwurnferzlubzy.supabase.co/storage/v1/object/public/releases/manif
       {
         "id": "aurevix-app",
         "kind": "appInstaller",
-        "url": "https://github.com/s0k1x/sistema-OS-aurevix-OS/releases/download/v0.2.0/AurevixSetup-0.2.0.exe",
+        "url": "https://github.com/s0k1x/aurevix-OS/releases/download/v0.2.0/AurevixSetup-0.2.0.exe",
         "sha256": "<64 hex>",
         "size": 160000000
       }

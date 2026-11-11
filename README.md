@@ -27,7 +27,7 @@ Experiencia de **Windows 11** personalizada, modular y actualizable. AUREVIX **n
 
 ## Instalar
 
-Descarga **AUREVIX Installer** desde la web (https://s0k1x.github.io/sistema-OS-aurevix-OS/) y elige: instalar en este Windows, reinstalar limpio o crear un USB/ISO. Ver [docs/INSTALLER.md](docs/INSTALLER.md).
+Descarga **AUREVIX Installer** desde la web (https://s0k1x.github.io/aurevix-OS/) y elige: instalar en este Windows, reinstalar limpio o crear un USB/ISO. Ver [docs/INSTALLER.md](docs/INSTALLER.md).
 
 > No se publica ninguna ISO de Windows modificada: la licencia no lo permite. Ver [ADR 0004](docs/adr/0004-iso-y-licencias.md).
 
