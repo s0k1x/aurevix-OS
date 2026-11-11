@@ -27,7 +27,7 @@ public sealed class AppearancePage : UserControl
         body.Children.Add(Ui.Card(
             Ui.Eyebrow(applied ? "ACTIVO" : "RECOMENDADO"),
             Ui.H2("Estilo AUREVIX"),
-            Ui.Muted("Windows minimalista en un clic: modo oscuro con acento verde lima, fondo y pantalla de bloqueo AUREVIX, " +
+            Ui.Muted("Windows minimalista en un clic: tema claro con acento verde, 70 iconos propios, fondo y pantalla de bloqueo AUREVIX, " +
                      "barra de tareas limpia (iconos centrados, búsqueda solo icono, sin Vista de tareas ni widgets), " +
                      "menú Inicio sin recomendaciones y Explorador que abre en «Este equipo» sin recientes. Todo es reversible."),
             Ui.Row(
@@ -38,7 +38,7 @@ public sealed class AppearancePage : UserControl
         body.Children.Add(Ui.Card(
             Ui.Eyebrow(AurevixShell.IsAvailable ? (shellOn ? "ACTIVADO" : "DESACTIVADO") : "NO DISPONIBLE EN ESTE EQUIPO"),
             Ui.H2("AUREVIX Shell"),
-            Ui.Muted("Barra de tareas en negro grafito con indicadores verde lima y menú Inicio redondeado a juego, desde que enciendes el equipo. " +
+            Ui.Muted("Barra de tareas, menú Inicio y Configuración con los colores AUREVIX (claros u oscuros según tu tema) e indicadores verdes, desde que enciendes el equipo, sin que tengas que hacer nada. " +
                      "Es un componente propio de AUREVIX: solo cambia el aspecto en memoria, no modifica archivos de Windows."),
             Ui.Muted("Si algún juego con anticheat se queja o algo se ve raro, desactívalo: Windows 11 vuelve a verse como siempre al momento."),
             Ui.Row(

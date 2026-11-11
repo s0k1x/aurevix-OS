@@ -14,7 +14,7 @@ namespace Aurevix.ControlCenter.Services;
 ///   - Menú Inicio sin recomendaciones ni sugerencias.
 ///   - Explorador abierto en "Este equipo", extensiones visibles, sin recientes/frecuentes.
 ///   - Animaciones y transparencias de Windows activadas.
-///   - Ventanas con barra de título y borde en negro grafito AUREVIX (color de ventana de DWM).
+///   - Ventanas con barra de título y borde en los tonos AUREVIX (color de ventana de DWM).
 ///   - Pantalla de bloqueo AUREVIX sin anuncios ni «datos curiosos» (API oficial Windows.System.UserProfile.LockScreen).
 /// Todo se guarda en una copia de seguridad (TweakEngine) y se puede deshacer.
 /// </summary>
