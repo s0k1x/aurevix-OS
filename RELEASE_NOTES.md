@@ -1,3 +1,11 @@
+## AUREVIX OS 0.7.0 — Tema claro, iconos y fondos
+
+- **Tema claro por defecto**: el Estilo AUREVIX deja Windows en tema claro con acento verde, ventanas gris perla y el fondo Daylight. El modo oscuro está a un clic en Apariencia.
+- **26 iconos AUREVIX** en tonos intermedios, que se leen igual en claro y en oscuro: carpetas (también Documentos, Descargas, Música, Imágenes, Vídeos y Escritorio), discos, SSD, USB, CD/DVD, unidad de red, Este equipo, Papelera, Red, tu carpeta, Configuración, Panel de control y más. Se quitan con «Restablecer aspecto de Windows 11».
+- **8 fondos en 4K**: Daylight (predeterminado), Mist, Sand y Glacier (claros); Aurora, Tide, Dusk y Nebula (oscuros).
+- **AUREVIX Shell** usa la paleta clara u oscura según Windows y prueba dos formas de conexión.
+- **Web**: escritorio de ejemplo en tema claro con botón para verlo en oscuro, 26 iconos, 8 fondos, menú superior que ya no se mezcla con el texto y la barra de iconos ya cabe en el móvil.
+
 ## AUREVIX OS 0.6.1 — Iconos AUREVIX
 
 - **Iconos rediseñados**: carpetas, carpeta abierta, discos, USB, CD/DVD, Este equipo, Papelera (vacía y llena), Red y tu carpeta de usuario, en el estilo AUREVIX (grafito con detalle verde lima), en todos los tamaños de Windows. Se aplican con el Estilo AUREVIX y se quitan con «Restablecer aspecto de Windows 11».

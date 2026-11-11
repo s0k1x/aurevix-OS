@@ -45,6 +45,7 @@ public static class AurevixShell
     private static extern uint GetWindowThreadProcessId(IntPtr hwnd, out uint pid);
 
     private static InitializeXamlDiagnosticsExFn? _init;
+    private static int _goodVariant;
     /// <summary>Último resultado de un intento (para el registro y la prueba automática).</summary>
     public static string LastResult { get; private set; } = "";
 
@@ -154,9 +155,19 @@ public static class AurevixShell
                 if (fn == IntPtr.Zero) { AurevixLog.Warn("AUREVIX Shell: este Windows no tiene InitializeXamlDiagnosticsEx."); Stop(); return false; }
                 _init = Marshal.GetDelegateForFunctionPointer<InitializeXamlDiagnosticsExFn>(fn);
             }
-            // Igual que las herramientas de diagnóstico de XAML: cadenas vacías (no nulas) en los parámetros opcionales.
-            var hr = _init($"AurevixShell-{pid}-{Environment.TickCount64}", (uint)pid, "", DllPath, TapClsid, "");
-            LastResult = $"{what} pid {pid}: 0x{hr:X8}";
+            // Se prueban las dos formas de llamada que usan las herramientas de diagnóstico de XAML y se recuerda la que funcione.
+            var hr = unchecked((int)0x80004005);
+            var tried = new List<string>();
+            for (var v = 0; v < 2; v++)
+            {
+                var variant = (_goodVariant + v) % 2;
+                hr = variant == 0
+                    ? _init($"AurevixShell-{pid}-{Environment.TickCount64}", (uint)pid, "", DllPath, TapClsid, "")
+                    : _init("VisualDiagConnection1", (uint)pid, null, DllPath, TapClsid, null);
+                tried.Add($"v{variant}=0x{hr:X8}");
+                if (hr >= 0) { _goodVariant = variant; break; }
+            }
+            LastResult = $"{what} pid {pid}: {string.Join(" ", tried)}";
             if (hr >= 0)
             {
                 Injected.Add(pid);
@@ -165,7 +176,7 @@ public static class AurevixShell
             }
             // XAML aún no está cargado (el proceso acaba de arrancar): se reintenta en el siguiente ciclo.
             Failures[pid] = fails + 1;
-            if (fails == 0 || fails == 19) AurevixLog.Info($"AUREVIX Shell: el {what} aún no está listo (0x{hr:X8}).");
+            if (fails == 0 || fails == 19) AurevixLog.Info($"AUREVIX Shell: el {what} aún no está listo ({LastResult}).");
             return false;
         }
         catch (Exception ex)
