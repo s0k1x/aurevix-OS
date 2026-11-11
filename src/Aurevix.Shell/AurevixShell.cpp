@@ -16,6 +16,7 @@
 #include <xamlOM.h>
 #include <string>
 #include <chrono>
+#include <limits>
 #include <atomic>
 #include <cstdio>
 #include <share.h>
@@ -99,10 +100,13 @@ static void OpenDump(std::wstring const& process)
     std::wstring flag(dll);
     flag = flag.substr(0, flag.find_last_of(L"\\/") + 1) + L"dump.flag";
     if (GetFileAttributesW(flag.c_str()) == INVALID_FILE_ATTRIBUTES) return;
+    std::wstring dir = flag.substr(0, flag.find_last_of(L"\\/") + 1);
+    s_dump = _wfsopen((dir + L"aurevix-tree-" + process + L".log").c_str(), L"w, ccs=UTF-8", _SH_DENYNO); // legible mientras está abierto
+    if (s_dump) return;
     wchar_t path[MAX_PATH];
     if (!GetTempPathW(MAX_PATH, path)) return;
     std::wstring out = std::wstring(path) + L"aurevix-tree-" + process + L".log";
-    s_dump = _wfsopen(out.c_str(), L"w, ccs=UTF-8", _SH_DENYNO); // se puede leer mientras está abierto
+    s_dump = _wfsopen(out.c_str(), L"w, ccs=UTF-8", _SH_DENYNO);
 }
 static void DumpElement(unsigned long long parent, unsigned long long handle, LPCWSTR type, LPCWSTR name)
 {
@@ -228,6 +232,34 @@ static void AddHoverZoom(wux::UIElement const& el)
     g_styled++;
 }
 
+// Inicio AUREVIX: sin «Recomendado», las apps ancladas ocupan todo el alto.
+static void CompactStart(wuxc::Grid const& root)
+{
+    try
+    {
+        auto rows = root.RowDefinitions();
+        if (rows.Size() == 0) return;
+        for (auto const& child : root.Children())
+        {
+            auto fe = child.try_as<wux::FrameworkElement>();
+            if (!fe) continue;
+            auto row = static_cast<uint32_t>(wuxc::Grid::GetRow(fe));
+            if (row >= rows.Size()) continue;
+            std::wstring_view n = fe.Name();
+            bool suggestions = n == L"TopLevelSuggestionsListHeader" || n == L"ShowMoreSuggestions";
+            if (!suggestions && n.empty())
+                suggestions = static_cast<bool>(fe.FindName(L"TopLevelSuggestionsContainer"));
+            if (suggestions) { rows.GetAt(row).Height(wux::GridLengthHelper::FromPixels(0)); fe.Visibility(wux::Visibility::Collapsed); }
+            else if (n == L"StartMenuPinnedList")
+            {
+                rows.GetAt(row).Height(wux::GridLengthHelper::FromValueAndType(1, wux::GridUnitType::Star));
+                fe.VerticalAlignment(wux::VerticalAlignment::Stretch);
+            }
+        }
+    }
+    catch (...) {}
+}
+
 static void StyleElement(wux::DependencyObject const& obj, std::wstring_view name)
 {
     if (s_isExplorer)
@@ -257,6 +289,15 @@ static void StyleElement(wux::DependencyObject const& obj, std::wstring_view nam
     }
     if (s_isStart)
     {
+        if (name == L"TopLevelRoot")
+            if (auto grid = obj.try_as<wuxc::Grid>())
+            {
+                grid.Loaded([grid](auto&&, auto&&) { CompactStart(grid); });
+                grid.SizeChanged([grid](auto&&, auto&&) { CompactStart(grid); });
+                CompactStart(grid);
+            }
+        if (name == L"PinnedList")
+            if (auto fe = obj.try_as<wux::FrameworkElement>()) { fe.VerticalAlignment(wux::VerticalAlignment::Stretch); fe.Height(std::numeric_limits<double>::quiet_NaN()); }
         // Menú Inicio AUREVIX: sin la sección «Recomendado»; solo tus apps.
         if (name == L"TopLevelSuggestionsContainer" || name == L"TopLevelSuggestionsListHeader" || name == L"ShowMoreSuggestions" ||
             name == L"NoTopLevelSuggestionsText" || name == L"NoSuggestionsShowSettings")

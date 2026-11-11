@@ -141,6 +141,7 @@ jobs:
           Copy-Item (Join-Path $env:TEMP 'aurevix-shell.log') (Join-Path $dir 'aurevix-shell.log') -ErrorAction SilentlyContinue
           Get-Process StartMenuExperienceHost, SystemSettings -ErrorAction SilentlyContinue | Stop-Process -Force
           Start-Sleep 2
+          Get-ChildItem out\cc\shell -Filter 'aurevix-tree-*.log' -ErrorAction SilentlyContinue | Copy-Item -Destination $dir -ErrorAction SilentlyContinue
           foreach ($t in @($env:TEMP, "$env:SystemRoot\Temp", 'C:\Users\runneradmin\AppData\Local\Temp', 'D:\a\_temp')) {
             Get-ChildItem $t -Filter 'aurevix-*.log' -ErrorAction SilentlyContinue | Copy-Item -Destination $dir -ErrorAction SilentlyContinue
           }
