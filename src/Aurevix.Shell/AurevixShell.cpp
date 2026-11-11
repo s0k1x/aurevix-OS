@@ -39,6 +39,7 @@
 #include <winrt/Windows.Storage.Streams.h>
 #include <shlwapi.h>
 #include <shcore.h>
+#include <dwmapi.h>
 
 namespace wux = winrt::Windows::UI::Xaml;
 namespace wuxm = winrt::Windows::UI::Xaml::Media;
@@ -51,9 +52,10 @@ using winrt::Windows::UI::Color;
 static constexpr GUID CLSID_AurevixTap = { 0x8c2d5b1e, 0x6a3f, 0x4e8b, { 0x9d, 0x47, 0xa7, 0xe1, 0x5c, 0x0b, 0x3f, 0x21 } };
 
 // Paleta AUREVIX: clara (predeterminada) u oscura, según el modo de Windows.
-static Color Graphite{ 0xF5, 0x0B, 0x0B, 0x0E };   // fondo de la barra y del menú (casi opaco: barato de dibujar)
+static Color Graphite{ 0xA6, 0x0B, 0x0B, 0x0E };   // fondo de la barra: grafito translúcido (efecto cristal)
+static Color Sheen{ 0x26, 0xFF, 0xFF, 0xFF };      // brillo superior del cristal
 static Color Lime{ 0xFF, 0x8D, 0xE0, 0x3C };       // acento
-static Color Page{ 0xFF, 0x0B, 0x0B, 0x0E };       // fondo de Configuración
+static Color Page{ 0xB8, 0x0B, 0x0B, 0x0E };       // fondo de Configuración (deja ver el Mica de Windows)
 
 static void LoadPalette()
 {
@@ -62,13 +64,15 @@ static void LoadPalette()
                  RRF_RT_REG_DWORD, nullptr, &light, &size);
     if (light)
     {
-        Graphite = { 0xF4, 0xF1, 0xF6, 0xEA };   // blanco con un toque verde AUREVIX
+        Graphite = { 0x9E, 0xF1, 0xF6, 0xEA };   // blanco translúcido con un toque verde AUREVIX
+        Sheen = { 0x8C, 0xFF, 0xFF, 0xFF };
         Lime = { 0xFF, 0x4E, 0x9A, 0x1E };
-        Page = { 0xFF, 0xF1, 0xF6, 0xEC };
+        Page = { 0xB0, 0xF1, 0xF6, 0xEC };
     }
 }
 
 static std::atomic<bool> g_active{ false };
+static DWORD WINAPI GlassExplorerWindows(LPVOID);
 static std::atomic<long> g_styled{ 0 };
 
 // ------------------------------------------------------------------ registro (diagnóstico)
@@ -151,6 +155,28 @@ static bool SameColor(wuxm::Brush const& b, Color c)
 }
 
 // Aplica el color y lo mantiene: si Windows lo cambia (por ejemplo, al maximizar una ventana), se vuelve a poner.
+static wuxm::Brush GlassBrush()
+{
+    wuxm::LinearGradientBrush g;
+    g.StartPoint({ 0, 0 }); g.EndPoint({ 0, 1 });
+    wuxm::GradientStop top; top.Color(Sheen); top.Offset(0);
+    wuxm::GradientStop mid; mid.Color(Graphite); mid.Offset(0.45);
+    wuxm::GradientStop bottom; bottom.Color(Graphite); bottom.Offset(1);
+    g.GradientStops().Append(top); g.GradientStops().Append(mid); g.GradientStops().Append(bottom);
+    return g;
+}
+
+static void KeepGlassFill(wuxs::Shape const& shape)
+{
+    auto brush = GlassBrush();
+    shape.Fill(brush);
+    shape.RegisterPropertyChangedCallback(wuxs::Shape::FillProperty(), [brush](wux::DependencyObject const& s, wux::DependencyProperty const&)
+    {
+        try { auto sh = s.as<wuxs::Shape>(); if (sh.Fill() != brush) sh.Fill(brush); } catch (...) {}
+    });
+    g_styled++;
+}
+
 static void KeepFill(wuxs::Shape const& shape, Color color)
 {
     if (!SameColor(shape.Fill(), color)) shape.Fill(wuxm::SolidColorBrush(color));
@@ -233,6 +259,10 @@ static void AddHoverZoom(wux::UIElement const& el)
     el.PointerEntered([st](auto&&, auto&&) { try { AnimateScale(st, 1.2, true); } catch (...) {} });
     el.PointerExited([st](auto&&, auto&&) { try { AnimateScale(st, 1.0, false); } catch (...) {} });
     el.PointerCanceled([st](auto&&, auto&&) { try { AnimateScale(st, 1.0, false); } catch (...) {} });
+    el.AddHandler(wux::UIElement::PointerPressedEvent(), winrt::box_value(wux::Input::PointerEventHandler(
+        [st](auto&&, auto&&) { try { AnimateScale(st, 0.9, false); } catch (...) {} })), true);
+    el.AddHandler(wux::UIElement::PointerReleasedEvent(), winrt::box_value(wux::Input::PointerEventHandler(
+        [st](auto&&, auto&&) { try { AnimateScale(st, 1.2, true); } catch (...) {} })), true);
     g_styled++;
 }
 
@@ -310,7 +340,7 @@ static void StyleElement(wux::DependencyObject const& obj, std::wstring_view nam
             if (name == L"BackgroundFill" && HasAncestor(obj, L"Taskbar.TaskbarBackground"))
             {
                 // Barra flotante AUREVIX: separada de los bordes y con esquinas redondeadas, sin borde.
-                KeepFill(shape, Graphite);
+                KeepGlassFill(shape);
                 shape.Margin(wux::ThicknessHelper::FromLengths(6, 3, 6, 3));
                 shape.StrokeThickness(0); // sin borde: solo el fondo AUREVIX
                 if (auto rect = obj.try_as<wuxs::Rectangle>()) { rect.RadiusX(14); rect.RadiusY(14); }
@@ -360,11 +390,11 @@ static void StyleElement(wux::DependencyObject const& obj, std::wstring_view nam
         {
             if (name == L"AcrylicBorder")
             {
-                KeepBorderBackground(border, Graphite);
+                // Se conserva el acrílico de Windows (desenfoque real); el tinte AUREVIX va en AcrylicOverlay.
                 border.CornerRadius(wux::CornerRadiusHelper::FromUniformRadius(16));
                 border.BorderThickness(wux::ThicknessHelper::FromUniformLength(0)); // sin borde, más limpio
             }
-            else if (name == L"AcrylicOverlay") border.Visibility(wux::Visibility::Collapsed);
+            else if (name == L"AcrylicOverlay") { border.Background(GlassBrush()); g_styled++; }
             else if (name == L"TopLevelSuggestionsBackground") border.Visibility(wux::Visibility::Collapsed);
             else if (name == L"StartDropShadow" || name == L"RootGridDropShadow" || name == L"DropShadow")
                 border.CornerRadius(wux::CornerRadiusHelper::FromUniformRadius(16));
@@ -456,6 +486,7 @@ struct AurevixTap : winrt::implements<AurevixTap, IObjectWithSite, winrt::non_ag
             Log(L"AUREVIX Shell cargado en %s", name.c_str());
             OpenDump(name);
             m_watcher = winrt::make_self<VisualTreeWatcher>(m_site);
+            if (s_isExplorer) if (HANDLE t = CreateThread(nullptr, 0, GlassExplorerWindows, nullptr, 0, nullptr)) CloseHandle(t);
             return S_OK;
         }
         catch (...) { return winrt::to_hresult(); }
@@ -497,6 +528,30 @@ STDAPI DllGetClassObject(REFCLSID clsid, REFIID riid, void** ppv)
 
 // La DLL se queda cargada mientras viva el proceso (los callbacks de XAML apuntan a su código).
 STDAPI DllCanUnloadNow() { return S_FALSE; }
+
+// ------------------------------------------------------------------ cristal en las ventanas del Explorador de archivos
+
+static DWORD WINAPI GlassExplorerWindows(LPVOID)
+{
+    for (;;)
+    {
+        EnumWindows([](HWND hwnd, LPARAM) -> BOOL
+        {
+            DWORD pid = 0;
+            GetWindowThreadProcessId(hwnd, &pid);
+            if (pid != GetCurrentProcessId()) return TRUE;
+            wchar_t cls[64]{};
+            GetClassNameW(hwnd, cls, 64);
+            if (wcscmp(cls, L"CabinetWClass") != 0) return TRUE;
+            if (GetPropW(hwnd, L"AurevixGlass")) return TRUE;
+            int backdrop = 3; // DWMSBT_TRANSIENTWINDOW: acrílico de Windows
+            DwmSetWindowAttribute(hwnd, 38 /* DWMWA_SYSTEMBACKDROP_TYPE */, &backdrop, sizeof(backdrop));
+            SetPropW(hwnd, L"AurevixGlass", reinterpret_cast<HANDLE>(1));
+            return TRUE;
+        }, 0);
+        Sleep(1500);
+    }
+}
 
 // ------------------------------------------------------------------ arranque automático dentro del proceso
 

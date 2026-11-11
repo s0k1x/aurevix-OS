@@ -277,14 +277,19 @@ public static class AurevixStyle
             (r.Success ? applied : skipped).Add(g.Title);
         }
 
-        // 2b. Iconos AUREVIX: los del usuario aquí; carpetas y unidades (todo el equipo) los pone AUREVIX Core Service.
-        var icons = AppServices.Tweaks.Apply([DesktopIcons()], $"{BackupPrefix} · Iconos AUREVIX");
-        (icons.Success ? applied : skipped).Add("Iconos AUREVIX del escritorio");
-        var machineIcons = await CoreServiceClient.SendAsync(new CoreRequest { Op = "icons-on" }, TimeSpan.FromSeconds(20));
-        (machineIcons.Ok ? applied : skipped).Add(machineIcons.Ok ? "Iconos AUREVIX de carpetas y unidades" : "Iconos de carpetas y unidades (AUREVIX Core Service no disponible)");
-        var folders = ApplyKnownFolderIcons();
-        if (folders > 0) applied.Add($"Iconos AUREVIX de Documentos, Descargas, Música, Imágenes, Vídeos y Escritorio ({folders})");
-        RefreshIcons();
+        // 2b. Iconos: AUREVIX usa los de Windows. Si una versión anterior puso los suyos, se quitan aquí.
+        if (AppServices.Tweaks.ListBackups().Any(b => b.Description.Contains("Iconos AUREVIX")) || File.Exists(KnownFolderBackup))
+        {
+            await CoreServiceClient.SendAsync(new CoreRequest { Op = "icons-off" }, TimeSpan.FromSeconds(20));
+            RestoreKnownFolderIcons();
+            foreach (var b in AppServices.Tweaks.ListBackups().Where(b => b.Description.Contains("Iconos AUREVIX")).ToList())
+            {
+                AppServices.Tweaks.Revert(b);
+                try { File.Delete(Path.Combine(AurevixPaths.Backups, $"change-{b.Id}.json")); } catch { }
+            }
+            RefreshIcons();
+            applied.Add("Iconos de Windows");
+        }
 
         // 3. Tema AUREVIX (.theme): Windows aplica acento, colores y fondo de forma oficial.
         try
