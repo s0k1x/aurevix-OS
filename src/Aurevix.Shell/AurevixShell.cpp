@@ -168,38 +168,7 @@ static void StyleSettingsContent()
     catch (...) {}
 }
 
-// ------------------------------------------------------------------ dock AUREVIX (barra pequeña y centrada)
-
-static winrt::weak_ref<wuxs::Shape> s_fill;
-static winrt::weak_ref<wux::FrameworkElement> s_apps;
-
-// Barra tipo dock: centrada, del ancho del menú Inicio.
-static void UpdateDock()
-{
-    try
-    {
-        auto fill = s_fill.get();
-        auto apps = s_apps.get();
-        if (!fill || !apps || apps.ActualWidth() <= 0) return;
-        // Mismo ancho que el menú Inicio (640) y centrada como él; si no caben las apps, se ensancha lo justo.
-        const double startWidth = 640, pad = 12;
-        double width = apps.ActualWidth() + pad * 2;
-        if (width < startWidth) width = startWidth;
-        fill.HorizontalAlignment(wux::HorizontalAlignment::Center);
-        fill.Width(width);
-        fill.Margin(wux::ThicknessHelper::FromLengths(0, 3, 0, 3));
-    }
-    catch (...) {}
-}
-
-static void WatchDockApps(wux::FrameworkElement const& apps)
-{
-    s_apps = winrt::make_weak(apps);
-    apps.SizeChanged([](auto&&, auto&&) { UpdateDock(); });
-    apps.LayoutUpdated([](auto&&, auto&&) { UpdateDock(); });
-    Log(L"Dock: iconos encontrados");
-    UpdateDock();
-}
+// ------------------------------------------------------------------ animación de los iconos de la barra
 
 // Animación al pasar el ratón: el icono crece un poco con un pequeño rebote y vuelve suave.
 static void AnimateScale(wuxm::ScaleTransform const& st, double to, bool bounce)
@@ -238,20 +207,16 @@ static void StyleElement(wux::DependencyObject const& obj, std::wstring_view nam
         {
             if (name == L"BackgroundFill" && HasAncestor(obj, L"Taskbar.TaskbarBackground"))
             {
-                s_fill = winrt::make_weak(shape);
                 // Barra flotante AUREVIX: separada de los bordes y con esquinas redondeadas, sin borde.
                 KeepFill(shape, Graphite);
                 shape.Margin(wux::ThicknessHelper::FromLengths(6, 3, 6, 3));
                 shape.StrokeThickness(0); // sin borde: solo el fondo AUREVIX
                 if (auto rect = obj.try_as<wuxs::Rectangle>()) { rect.RadiusX(14); rect.RadiusY(14); }
-                UpdateDock();
             }
             else if (name == L"BackgroundStroke" && HasAncestor(obj, L"Taskbar.TaskbarBackground"))
                 shape.Visibility(wux::Visibility::Collapsed); // la línea de Windows sobra con el borde redondeado
             else if (name == L"RunningIndicator") KeepFill(shape, Lime);
         }
-        if (name == L"TaskbarFrameRepeater")
-            if (auto fe = obj.try_as<wux::FrameworkElement>()) WatchDockApps(fe);
         return;
     }
     if (s_isSettings)
