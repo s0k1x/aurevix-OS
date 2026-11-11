@@ -103,6 +103,7 @@ jobs:
           Get-ChildItem "$env:LOCALAPPDATA\Aurevix\logs" -ErrorAction SilentlyContinue | Select-Object -Last 1 | ForEach-Object { Copy-Item $_.FullName (Join-Path $dir 'controlcenter.log') }
           Get-ChildItem $dir | Format-Table Name, Length
           Get-Content (Join-Path $dir 'aurevix-shell.log') -ErrorAction SilentlyContinue
+          Get-Content (Join-Path $dir 'controlcenter.log') -ErrorAction SilentlyContinue
       - name: Añadir a la rama ci-capturas
         shell: pwsh
         run: |
@@ -110,6 +111,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           $tmp = Join-Path $env:RUNNER_TEMP 'shl'
           Copy-Item shell $tmp -Recurse
+          git reset -q --hard; git clean -ffdxq
           git fetch origin ci-capturas --depth 1
           git checkout -B ci-capturas FETCH_HEAD
           if (Test-Path shell) { Remove-Item shell -Recurse -Force }
@@ -146,6 +148,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           $tmp = Join-Path $env:RUNNER_TEMP 'esc'
           Copy-Item escritorio $tmp -Recurse
+          git reset -q --hard; git clean -ffdxq
           git fetch origin ci-capturas --depth 1
           git checkout -B ci-capturas origin/ci-capturas
           Copy-Item "$tmp\*" . -Recurse -Force

@@ -101,6 +101,38 @@ public static class AurevixStyle
         },
     ];
 
+    private const string ClsidIcons = @"Software\Microsoft\Windows\CurrentVersion\Explorer\CLSID";
+    public static string IconPath(string name) => Path.Combine(AppContext.BaseDirectory, "Assets", "Icons", name + ".ico") + ",0";
+
+    /// <summary>Iconos AUREVIX del escritorio y del Explorador para este usuario: Este equipo, Papelera, Red y carpeta de usuario.</summary>
+    private static TweakDefinition DesktopIcons() => new()
+    {
+        Id = "style.icons", Title = "Iconos AUREVIX (Este equipo, Papelera, Red, usuario)", Category = TweakCategory.Interface,
+        Registry =
+        [
+            Sz($@"{ClsidIcons}\{{20D04FE0-3AEA-1069-A2D8-08002B30309D}}\DefaultIcon", "", IconPath("pc")),
+            Sz($@"{ClsidIcons}\{{645FF040-5081-101B-9F08-00AA002F954E}}\DefaultIcon", "", IconPath("bin-empty")),
+            Sz($@"{ClsidIcons}\{{645FF040-5081-101B-9F08-00AA002F954E}}\DefaultIcon", "empty", IconPath("bin-empty")),
+            Sz($@"{ClsidIcons}\{{645FF040-5081-101B-9F08-00AA002F954E}}\DefaultIcon", "full", IconPath("bin-full")),
+            Sz($@"{ClsidIcons}\{{F02C1A0D-BE21-4350-88B0-7367FC96EF3C}}\DefaultIcon", "", IconPath("network")),
+            Sz($@"{ClsidIcons}\{{59031a47-3f72-44a7-89c5-5595fe6b30ee}}\DefaultIcon", "", IconPath("user")),
+        ]
+    };
+
+    [DllImport("shell32.dll")]
+    private static extern void SHChangeNotify(int eventId, uint flags, IntPtr item1, IntPtr item2);
+
+    /// <summary>Pide a Windows que vuelva a leer los iconos (sin reiniciar sesión).</summary>
+    public static void RefreshIcons()
+    {
+        try
+        {
+            SHChangeNotify(0x08000000 /* SHCNE_ASSOCCHANGED */, 0, IntPtr.Zero, IntPtr.Zero);
+            Process.Start(new ProcessStartInfo("ie4uinit.exe", "-show") { UseShellExecute = false, CreateNoWindow = true })?.Dispose();
+        }
+        catch (Exception ex) { AurevixLog.Warn($"Refrescar iconos: {ex.Message}"); }
+    }
+
     public sealed record Result(List<string> Applied, List<string> Skipped, bool NeedsExplorerRestart);
 
     public static async Task<Result> ApplyAsync(bool includeLockScreen)
@@ -127,6 +159,13 @@ public static class AurevixStyle
             var r = AppServices.Tweaks.Apply([g], $"{BackupPrefix} · {g.Title}");
             (r.Success ? applied : skipped).Add(g.Title);
         }
+
+        // 2b. Iconos AUREVIX: los del usuario aquí; carpetas y unidades (todo el equipo) los pone AUREVIX Core Service.
+        var icons = AppServices.Tweaks.Apply([DesktopIcons()], $"{BackupPrefix} · Iconos AUREVIX");
+        (icons.Success ? applied : skipped).Add("Iconos AUREVIX del escritorio");
+        var machineIcons = await CoreServiceClient.SendAsync(new CoreRequest { Op = "icons-on" }, TimeSpan.FromSeconds(20));
+        (machineIcons.Ok ? applied : skipped).Add(machineIcons.Ok ? "Iconos AUREVIX de carpetas y unidades" : "Iconos de carpetas y unidades (AUREVIX Core Service no disponible)");
+        RefreshIcons();
 
         // 3. Tema AUREVIX (.theme): Windows aplica acento, colores y fondo de forma oficial.
         try
@@ -161,6 +200,7 @@ public static class AurevixStyle
 
     public static async Task RestoreAsync()
     {
+        await CoreServiceClient.SendAsync(new CoreRequest { Op = "icons-off" }, TimeSpan.FromSeconds(20));
         foreach (var b in AppServices.Tweaks.ListBackups().Where(b => b.Description.StartsWith(BackupPrefix)))
         {
             AppServices.Tweaks.Revert(b);
@@ -184,6 +224,7 @@ public static class AurevixStyle
             File.Delete(stateFile);
         }
         BroadcastSettingChange();
+        RefreshIcons();
         AurevixLog.Info("Estilo AUREVIX restaurado.");
     }
 

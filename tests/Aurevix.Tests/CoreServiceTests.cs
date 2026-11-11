@@ -148,6 +148,7 @@ public class CoreSystemActionTests
         public IReadOnlyList<string> ListBlocked() => [];
         public (bool ok, string message, string? json) RunBenchmark(string exe, int s, string l) { Calls.Add($"bench:{exe}:{s}"); return (true, "ok", "{}"); }
         public (bool ok, string message) InstallUpdate(string c, string id) { Calls.Add("upd:" + c); return (true, "ok"); }
+        public (bool ok, string message) SetShellIcons(bool on) { Calls.Add("icons:" + on); return (true, "ok"); }
     }
 
     private static (CoreRequestHandler, FakeSys) Make()
@@ -194,5 +195,8 @@ public class CoreSystemActionTests
         Assert.False(h.Handle(new CoreRequest { Op = "update-install", Value = "stable", Label = "x" }, "S-1").Ok);
         Assert.True(h.Handle(new CoreRequest { Op = "update-install", Value = "stable", Label = new string('a', 32) }, "S-1").Ok);
         Assert.Equal(["bench:game.exe:60", "upd:stable"], s.Calls);
+        Assert.True(h.Handle(new CoreRequest { Op = "icons-on" }, "S-1").Ok);
+        Assert.True(h.Handle(new CoreRequest { Op = "icons-off" }, "S-1").Ok);
+        Assert.Equal(["bench:game.exe:60", "upd:stable", "icons:True", "icons:False"], s.Calls);
     }
 }

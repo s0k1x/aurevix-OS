@@ -137,6 +137,8 @@ public interface ISystemActions
     (bool ok, string message, string? json) RunBenchmark(string exe, int seconds, string label);
     /// <summary>Comprueba el manifiesto FIRMADO, descarga, verifica el SHA-256 y lanza el instalador con argumentos fijos.</summary>
     (bool ok, string message) InstallUpdate(string channel, string installId);
+    /// <summary>Iconos AUREVIX para carpetas y unidades en todo el equipo (clave «Shell Icons»). Las rutas las calcula el servicio.</summary>
+    (bool ok, string message) SetShellIcons(bool on);
 }
 
 public static class SystemActionRules
@@ -370,6 +372,13 @@ public sealed class CoreRequestHandler(IReadOnlyList<TweakDefinition> catalog, F
                 if (req.Seconds is < 10 or > 300) return CoreResponse.Fail("Duración no válida (10-300 s).");
                 var (ok, msg, json) = system.RunBenchmark(req.Value!, req.Seconds, Sanitize(req.Label) ?? "Medición");
                 return new CoreResponse { Ok = ok, Error = ok ? null : msg, Messages = [msg], Data = json };
+            }
+
+            case "icons-on" or "icons-off":
+            {
+                if (system is null) return CoreResponse.Fail("Acciones de sistema no disponibles.");
+                var (ok, msg) = system.SetShellIcons(req.Op == "icons-on");
+                return new CoreResponse { Ok = ok, Error = ok ? null : msg, Messages = [msg] };
             }
 
             case "update-install":
