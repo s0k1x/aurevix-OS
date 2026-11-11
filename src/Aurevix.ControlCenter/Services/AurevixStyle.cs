@@ -283,6 +283,12 @@ public static class AurevixStyle
         //    restablece estos valores; por eso van al final.
         await Task.Delay(4000);
         var frames = AppServices.Tweaks.Apply([WindowFrames], $"{BackupPrefix} · {WindowFrames.Title}");
+        if (!frames.Success)
+        {
+            // Windows puede seguir aplicando el tema y pisar el color: se reintenta una vez.
+            await Task.Delay(5000);
+            frames = AppServices.Tweaks.Apply([WindowFrames], $"{BackupPrefix} · {WindowFrames.Title}");
+        }
         (frames.Success ? applied : skipped).Add(frames.Success ? WindowFrames.Title : $"{WindowFrames.Title}: {string.Join(" / ", frames.Messages)}");
 
         BroadcastSettingChange();
