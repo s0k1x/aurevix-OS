@@ -173,7 +173,7 @@ static void StyleSettingsContent()
 static winrt::weak_ref<wuxs::Shape> s_fill;
 static winrt::weak_ref<wux::FrameworkElement> s_apps;
 
-// El fondo de la barra se ajusta al ancho de los iconos anclados y abiertos, como un dock.
+// Barra tipo dock: centrada, del ancho del menú Inicio.
 static void UpdateDock()
 {
     try
@@ -181,13 +181,13 @@ static void UpdateDock()
         auto fill = s_fill.get();
         auto apps = s_apps.get();
         if (!fill || !apps || apps.ActualWidth() <= 0) return;
-        auto parent = wuxm::VisualTreeHelper::GetParent(fill).try_as<wux::UIElement>();
-        if (!parent) return;
-        auto origin = apps.TransformToVisual(parent).TransformPoint({ 0, 0 });
-        const double pad = 10;
-        fill.HorizontalAlignment(wux::HorizontalAlignment::Left);
-        fill.Width(apps.ActualWidth() + pad * 2);
-        fill.Margin(wux::ThicknessHelper::FromLengths(origin.X - pad, 3, 0, 3));
+        // Mismo ancho que el menú Inicio (640) y centrada como él; si no caben las apps, se ensancha lo justo.
+        const double startWidth = 640, pad = 12;
+        double width = apps.ActualWidth() + pad * 2;
+        if (width < startWidth) width = startWidth;
+        fill.HorizontalAlignment(wux::HorizontalAlignment::Center);
+        fill.Width(width);
+        fill.Margin(wux::ThicknessHelper::FromLengths(0, 3, 0, 3));
     }
     catch (...) {}
 }
