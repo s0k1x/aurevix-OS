@@ -2,3 +2,5 @@ LIBRARY AurevixShell
 EXPORTS
     DllGetClassObject PRIVATE
     DllCanUnloadNow PRIVATE
+    AurevixHook
+    AurevixIsActive

@@ -44,6 +44,15 @@ public static class AurevixShell
     [DllImport("user32.dll")]
     private static extern uint GetWindowThreadProcessId(IntPtr hwnd, out uint pid);
 
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern IntPtr SetWindowsHookExW(int idHook, IntPtr proc, IntPtr module, uint threadId);
+    [DllImport("user32.dll")]
+    private static extern bool UnhookWindowsHookEx(IntPtr hook);
+    [DllImport("user32.dll")]
+    private static extern bool PostThreadMessageW(uint threadId, uint msg, IntPtr w, IntPtr l);
+
+    private static IntPtr _shellModule, _hookProc;
+
     private static InitializeXamlDiagnosticsExFn? _init;
     private static int _goodVariant;
     /// <summary>Último resultado de un intento (para el registro y la prueba automática).</summary>
@@ -53,9 +62,6 @@ public static class AurevixShell
     public static void Start()
     {
         if (!AppServices.Settings.ShellEnabled || !IsAvailable) return;
-        // Con permisos de administrador Windows no deja que la barra de tareas (sin permisos) se conecte: se avisa en el registro.
-        if (AppServices.IsAdmin)
-            AurevixLog.Warn("AUREVIX Shell: el Control Center se está ejecutando como administrador; ábrelo normalmente para que se aplique el estilo.");
         _timer ??= new System.Threading.Timer(_ => Tick(), null, TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(3));
         AurevixLog.Info("AUREVIX Shell activo.");
     }
@@ -146,11 +152,76 @@ public static class AurevixShell
         Notify?.Invoke("AUREVIX Shell se ha desactivado porque el Explorador se reinició varias veces. Puedes volver a activarlo en Apariencia.");
     }
 
-    private static bool TryInject(int pid, string what)
+    /// <summary>Hilos con ventanas del proceso: el Explorador, el de la barra de tareas; los demás, todos sus hilos.</summary>
+    private static List<uint> ThreadsOf(int pid)
     {
-        if (Failures.TryGetValue(pid, out var fails) && fails >= 20) return false;
+        var tray = FindWindowW("Shell_TrayWnd", null);
+        if (tray != IntPtr.Zero)
+        {
+            var tid = GetWindowThreadProcessId(tray, out var owner);
+            if (owner == (uint)pid) return [tid];
+        }
         try
         {
+            using var p = Process.GetProcessById(pid);
+            return p.Threads.Cast<ProcessThread>().Select(t => (uint)t.Id).ToList();
+        }
+        catch { return []; }
+    }
+
+    private static bool IsLoadedIn(int pid)
+    {
+        try
+        {
+            using var p = Process.GetProcessById(pid);
+            foreach (ProcessModule m in p.Modules)
+                if (string.Equals(m.FileName, DllPath, StringComparison.OrdinalIgnoreCase)) return true;
+        }
+        catch { }
+        return false;
+    }
+
+    /// <summary>
+    /// Arranque automático: AurevixShell.dll se carga en el hilo de la ventana del proceso y se conecta desde dentro
+    /// (Windows solo acepta así la conexión de XAML). Después se retira el procedimiento; la DLL queda activa.
+    /// </summary>
+    private static int StartInside(int pid)
+    {
+        if (_shellModule == IntPtr.Zero)
+        {
+            _shellModule = LoadLibraryExW(DllPath, IntPtr.Zero, 0);
+            _hookProc = _shellModule == IntPtr.Zero ? IntPtr.Zero : GetProcAddress(_shellModule, "AurevixHook");
+            if (_hookProc == IntPtr.Zero) return -1;
+        }
+        var hooks = new List<IntPtr>();
+        foreach (var tid in ThreadsOf(pid))
+        {
+            var hook = SetWindowsHookExW(3 /* WH_GETMESSAGE */, _hookProc, _shellModule, tid);
+            if (hook == IntPtr.Zero) continue; // hilo sin cola de mensajes
+            hooks.Add(hook);
+            PostThreadMessageW(tid, 0 /* WM_NULL */, IntPtr.Zero, IntPtr.Zero);
+        }
+        if (hooks.Count == 0) return -2;
+        try { for (var i = 0; i < 25 && !IsLoadedIn(pid); i++) Thread.Sleep(100); }
+        finally { foreach (var h in hooks) UnhookWindowsHookEx(h); }
+        return IsLoadedIn(pid) ? 1 : 0;
+    }
+
+    private static bool TryInject(int pid, string what)
+    {
+        if (Failures.TryGetValue(pid, out var fails) && fails >= 100) return false;
+        try
+        {
+            // El menú Inicio está «dormido» hasta que se abre: carga la DLL en ese momento.
+            var inside = IsLoadedIn(pid) ? 1 : StartInside(pid);
+            if (inside == 1)
+            {
+                LastResult = $"{what} pid {pid}: dentro";
+                Injected.Add(pid);
+                AurevixLog.Info($"AUREVIX Shell aplicado al {what} (PID {pid}).");
+                return true;
+            }
+            var insideResult = $"dentro={inside}";
             if (_init is null)
             {
                 var module = LoadLibraryExW("Windows.UI.Xaml.dll", IntPtr.Zero, 0x00000800 /* LOAD_LIBRARY_SEARCH_SYSTEM32 */);
@@ -160,7 +231,7 @@ public static class AurevixShell
             }
             // Se prueban las dos formas de llamada que usan las herramientas de diagnóstico de XAML y se recuerda la que funcione.
             var hr = unchecked((int)0x80004005);
-            var tried = new List<string>();
+            var tried = new List<string> { insideResult };
             for (var v = 0; v < 2; v++)
             {
                 var variant = (_goodVariant + v) % 2;
@@ -179,7 +250,7 @@ public static class AurevixShell
             }
             // XAML aún no está cargado (el proceso acaba de arrancar): se reintenta en el siguiente ciclo.
             Failures[pid] = fails + 1;
-            if (fails == 0 || fails == 19) AurevixLog.Info($"AUREVIX Shell: el {what} aún no está listo ({LastResult}).");
+            if (fails == 0 || fails == 99) AurevixLog.Info($"AUREVIX Shell: el {what} aún no está listo ({LastResult}).");
             return false;
         }
         catch (Exception ex)

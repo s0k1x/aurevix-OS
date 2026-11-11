@@ -307,8 +307,63 @@ STDAPI DllGetClassObject(REFCLSID clsid, REFIID riid, void** ppv)
 // La DLL se queda cargada mientras viva el proceso (los callbacks de XAML apuntan a su código).
 STDAPI DllCanUnloadNow() { return S_FALSE; }
 
+// ------------------------------------------------------------------ arranque automático dentro del proceso
+
+static HMODULE g_module = nullptr;
+static std::atomic<bool> g_started{ false };
+
+// Windows solo acepta la conexión de diagnóstico de XAML hecha desde el propio proceso: se llama aquí dentro.
+static DWORD WINAPI StartInProcess(LPVOID)
+{
+    using InitFn = HRESULT(WINAPI*)(LPCWSTR, DWORD, LPCWSTR, LPCWSTR, CLSID, LPCWSTR);
+    HMODULE xaml = nullptr;
+    for (int i = 0; i < 60 && !xaml; i++) { xaml = GetModuleHandleW(L"Windows.UI.Xaml.dll"); if (!xaml) Sleep(1000); }
+    if (!xaml) xaml = LoadLibraryExW(L"Windows.UI.Xaml.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
+    auto init = xaml ? reinterpret_cast<InitFn>(GetProcAddress(xaml, "InitializeXamlDiagnosticsEx")) : nullptr;
+    if (!init) { Log(L"InitializeXamlDiagnosticsEx no disponible"); g_started = false; return 0; }
+    wchar_t path[MAX_PATH]{};
+    GetModuleFileNameW(g_module, path, MAX_PATH);
+    HRESULT hr = E_FAIL;
+    for (int attempt = 0; attempt < 30; attempt++)
+    {
+        for (int n = 1; n <= 20; n++)
+        {
+            wchar_t endpoint[64];
+            swprintf_s(endpoint, L"VisualDiagConnection%d", n);
+            hr = init(endpoint, GetCurrentProcessId(), nullptr, path, CLSID_AurevixTap, nullptr);
+            if (hr != HRESULT_FROM_WIN32(ERROR_ALREADY_EXISTS)) break;
+        }
+        if (SUCCEEDED(hr) || g_active) break;
+        Sleep(1000); // XAML todavía no ha creado su primera ventana
+    }
+    Log(L"Conexión en el proceso: 0x%08X", static_cast<unsigned>(hr));
+    if (FAILED(hr) && !g_active) g_started = false;
+    return 0;
+}
+
+// Procedimiento que el Control Center registra en el hilo de la ventana del proceso de destino.
+extern "C" LRESULT CALLBACK AurevixHook(int code, WPARAM wParam, LPARAM lParam)
+{
+    if (!g_started.exchange(true))
+    {
+        auto name = ProcessName();
+        if (name == L"explorer.exe" || name == L"startmenuexperiencehost.exe" || name == L"systemsettings.exe")
+        {
+            HMODULE pinned = nullptr; // que la DLL siga cargada aunque se retire el procedimiento
+            GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_PIN,
+                reinterpret_cast<LPCWSTR>(&AurevixHook), &pinned);
+            if (HANDLE t = CreateThread(nullptr, 0, StartInProcess, nullptr, 0, nullptr)) CloseHandle(t);
+            else g_started = false;
+        }
+    }
+    return CallNextHookEx(nullptr, code, wParam, lParam);
+}
+
+// Estado para el Control Center: 1 si el estilo ya está activo en este proceso.
+extern "C" int WINAPI AurevixIsActive() { return g_active ? 1 : 0; }
+
 BOOL APIENTRY DllMain(HMODULE module, DWORD reason, LPVOID)
 {
-    if (reason == DLL_PROCESS_ATTACH) DisableThreadLibraryCalls(module);
+    if (reason == DLL_PROCESS_ATTACH) { g_module = module; DisableThreadLibraryCalls(module); }
     return TRUE;
 }
