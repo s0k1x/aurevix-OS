@@ -87,6 +87,29 @@ static void Log(const wchar_t* fmt, ...)
     }
 }
 
+// Diagnóstico (solo máquina de pruebas): si junto a la DLL existe «dump.flag», se guarda la estructura de la interfaz.
+static HMODULE g_module = nullptr;
+static FILE* s_dump = nullptr;
+static long s_dumpLines = 0;
+static void OpenDump(std::wstring const& process)
+{
+    wchar_t dll[MAX_PATH]{};
+    GetModuleFileNameW(g_module, dll, MAX_PATH);
+    std::wstring flag(dll);
+    flag = flag.substr(0, flag.find_last_of(L"\\/") + 1) + L"dump.flag";
+    if (GetFileAttributesW(flag.c_str()) == INVALID_FILE_ATTRIBUTES) return;
+    wchar_t path[MAX_PATH];
+    if (!GetTempPathW(MAX_PATH, path)) return;
+    std::wstring out = std::wstring(path) + L"aurevix-tree-" + process + L".log";
+    _wfopen_s(&s_dump, out.c_str(), L"w, ccs=UTF-8");
+}
+static void DumpElement(unsigned long long parent, unsigned long long handle, LPCWSTR type, LPCWSTR name)
+{
+    if (!s_dump || s_dumpLines > 20000) return;
+    fwprintf(s_dump, L"%llx > %llx  %s  #%s\n", parent, handle, type ? type : L"?", name ? name : L"");
+    if (++s_dumpLines % 200 == 0) fflush(s_dump);
+}
+
 static std::wstring ProcessName()
 {
     wchar_t path[MAX_PATH]{};
@@ -272,6 +295,7 @@ struct VisualTreeWatcher : winrt::implements<VisualTreeWatcher, IVisualTreeServi
     HRESULT STDMETHODCALLTYPE OnVisualTreeChange(ParentChildRelation relation, VisualElement element, VisualMutationType mutation) noexcept override
     {
         if (mutation != Add) return S_OK;
+        DumpElement(static_cast<unsigned long long>(relation.Parent), static_cast<unsigned long long>(element.Handle), element.Type, element.Name);
         if (s_isSettings) StyleSettingsContent();
         // Iconos de la barra (apps y botón de Inicio): animación al pasar el ratón.
         if (s_isExplorer && element.Type)
@@ -329,6 +353,7 @@ struct AurevixTap : winrt::implements<AurevixTap, IObjectWithSite, winrt::non_ag
             s_isSettings = name == L"systemsettings.exe";
             LoadPalette();
             Log(L"AUREVIX Shell cargado en %s", name.c_str());
+            OpenDump(name);
             m_watcher = winrt::make_self<VisualTreeWatcher>(m_site);
             return S_OK;
         }
@@ -374,7 +399,6 @@ STDAPI DllCanUnloadNow() { return S_FALSE; }
 
 // ------------------------------------------------------------------ arranque automático dentro del proceso
 
-static HMODULE g_module = nullptr;
 static std::atomic<bool> g_started{ false };
 
 // Windows solo acepta la conexión de diagnóstico de XAML hecha desde el propio proceso: se llama aquí dentro.

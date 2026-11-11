@@ -47,8 +47,8 @@ public static class AurevixStyle
     /// </summary>
     private static readonly TweakDefinition WindowFrames = new()
     {
-        Id = "style.windows", Title = "Ventanas AUREVIX (barra de título gris perla)", Category = TweakCategory.Interface,
-        Registry = [Dw(Dwm, "ColorPrevalence", 1), Color("AccentColor", 0xFFF2EFEC), Color("AccentColorInactive", 0xFFF9F8F7)]
+        Id = "style.windows", Title = "Ventanas AUREVIX (barra de título verde claro)", Category = TweakCategory.Interface,
+        Registry = [Dw(Dwm, "ColorPrevalence", 1), Color("AccentColor", 0xFFDEF2E8), Color("AccentColorInactive", 0xFFECF6F1)]
     };
 
     /// <summary>Grupos de ajustes. Cada grupo es un TweakDefinition independiente: si Windows bloquea uno, los demás siguen.</summary>
@@ -283,7 +283,7 @@ public static class AurevixStyle
         //    restablece estos valores; por eso van al final.
         await Task.Delay(4000);
         var frames = AppServices.Tweaks.Apply([WindowFrames], $"{BackupPrefix} · {WindowFrames.Title}");
-        (frames.Success ? applied : skipped).Add(WindowFrames.Title);
+        (frames.Success ? applied : skipped).Add(frames.Success ? WindowFrames.Title : $"{WindowFrames.Title}: {string.Join(" / ", frames.Messages)}");
 
         BroadcastSettingChange();
         AurevixLog.Info($"Estilo AUREVIX aplicado: {applied.Count} cambios, {skipped.Count} omitidos.");

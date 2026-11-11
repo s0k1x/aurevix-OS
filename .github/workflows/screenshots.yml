@@ -118,6 +118,9 @@ jobs:
         shell: pwsh
         run: |
           Get-Process AurevixControlCenter -ErrorAction SilentlyContinue | Stop-Process -Force
+          # Diagnóstico: guarda la estructura de la barra de tareas, Inicio y Configuración.
+          Set-Content out\cc\shell\dump.flag '1'
+          Get-Process StartMenuExperienceHost, SystemSettings -ErrorAction SilentlyContinue | Stop-Process -Force
           $dir = Join-Path $PWD 'shell\todo'
           New-Item -ItemType Directory -Force $dir | Out-Null
           # Iconos de carpetas y unidades para todo el equipo (en un PC normal los pone AUREVIX Core Service).
@@ -136,6 +139,8 @@ jobs:
           Get-ChildItem $dir | Format-Table Name, Length
           Get-Content (Join-Path $dir 'todo-info.txt'), (Join-Path $dir 'error-todo.txt') -ErrorAction SilentlyContinue
           Copy-Item (Join-Path $env:TEMP 'aurevix-shell.log') (Join-Path $dir 'aurevix-shell.log') -ErrorAction SilentlyContinue
+          Get-ChildItem $env:TEMP -Filter 'aurevix-tree-*.log' -ErrorAction SilentlyContinue | Copy-Item -Destination $dir
+          Get-ChildItem "$env:LOCALAPPDATA\Packages" -Recurse -Filter 'aurevix-tree-*.log' -ErrorAction SilentlyContinue | Copy-Item -Destination $dir
       - name: Añadir a la rama ci-capturas
         shell: pwsh
         run: |
