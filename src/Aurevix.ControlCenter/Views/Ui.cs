@@ -11,6 +11,27 @@ public static class Ui
 {
     public static T Res<T>(string key) => (T)Application.Current.FindResource(key);
 
+    [System.Runtime.InteropServices.DllImport("dwmapi.dll")]
+    private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
+
+    /// <summary>
+    /// Barra de título oscura, del color del fondo de AUREVIX, en todas las ventanas de la app (API oficial de DWM).
+    /// En Windows 10 solo se oscurece; el color exacto y el borde necesitan Windows 11.
+    /// </summary>
+    public static void EnableDarkTitleBars()
+    {
+        EventManager.RegisterClassHandler(typeof(Window), FrameworkElement.LoadedEvent, new RoutedEventHandler((s, _) =>
+        {
+            if (s is not Window w) return;
+            var hwnd = new System.Windows.Interop.WindowInteropHelper(w).Handle;
+            if (hwnd == IntPtr.Zero) return;
+            int on = 1, caption = 0x00060505, border = 0x00282222; // COLORREF 0x00BBGGRR
+            DwmSetWindowAttribute(hwnd, 20, ref on, sizeof(int));       // DWMWA_USE_IMMERSIVE_DARK_MODE
+            DwmSetWindowAttribute(hwnd, 35, ref caption, sizeof(int));  // DWMWA_CAPTION_COLOR
+            DwmSetWindowAttribute(hwnd, 34, ref border, sizeof(int));   // DWMWA_BORDER_COLOR
+        }));
+    }
+
     /// <summary>Lo fija la app según Ajustes ("Reducir movimiento").</summary>
     public static bool ReduceMotion { get; set; }
 

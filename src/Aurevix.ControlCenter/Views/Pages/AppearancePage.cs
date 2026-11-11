@@ -70,17 +70,11 @@ public sealed class AppearancePage : UserControl
                 Ui.Button("Centrada", () => ApplyReg("Barra centrada", [Dw(Advanced, "TaskbarAl", 1)])),
                 Ui.Button("A la izquierda", () => ApplyReg("Barra a la izquierda", [Dw(Advanced, "TaskbarAl", 0)])))));
 
-        var wallDir = Path.Combine(AppContext.BaseDirectory, "Assets", "Wallpapers");
-        var walls = Directory.Exists(wallDir) ? Directory.GetFiles(wallDir, "*.png") : Array.Empty<string>();
+        var walls = AurevixStyle.Wallpapers();
         var wallRow = Ui.Wrap();
-        foreach (var w in walls)
-        {
-            var b = Ui.Button(Path.GetFileNameWithoutExtension(w).Replace('-', ' '), () => SetWallpaper(w));
-            b.Margin = new Thickness(0, 0, 8, 8);
-            wallRow.Children.Add(b);
-        }
+        foreach (var w in walls) wallRow.Children.Add(WallpaperTile(w));
         body.Children.Add(Ui.Card(Ui.H2("Fondos AUREVIX"),
-            walls.Length == 0 ? Ui.Muted("No se encontraron fondos instalados.") : Ui.Muted("Elige un fondo de la colección AUREVIX."),
+            walls.Count == 0 ? Ui.Muted("No se encontraron fondos instalados.") : Ui.Muted("Pulsa un fondo para ponerlo en el escritorio. Aurora es el predeterminado de AUREVIX OS."),
             wallRow,
             Ui.Row(Ui.Button("Restaurar fondo original", RestoreWallpaper))));
 
@@ -146,6 +140,31 @@ public sealed class AppearancePage : UserControl
         var r = AppServices.Tweaks.Apply([tweak], Prefix + name);
         if (!r.Success) MessageBox.Show(string.Join("\n", r.Messages), "Apariencia", MessageBoxButton.OK, MessageBoxImage.Warning);
         else Core.Logging.AurevixLog.Info($"Apariencia aplicada: {name}");
+    }
+
+    /// <summary>Miniatura pulsable de un fondo (se decodifica a tamaño pequeño para no cargar el 4K entero).</summary>
+    private static UIElement WallpaperTile(string path)
+    {
+        var bmp = new System.Windows.Media.Imaging.BitmapImage();
+        bmp.BeginInit();
+        bmp.UriSource = new Uri(path);
+        bmp.DecodePixelWidth = 440;
+        bmp.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+        bmp.EndInit();
+        bmp.Freeze();
+        var name = Path.GetFileNameWithoutExtension(path).Replace("Aurevix-", "");
+        var frame = new Border
+        {
+            Width = 220, Height = 124, CornerRadius = new CornerRadius(12), BorderThickness = new Thickness(1), BorderBrush = Ui.Brush("BorderBrushAx"),
+            Background = new System.Windows.Media.ImageBrush(bmp) { Stretch = System.Windows.Media.Stretch.UniformToFill }, Cursor = System.Windows.Input.Cursors.Hand
+        };
+        var label = Ui.Muted(name);
+        label.Margin = new Thickness(2, 6, 0, 0);
+        var tile = new StackPanel { Margin = new Thickness(0, 0, 12, 12), Children = { frame, label } };
+        frame.MouseEnter += (_, _) => frame.BorderBrush = Ui.Brush("Accent");
+        frame.MouseLeave += (_, _) => frame.BorderBrush = Ui.Brush("BorderBrushAx");
+        frame.MouseLeftButtonUp += (_, _) => SetWallpaper(path);
+        return tile;
     }
 
     private static string OriginalWallpaperFile => Path.Combine(AurevixPaths.Backups, "original-wallpaper.txt");

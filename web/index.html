@@ -37,7 +37,7 @@
   .copy{max-width:380px}
   .right{justify-content:flex-end}
   .eyebrow{font-size:12px;color:var(--muted);margin-bottom:10px;letter-spacing:.02em}
-  h1{font-size:clamp(44px,7.4vw,104px);line-height:.98;font-weight:600;letter-spacing:-.035em}
+  h1{font-size:clamp(38px,5vw,72px);line-height:.98;font-weight:600;letter-spacing:-.035em}
   h2{font-size:clamp(26px,3.2vw,36px);line-height:1.12;font-weight:600;letter-spacing:-.02em;margin-bottom:14px}
   .lead{color:var(--muted);font-size:16px;max-width:460px;margin-top:22px}
   p.body{color:var(--muted);font-size:14px}
@@ -48,6 +48,32 @@
   .hero{position:relative;flex-direction:column;justify-content:flex-end;align-items:flex-start;padding-bottom:12vh}
   .hero .row{display:flex;gap:22px;align-items:center;margin-top:34px;flex-wrap:wrap}
   .scroll{position:absolute;bottom:28px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--muted);letter-spacing:.14em}
+
+  /* Producto real: capturas dentro de un marco de ventana */
+  .show{flex-direction:column;align-items:stretch;justify-content:center;gap:34px}
+  .show .head{max-width:620px}
+  .split{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:5vw;align-items:center;width:100%}
+  .split.flip{grid-template-columns:minmax(0,7fr) minmax(0,5fr)}
+  .split.flip .copy{order:2}
+  .win{border:1px solid #26262d;border-radius:14px;overflow:hidden;background:#050506;box-shadow:0 40px 90px -30px rgba(0,0,0,.9),0 0 0 1px rgba(255,255,255,.02) inset;
+       transition:transform .5s cubic-bezier(.2,.7,.2,1),border-color .3s}
+  .win:hover{transform:translateY(-3px);border-color:#3a3a44}
+  .win .bar{display:flex;align-items:center;gap:9px;height:34px;padding:0 13px;background:#050506;border-bottom:1px solid #17171b;font-size:12px;color:var(--muted)}
+  .win .bar img{width:14px;height:14px}
+  .win img.shot{display:block;width:100%;height:auto}
+  .desk{position:relative;border-radius:20px;overflow:hidden;border:1px solid var(--line);background:#050506 center/cover no-repeat;
+        padding:clamp(18px,4vw,60px) clamp(14px,7vw,120px) 0;width:100%}
+  .desk .win{border-bottom:0;border-radius:14px 14px 0 0;max-height:min(56vh,540px);max-width:900px;margin:0 auto}
+  .desk .win:hover{transform:none}
+  .list{list-style:none;padding:0;margin-top:20px;display:grid;gap:10px}
+  .list li{position:relative;padding-left:20px;font-size:14px;color:var(--muted)}
+  .list li::before{content:"";position:absolute;left:0;top:.62em;width:8px;height:2px;background:var(--accent)}
+  .list b{color:var(--text);font-weight:600}
+  .walls{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;width:100%}
+  .wall{position:relative;aspect-ratio:16/9;border-radius:16px;overflow:hidden;border:1px solid var(--line)}
+  .wall img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .9s cubic-bezier(.2,.7,.2,1)}
+  .wall:hover img{transform:scale(1.03)}
+  .wall span{position:absolute;left:14px;bottom:12px;font-size:12px;color:var(--text);background:rgba(5,5,6,.55);backdrop-filter:blur(8px);padding:4px 10px;border-radius:999px}
 
   /* Descarga */
   .download{flex-direction:column;align-items:center;text-align:center;justify-content:center}
@@ -76,11 +102,17 @@
     .right{justify-content:flex-start}
     .copy{max-width:none;background:linear-gradient(transparent,rgba(5,5,6,.85) 30%);padding-top:40px}
     .options{grid-template-columns:1fr}
+    .split,.split.flip{grid-template-columns:1fr;gap:26px}
+    .split.flip .copy{order:0}
+    .show{align-items:stretch;padding-bottom:88px}
+    .show .copy{background:none;padding-top:0}
+    .walls{grid-template-columns:1fr}
     .stats{gap:24px}
   }
   @media (prefers-reduced-motion:reduce){
     html{scroll-behavior:auto}
     .reveal{opacity:1;transform:none;transition:none}
+    .win,.wall img{transition:none}
   }
 </style>
 </head>
@@ -90,54 +122,86 @@
 <nav aria-label="Principal">
   <a class="brand" href="#inicio"><img src="logo.png" alt="" width="20" height="20">AUREVIX</a>
   <div class="links">
-    <a href="#diagnostico">Sistema</a>
+    <a href="#escritorio">Sistema</a>
+    <a href="#rendimiento">Rendimiento</a>
     <a href="#seguridad">Seguridad</a>
-    <a href="#descargar">Instalar</a>
     <a class="pill" href="#descargar">Descargar</a>
   </div>
 </nav>
 
 <main>
-  <section class="hero" id="inicio" data-shape="sphere" data-x=".64">
+  <section class="hero" id="inicio" data-shape="sphere" data-x=".78" data-scale=".78">
     <div class="eyebrow reveal" id="ver">AUREVIX OS</div>
-    <h1 class="reveal d1">Windows 11.<br>Sin ruido.</h1>
-    <p class="lead reveal d2">Windows oficial con una capa propia: minimalista, seguro, reversible y siempre actualizado.</p>
+    <h1 class="reveal d1">Un sistema nuevo.<br>Tus programas de siempre.</h1>
+    <p class="lead reveal d2">AUREVIX OS es Windows 11 oficial con otra cara: oscuro, limpio y rápido. Todo lo que funciona en Windows funciona aquí.</p>
     <div class="row reveal d3">
       <a class="pill big" href="#descargar">Descargar AUREVIX</a>
-      <a class="ghost" href="#diagnostico">Descubrir</a>
+      <a class="ghost" href="#escritorio">Ver cómo es</a>
     </div>
     <div class="scroll">DESLIZA</div>
   </section>
 
-  <section id="diagnostico" data-shape="ring" data-x=".66">
-    <div class="copy">
-      <div class="eyebrow reveal">Diagnóstico</div>
-      <h2 class="reveal d1">Conoce tu equipo en un minuto.</h2>
-      <p class="body reveal d2">CPU, gráfica, memoria, discos, controladores y Windows Update. Se analiza en tu PC y nada sale de él. Si un dato no es fiable, lo decimos: nunca lo inventamos.</p>
-      <div class="stats reveal d3">
-        <div class="stat"><b>0</b><span>datos enviados</span></div>
-        <div class="stat"><b>4</b><span>niveles de estado</span></div>
+  <section class="show" id="escritorio" data-shape="sphere" data-x=".5" data-dim="0">
+    <div class="head">
+      <div class="eyebrow reveal">El escritorio</div>
+      <h2 class="reveal d1">Negro grafito, un solo acento y nada que sobre.</h2>
+      <p class="body reveal d2">Fondo Aurora, ventanas oscuras, barra de tareas limpia, Inicio sin anuncios y pantalla de bloqueo sin sugerencias. Se aplica con un clic y se deshace con otro.</p>
+    </div>
+    <div class="desk reveal d2" style="background-image:url(img/fondo-aurora.webp)">
+      <div class="win">
+        <div class="bar"><img src="logo.png" alt="">AUREVIX Control Center</div>
+        <img class="shot" src="img/app-inicio.webp" width="1542" height="1123" alt="AUREVIX Control Center: uso del procesador, memoria, disco y accesos a Optimizar, Game Boost, Benchmark y Estilo AUREVIX" loading="lazy">
       </div>
     </div>
   </section>
 
-  <section class="right" id="perfiles" data-shape="wave" data-x=".33" data-scale=".72">
-    <div class="copy">
-      <div class="eyebrow reveal">Rendimiento</div>
-      <h2 class="reveal d1">Tres niveles. Cero humo.</h2>
-      <p class="body reveal d2">Recomendado, Rendimiento y Máximo, o Personalizado ajuste a ajuste: energía sin ahorros, prioridad al juego, GPU, latencia, servicios y telemetría. Cada cambio se explica, se mide con AUREVIX Benchmark y se deshace con un clic.</p>
-      <div class="stats reveal d3">
-        <div class="stat"><b>40+</b><span>ajustes revisados</span></div>
-        <div class="stat"><b>1%</b><span>lows medidos</span></div>
+  <section class="show" id="rendimiento" data-shape="wave" data-x=".5" data-dim="0">
+    <div class="split">
+      <div class="copy">
+        <div class="eyebrow reveal">Rendimiento</div>
+        <h2 class="reveal d1">Más fluido, y lo puedes medir.</h2>
+        <p class="body reveal d2">88 ajustes revisados en tres niveles. Ninguno apaga Defender, el Firewall ni Windows Update, y todos se deshacen.</p>
+        <ul class="list reveal d3">
+          <li><b>Game Boost.</b> Al abrir un juego le da prioridad y aparta lo demás. Al cerrarlo, todo vuelve.</li>
+          <li><b>Benchmark.</b> FPS medios y 1 % lows antes y después, con tus juegos.</li>
+          <li><b>Red.</b> DNS más rápido, prioridad por juego y adaptador sin ahorro de energía.</li>
+        </ul>
+      </div>
+      <div class="win reveal d2">
+        <div class="bar"><img src="logo.png" alt="">Game Boost</div>
+        <img class="shot" src="img/app-gameboost.webp" width="1542" height="1123" alt="Pantalla Game Boost con las opciones que se aplican al empezar a jugar" loading="lazy">
       </div>
     </div>
   </section>
 
-  <section id="estilo" data-shape="sphere" data-x=".66" data-scale=".8">
-    <div class="copy">
-      <div class="eyebrow reveal">Estilo AUREVIX</div>
-      <h2 class="reveal d1">Windows, pero en calma.</h2>
-      <p class="body reveal d2">Modo oscuro con acento verde lima, barra de tareas limpia, Inicio sin anuncios y un Explorador ordenado. Con opciones oficiales de Windows, sin parchear el sistema.</p>
+  <section class="show" id="instalar" data-shape="ring" data-x=".5" data-dim="0">
+    <div class="split flip">
+      <div class="win reveal d2">
+        <div class="bar"><img src="logo.png" alt="">AUREVIX Installer</div>
+        <img class="shot" src="img/instalador.webp" width="1476" height="1021" alt="AUREVIX Installer creando un USB: 28 por ciento, quedan unos 9 minutos" loading="lazy">
+      </div>
+      <div class="copy">
+        <div class="eyebrow reveal">Instalación</div>
+        <h2 class="reveal d1">Un instalador. Tres caminos.</h2>
+        <p class="body reveal d2">Te dice cuánto falta, comprueba el espacio antes de empezar y verifica el resultado al terminar.</p>
+        <ul class="list reveal d3">
+          <li><b>En este Windows.</b> Añade AUREVIX sin borrar nada. Unos 2 minutos.</li>
+          <li><b>Reinstalar limpio.</b> Windows 11 desde cero, sin USB y en español.</li>
+          <li><b>USB o ISO.</b> Enchufa un pendrive y lo deja listo para arrancar.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="show" id="fondos" data-shape="sphere" data-x=".5" data-dim="0">
+    <div class="head">
+      <div class="eyebrow reveal">Fondos</div>
+      <h2 class="reveal d1">Tres fondos en 4K, hechos para AUREVIX.</h2>
+    </div>
+    <div class="walls reveal d2">
+      <div class="wall"><img src="img/fondo-aurora.webp" width="1920" height="1080" alt="Fondo Aurora: una cinta de luz verde lima sobre negro" loading="lazy"><span>Aurora</span></div>
+      <div class="wall"><img src="img/fondo-tide.webp" width="1920" height="1080" alt="Fondo Tide: una cinta de luz azul sobre negro" loading="lazy"><span>Tide</span></div>
+      <div class="wall"><img src="img/fondo-dusk.webp" width="1920" height="1080" alt="Fondo Dusk: una cinta de luz naranja y rosa sobre negro" loading="lazy"><span>Dusk</span></div>
     </div>
   </section>
 
@@ -145,10 +209,11 @@
     <div class="copy">
       <div class="eyebrow reveal">Seguridad</div>
       <h2 class="reveal d1">Firmado. Verificado. Tuyo.</h2>
-      <p class="body reveal d2">Cada actualización llega firmada y se comprueba antes de instalarse. Defender, Firewall, SmartScreen y UAC siguen activos. El servidor nunca controla tu PC.</p>
+      <p class="body reveal d2">Cada actualización llega firmada y se comprueba antes de instalarse. Defender, Firewall, SmartScreen y UAC siguen activos. El diagnóstico se hace en tu PC y nada sale de él.</p>
       <div class="stats reveal d3">
         <div class="stat"><b>P-256</b><span>firma ECDSA</span></div>
         <div class="stat"><b>SHA-256</b><span>cada paquete</span></div>
+        <div class="stat"><b>0</b><span>datos enviados</span></div>
       </div>
     </div>
   </section>
@@ -162,14 +227,14 @@
 
     <div class="options reveal d3">
       <div class="opt"><div class="n">01</div><h3>Instalar en este Windows</h3><p>Añade AUREVIX sin borrar nada. Tus archivos y programas siguen igual.</p></div>
-      <div class="opt"><div class="n">02</div><h3>Reinstalar limpio</h3><p>Descarga Windows 11 oficial y reinstala el PC desde cero, sin USB. Todo automático.</p></div>
+      <div class="opt"><div class="n">02</div><h3>Reinstalar limpio</h3><p>Descarga Windows 11 oficial y reinstala el PC desde cero, sin USB. Borra lo que haya en el disco del sistema.</p></div>
       <div class="opt"><div class="n">03</div><h3>Crear USB o ISO</h3><p>Enchufa un pendrive: AUREVIX lo detecta y monta dentro Windows 11 con todo listo.</p></div>
     </div>
 
     <div class="more reveal">
       <a class="ghost" id="dl-setup" href="#">Solo Control Center (.exe)</a>
       <a class="ghost" id="dl-iso" href="#">ISO Builder (avanzado)</a>
-      <a class="ghost" href="https://github.com/s0k1x/sistema-OS-aurevix-OS/releases" rel="noopener">Todas las versiones</a>
+      <a class="ghost" href="https://github.com/s0k1x/aurevix-OS/releases" rel="noopener">Todas las versiones</a>
     </div>
 
     <p class="legal reveal">Windows se descarga siempre desde Microsoft y se activa con tu propia licencia: AUREVIX no distribuye Windows ni incluye claves. Por eso no hay una ISO lista para descargar; el Installer la crea en tu PC en unos minutos.</p>
@@ -178,7 +243,7 @@
 
 <footer>
   <span>AUREVIX OS · Versión de pruebas. Úsala primero en una máquina virtual.</span>
-  <span>Windows es una marca de Microsoft. AUREVIX no está afiliado a Microsoft. · <a href="https://github.com/s0k1x/sistema-OS-aurevix-OS" rel="noopener">GitHub</a></span>
+  <span>Windows es una marca de Microsoft. AUREVIX no está afiliado a Microsoft. · <a href="https://github.com/s0k1x/aurevix-OS" rel="noopener">GitHub</a></span>
 </footer>
 
 <script>
@@ -204,9 +269,9 @@
   const cache = {};
   for (const k in shapes) { cache[k] = new Float32Array(N * 3); for (let i = 0; i < N; i++) cache[k].set(shapes[k](i), i * 3); }
   const pos = new Float32Array(cache.sphere);
-  let target = 'sphere', tx = .64, sx = 1, dim = 1, cxs = .64, scs = 1, dms = 1;
+  let target = 'sphere', tx = .78, sx = .78, dim = 1, cxs = .78, scs = .78, dms = 1;
 
-  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { const d = e.target.dataset; target = d.shape || 'sphere'; tx = +(d.x || .5); sx = +(d.scale || 1); dim = +(d.dim || 1); } }), { threshold: .45 });
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { const d = e.target.dataset; target = d.shape || 'sphere'; tx = +(d.x || .5); sx = +(d.scale || 1); dim = d.dim === undefined ? 1 : +d.dim; } }), { threshold: .45 });
   document.querySelectorAll('section[data-shape]').forEach(s => io.observe(s));
 
   let rot = 0, last = performance.now();
@@ -271,7 +336,7 @@
     if (safe(rel.isobuilder_url)) $('dl-iso').href = rel.isobuilder_url; else $('dl-iso').remove();
   } catch {
     $('dl-badge').textContent = 'No se pudo cargar la versión';
-    $('dl-main').href = 'https://github.com/s0k1x/sistema-OS-aurevix-OS/releases/latest';
+    $('dl-main').href = 'https://github.com/s0k1x/aurevix-OS/releases/latest';
   }
 })();
 </script>

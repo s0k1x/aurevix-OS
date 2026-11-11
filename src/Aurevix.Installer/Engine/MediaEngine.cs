@@ -58,8 +58,21 @@ public sealed class MediaEngine
         if (r.Status is not (UpdateStatus.Available or UpdateStatus.NotEligibleYet or UpdateStatus.RequiresManualUpdate) || r.Release is null)
             throw new InvalidOperationException($"No se pudo obtener AUREVIX: {r.Message}");
         var pkg = r.Release.Packages.First(p => p.Kind == PackageKind.AppInstaller);
-        var path = await client.DownloadAsync(pkg, Path.Combine(WorkRoot, "aurevix"),
-            new Progress<double>(f => progress.Report(new Step($"Descargando AUREVIX {r.Release.Version}…", f))), ct);
+        string path;
+        try
+        {
+            path = await client.DownloadAsync(pkg, Path.Combine(WorkRoot, "aurevix"),
+                new Progress<double>(f => progress.Report(new Step($"Descargando AUREVIX {r.Release.Version}", f))), ct);
+        }
+        catch (HttpRequestException ex)
+        {
+            AurevixLog.Error($"Descarga de AUREVIX fallida: {pkg.Url}", ex);
+            var code = ex.StatusCode is { } c ? $" (error {(int)c})" : "";
+            throw new InvalidOperationException(ex.StatusCode is System.Net.HttpStatusCode.NotFound or System.Net.HttpStatusCode.Forbidden
+                ? $"El servidor de descargas de AUREVIX no entrega la versión {r.Release.Version}{code}. No es un problema de tu equipo: " +
+                  "la descarga no está disponible públicamente en este momento. Inténtalo más tarde."
+                : $"No se pudo descargar AUREVIX{code}. Comprueba tu conexión a internet y vuelve a intentarlo.");
+        }
         AurevixLog.Info($"AUREVIX {r.Release.Version} descargado y verificado: {path}");
         return path;
     }

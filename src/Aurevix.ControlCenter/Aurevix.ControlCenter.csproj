@@ -22,6 +22,7 @@
   <ItemGroup>
     <Resource Include="Assets\aurevix.ico" />
     <Content Include="Assets\Wallpapers\*.png" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\Wallpapers\*.jpg" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <!-- WinForms se usa SOLO para el icono de la bandeja; evita conflictos de nombres con WPF. -->
   <ItemGroup>
