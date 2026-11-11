@@ -120,6 +120,49 @@ public static class Screenshotter
         main.Close();
     }
 
+    /// <summary>
+    /// «Con todo instalado»: Estilo AUREVIX completo (tema claro, fondo, iconos) + AUREVIX Shell activo, y capturas del
+    /// escritorio, el menú Inicio, el Explorador, Configuración y el Control Center (solo en máquinas de pruebas).
+    /// </summary>
+    public static async Task RenderInstalledAsync(string outDir)
+    {
+        Directory.CreateDirectory(outDir);
+        var log = new List<string>();
+        var r = await AurevixStyle.ApplyAsync(includeLockScreen: false);
+        log.Add($"aplicado: {string.Join(", ", r.Applied)}"); log.Add($"omitido: {string.Join(", ", r.Skipped)}");
+        AppServices.Settings.ShellEnabled = true;
+        AurevixShell.Start();
+        Kill("SystemSettings");
+        AurevixStyle.RestartExplorer();
+        await Task.Delay(15000);
+        CaptureScreen(Path.Combine(outDir, "todo-01-escritorio.png"));
+        StartMenu(); await Task.Delay(4000);
+        CaptureScreen(Path.Combine(outDir, "todo-02-inicio.png"));
+        StartMenu(); await Task.Delay(1500);
+
+        Open("shell:MyComputerFolder"); await Task.Delay(6000);
+        CaptureScreen(Path.Combine(outDir, "todo-03-este-equipo.png"));
+        Open("shell:UsersFilesFolder"); await Task.Delay(6000);
+        CaptureScreen(Path.Combine(outDir, "todo-04-carpeta-usuario.png"));
+        foreach (var p in System.Diagnostics.Process.GetProcessesByName("explorer"))
+            try { if (p.MainWindowHandle != IntPtr.Zero && p.MainWindowTitle.Length > 0) p.CloseMainWindow(); } catch { }
+        await Task.Delay(2000);
+
+        Open("ms-settings:personalization"); await Task.Delay(9000);
+        CaptureScreen(Path.Combine(outDir, "todo-05-configuracion.png"));
+        Open("ms-settings:colors"); await Task.Delay(5000);
+        CaptureScreen(Path.Combine(outDir, "todo-06-configuracion-colores.png"));
+        Kill("SystemSettings"); await Task.Delay(1500);
+
+        var main = new MainWindow { Left = 60, Top = 40 };
+        main.Show(); main.Activate();
+        await Task.Delay(4000);
+        CaptureScreen(Path.Combine(outDir, "todo-07-control-center.png"));
+        main.Close();
+        log.Add($"shell: {AurevixShell.LastResult}");
+        File.WriteAllLines(Path.Combine(outDir, "todo-info.txt"), log);
+    }
+
     public static void Save(Window w, string path)
     {
         w.UpdateLayout();

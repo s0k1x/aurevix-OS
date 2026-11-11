@@ -68,6 +68,19 @@ public partial class App : Application
             return;
         }
 
+        var allIdx = Array.FindIndex(e.Args, a => a.Equals("--render-installed", StringComparison.OrdinalIgnoreCase));
+        if (allIdx >= 0 && allIdx + 1 < e.Args.Length)
+        {
+            var adir = e.Args[allIdx + 1];
+            Dispatcher.InvokeAsync(async () =>
+            {
+                try { await Screenshotter.RenderInstalledAsync(adir); }
+                catch (Exception ex) { Directory.CreateDirectory(adir); File.WriteAllText(System.IO.Path.Combine(adir, "error-todo.txt"), ex.ToString()); }
+                Shutdown();
+            });
+            return;
+        }
+
         // Modo prueba de AUREVIX Shell (solo lo usa el workflow de GitHub Actions).
         var shellIdx = Array.FindIndex(e.Args, a => a.Equals("--shell-test", StringComparison.OrdinalIgnoreCase));
         if (shellIdx >= 0 && shellIdx + 1 < e.Args.Length)

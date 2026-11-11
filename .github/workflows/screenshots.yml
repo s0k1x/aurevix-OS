@@ -114,6 +114,26 @@ jobs:
           Get-Process AurevixControlCenter -IncludeUserName -ErrorAction SilentlyContinue | Format-Table Id, UserName, StartTime
           Get-Content (Join-Path $dir 'aurevix-shell.log') -ErrorAction SilentlyContinue
           Get-Content (Join-Path $dir 'controlcenter.log') -ErrorAction SilentlyContinue
+      - name: Todo instalado (estilo completo + Shell)
+        shell: pwsh
+        run: |
+          Get-Process AurevixControlCenter -ErrorAction SilentlyContinue | Stop-Process -Force
+          $dir = Join-Path $PWD 'shell\todo'
+          New-Item -ItemType Directory -Force $dir | Out-Null
+          # Iconos de carpetas y unidades para todo el equipo (en un PC normal los pone AUREVIX Core Service).
+          $icons = (Resolve-Path out/cc/Assets/Icons).Path
+          $k = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Icons'
+          New-Item -Path $k -Force | Out-Null
+          $map = @{ '0'='file'; '1'='file-text'; '2'='app'; '3'='folder'; '4'='folder-open'; '7'='usb'; '8'='drive'; '9'='network-drive'; '11'='disc'; '15'='pc'; '16'='printer'; '17'='network'; '29'='shortcut'; '34'='desktop'; '43'='favorites'; '47'='lock' }
+          foreach ($i in $map.Keys) { Set-ItemProperty -Path $k -Name $i -Value "$icons\$($map[$i]).ico,0" }
+          $cc = (Resolve-Path out/cc/AurevixControlCenter.exe).Path
+          $cmd = Join-Path $env:TEMP 'todo.cmd'
+          Set-Content -Path $cmd -Value "@echo off`r`nstart `"`" `"$cc`" --render-installed `"$dir`"" -Encoding ascii
+          Start-Process explorer.exe -ArgumentList "`"$cmd`""
+          for ($i = 0; $i -lt 240 -and -not (Test-Path (Join-Path $dir 'todo-info.txt')) -and -not (Test-Path (Join-Path $dir 'error-todo.txt')); $i++) { Start-Sleep 1 }
+          Get-ChildItem $dir | Format-Table Name, Length
+          Get-Content (Join-Path $dir 'todo-info.txt'), (Join-Path $dir 'error-todo.txt') -ErrorAction SilentlyContinue
+          Copy-Item (Join-Path $env:TEMP 'aurevix-shell.log') (Join-Path $dir 'aurevix-shell.log') -ErrorAction SilentlyContinue
       - name: Añadir a la rama ci-capturas
         shell: pwsh
         run: |

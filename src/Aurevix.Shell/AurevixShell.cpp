@@ -48,10 +48,10 @@ static void LoadPalette()
                  RRF_RT_REG_DWORD, nullptr, &light, &size);
     if (light)
     {
-        Graphite = { 0xF2, 0xF6, 0xF6, 0xF8 };
-        Line = { 0xFF, 0xD9, 0xDB, 0xE0 };
+        Graphite = { 0xF4, 0xF1, 0xF6, 0xEA };   // blanco con un toque verde AUREVIX
+        Line = { 0xFF, 0x9C, 0xD4, 0x62 };       // borde verde suave
         Lime = { 0xFF, 0x4E, 0x9A, 0x1E };
-        Page = { 0xFF, 0xF4, 0xF5, 0xF7 };
+        Page = { 0xFF, 0xF1, 0xF6, 0xEC };
     }
 }
 
@@ -148,15 +148,22 @@ static bool s_isSettings = false;
 
 // Configuración: fondo grafito AUREVIX en el contenido de la ventana (en lugar de Mica). Solo el contenido de la
 // ventana principal, nunca menús ni desplegables, que viven en otras raíces.
-static void StyleWindowRoot(wux::DependencyObject const& obj)
+static winrt::weak_ref<wux::UIElement> s_settingsRoot;
+static void StyleSettingsContent()
 {
-    if (!s_isSettings) return;
-    auto window = wux::Window::Current();
-    if (!window) return;
-    auto content = window.Content();
-    if (!content || content != obj.try_as<wux::UIElement>()) return;
-    if (auto panel = obj.try_as<wuxc::Panel>()) { panel.Background(wuxm::SolidColorBrush(Page)); g_styled++; }
-    else if (auto control = obj.try_as<wuxc::Control>()) { control.Background(wuxm::SolidColorBrush(Page)); g_styled++; }
+    try
+    {
+        auto window = wux::Window::Current();
+        if (!window) return;
+        auto content = window.Content();
+        if (!content || s_settingsRoot.get() == content) return;
+        bool done = false;
+        if (auto panel = content.try_as<wuxc::Panel>()) { panel.Background(wuxm::SolidColorBrush(Page)); done = true; }
+        else if (auto control = content.try_as<wuxc::Control>()) { control.Background(wuxm::SolidColorBrush(Page)); done = true; }
+        else if (auto border = content.try_as<wuxc::Border>()) { border.Background(wuxm::SolidColorBrush(Page)); done = true; }
+        if (done) { s_settingsRoot = winrt::make_weak(content); g_styled++; Log(L"Configuración: fondo AUREVIX"); }
+    }
+    catch (...) {}
 }
 
 static void StyleElement(wux::DependencyObject const& obj, std::wstring_view name)
@@ -166,9 +173,16 @@ static void StyleElement(wux::DependencyObject const& obj, std::wstring_view nam
         if (auto shape = obj.try_as<wuxs::Shape>())
         {
             if (name == L"BackgroundFill" && HasAncestor(obj, L"Taskbar.TaskbarBackground")) KeepFill(shape, Graphite);
-            else if (name == L"BackgroundStroke" && HasAncestor(obj, L"Taskbar.TaskbarBackground")) KeepFill(shape, Line);
+            else if (name == L"BackgroundStroke" && HasAncestor(obj, L"Taskbar.TaskbarBackground")) KeepFill(shape, Lime); // línea verde AUREVIX
             else if (name == L"RunningIndicator") KeepFill(shape, Lime);
         }
+        return;
+    }
+    if (s_isSettings)
+    {
+        // Indicador de la sección seleccionada (barra lateral) en verde AUREVIX.
+        if (name == L"SelectionIndicator" || name == L"ActiveIndicator")
+            if (auto shape = obj.try_as<wuxs::Shape>()) KeepFill(shape, Lime);
         return;
     }
     if (s_isStart)
@@ -180,7 +194,7 @@ static void StyleElement(wux::DependencyObject const& obj, std::wstring_view nam
                 KeepBorderBackground(border, Graphite);
                 border.CornerRadius(wux::CornerRadiusHelper::FromUniformRadius(16));
                 border.BorderBrush(wuxm::SolidColorBrush(Line));
-                border.BorderThickness(wux::ThicknessHelper::FromUniformLength(1));
+                border.BorderThickness(wux::ThicknessHelper::FromUniformLength(2));
             }
             else if (name == L"AcrylicOverlay") border.Visibility(wux::Visibility::Collapsed);
             else if (name == L"StartDropShadow" || name == L"RootGridDropShadow" || name == L"DropShadow")
@@ -213,16 +227,7 @@ struct VisualTreeWatcher : winrt::implements<VisualTreeWatcher, IVisualTreeServi
     HRESULT STDMETHODCALLTYPE OnVisualTreeChange(ParentChildRelation relation, VisualElement element, VisualMutationType mutation) noexcept override
     {
         if (mutation != Add) return S_OK;
-        if (s_isSettings && relation.Parent == 0)
-        {
-            try
-            {
-                winrt::Windows::Foundation::IInspectable root;
-                if (SUCCEEDED(m_diag->GetIInspectableFromHandle(element.Handle, reinterpret_cast<::IInspectable**>(winrt::put_abi(root)))) && root)
-                    if (auto d = root.try_as<wux::DependencyObject>()) StyleWindowRoot(d);
-            }
-            catch (...) {}
-        }
+        if (s_isSettings) StyleSettingsContent();
         if (!element.Name || !*element.Name) return S_OK;
         try
         {
