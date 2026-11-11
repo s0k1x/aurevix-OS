@@ -68,6 +68,22 @@ public partial class App : Application
             return;
         }
 
+        // Modo prueba de AUREVIX Shell (solo lo usa el workflow de GitHub Actions).
+        var shellIdx = Array.FindIndex(e.Args, a => a.Equals("--shell-test", StringComparison.OrdinalIgnoreCase));
+        if (shellIdx >= 0 && shellIdx + 1 < e.Args.Length)
+        {
+            var sfile = e.Args[shellIdx + 1];
+            Dispatcher.InvokeAsync(async () =>
+            {
+                string r;
+                try { r = await AurevixShell.ApplyOnceAsync(); } catch (Exception ex) { r = "FAIL " + ex; }
+                File.WriteAllText(sfile, r);
+                await Task.Delay(8000);
+                Shutdown();
+            });
+            return;
+        }
+
         var shotIdx = Array.FindIndex(e.Args, a => a.Equals("--render-screenshots", StringComparison.OrdinalIgnoreCase));
         if (shotIdx >= 0 && shotIdx + 1 < e.Args.Length)
         {
@@ -108,6 +124,9 @@ public partial class App : Application
             RestartPrompt.Ask($"AUREVIX {AppServices.CurrentVersion} instalado",
                 "La actualización se ha instalado. Reinicia el equipo para que todos los componentes y ajustes se apliquen por completo.");
         AppServices.Updates.StartBackgroundChecks();
+
+        AurevixShell.Notify += msg => Dispatcher.Invoke(() => _tray?.ShowBalloon("AUREVIX Shell", msg));
+        AurevixShell.Start();
 
         GameBoost.Notify += msg => Dispatcher.Invoke(() => _tray?.ShowBalloon("AUREVIX Game Boost", msg));
         GameBoost.Start();

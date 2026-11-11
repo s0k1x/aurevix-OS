@@ -16,10 +16,15 @@
 4. **[2026-11-11] Release = `release.yml` via workflow_dispatch with `version` input on `main`**
    Do instead: update `RELEASE_NOTES.md`, merge PR, dispatch; tag pushes are blocked.
 
+5. **[2026-11-11] AUREVIX Shell = native C++ TAP (`src/Aurevix.Shell`) loaded via InitializeXamlDiagnosticsEx**
+   Do instead: build with `src/Aurevix.Shell/build.ps1 -Out out/shell` before `dotnet build/publish` of ControlCenter (csproj copies it if present); verify with the `shell` job in `screenshots.yml` (`ci-capturas/shell/`).
+
 ## Shell & Command Reliability
 1. **[2026-11-11] Supabase and GitHub Pages hosts are blocked from this container**
    Do instead: read the `releases` table with the Supabase MCP `execute_sql` (project `zttqiphwurnferzlubzy`); never curl them.
-2. **[2026-11-11] Force push is denied**
+2. **[2026-11-11] GitHub MCP only accepts the old repo name**
+   Do instead: call `mcp__github__*` with repo `sistema-OS-aurevix-OS` (it redirects to `aurevix-OS`).
+3. **[2026-11-11] Force push is denied**
    Do instead: normal push and merge commits only.
 
 ## Domain Behavior Guardrails

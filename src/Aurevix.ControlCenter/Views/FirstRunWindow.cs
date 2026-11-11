@@ -21,6 +21,7 @@ public sealed class FirstRunWindow : Window
     private readonly List<string> _pending = [];
     private DiagnosticReport? _report;
     private string? _chosenProfile;
+    private readonly CheckBox _optimize = new() { Content = new TextBlock { Text = "Optimizar Windows para rendimiento (nivel Rendimiento de AUREVIX: menos procesos y servicios en segundo plano, energía sin ahorros, prioridad a lo que usas). Todo reversible.", TextWrapping = TextWrapping.Wrap }, IsChecked = true, Margin = new Thickness(0, 10, 0, 6) };
 
     public FirstRunWindow()
     {
@@ -146,12 +147,12 @@ public sealed class FirstRunWindow : Window
         _chosenProfile = "balanced";
         Show(5, "Perfil", Ui.H1("Elige cómo quieres usar tu equipo"),
             Ui.Muted("Podrás cambiarlo o deshacerlo en cualquier momento desde AUREVIX Control Center > Perfiles."),
-            Ui.Card(options),
-            Ui.Row(Ui.Button("Aplicar perfil", ApplyProfile, primary: true),
+            Ui.Card(options), _optimize,
+            Ui.Row(Ui.Button("Aplicar", ApplyProfile, primary: true),
                    Ui.Button("No aplicar ningún perfil", () => { _pending.Add("Elegir un perfil (opcional)."); StyleStep(); })));
     }
 
-    private void ApplyProfile()
+    private async void ApplyProfile()
     {
         var p = AppServices.ProfileManager.Find(_chosenProfile ?? "balanced")!;
         var preview = AppServices.Tweaks.Preview(AppServices.ProfileManager.TweaksOf(p));
@@ -165,34 +166,56 @@ public sealed class FirstRunWindow : Window
             _done.AddRange(r.Messages.Where(m => !m.StartsWith("Aplicado")).Select(m => "  " + m));
         }
         else _pending.Add($"El perfil «{p.Name}» no se pudo aplicar: {string.Join(" ", r.Messages)}");
+
+        if (_optimize.IsChecked == true)
+        {
+            try
+            {
+                var tweaks = TweakEngine.ForLevel(AppServices.Catalog, OptimizationLevel.Performance)
+                    .Where(t => AppServices.Tweaks.CompatibilityProblem(t) is null).ToList();
+                var o = await OptimizationManager.ApplyAsync(tweaks, "Nivel Rendimiento (asistente)");
+                if (o.Success) _done.Add($"Optimización Rendimiento aplicada ({tweaks.Count} ajustes).");
+                else _pending.Add("Optimización: " + string.Join(" ", o.Messages.Take(3)));
+                if (o.RequiresRestart) _pending.Add("Reiniciar el equipo para terminar de aplicar la optimización.");
+            }
+            catch (Exception ex) { _pending.Add("Optimización no aplicada: " + ex.Message); }
+        }
         StyleStep();
     }
 
     // 6. Aspecto
-    private void StyleStep() => Show(6, "Aspecto",
-        Ui.H1("Dale a Windows el estilo AUREVIX"),
-        Ui.Muted("Minimalista y oscuro: acento verde lima, fondo y pantalla de bloqueo AUREVIX, barra de tareas limpia, " +
-                 "menú Inicio sin recomendaciones y Explorador ordenado. Puedes volver al aspecto original desde Apariencia."),
-        Ui.Card(
-            Ui.Text("Qué cambia"),
-            Ui.Muted("• Modo oscuro con transparencias y acento verde lima"),
-            Ui.Muted("• Barra de tareas: iconos centrados, búsqueda como icono, sin Vista de tareas ni widgets"),
-            Ui.Muted("• Inicio: más anclados, sin recomendaciones ni sugerencias"),
-            Ui.Muted("• Explorador: abre en «Este equipo», extensiones visibles, sin archivos recientes"),
-            Ui.Muted("• Fondo y pantalla de bloqueo AUREVIX")),
-        Ui.Row(
-            Ui.Button("Aplicar estilo AUREVIX", async () =>
-            {
-                var r = await Services.AurevixStyle.ApplyAsync(includeLockScreen: true);
-                _done.Add("Estilo AUREVIX aplicado.");
-                foreach (var sk in r.Skipped) _pending.Add($"Estilo: {sk} (Windows no lo permitió).");
-                if (MessageBox.Show("Para ver la nueva barra de tareas hay que reiniciar el Explorador de Windows (unos segundos). ¿Hacerlo ahora?",
-                        "Estilo AUREVIX", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+    private void StyleStep()
+    {
+        var shell = new CheckBox { Content = new TextBlock { Text = "AUREVIX Shell: barra de tareas y menú Inicio con el diseño AUREVIX", TextWrapping = TextWrapping.Wrap }, IsChecked = Services.AurevixShell.IsAvailable, IsEnabled = Services.AurevixShell.IsAvailable, Margin = new Thickness(0, 4, 0, 4) };
+        var nusa = new CheckBox { Content = new TextBlock { Text = "Nusa: isla de música, letras y temporizador en la parte superior de la pantalla (Microsoft Store)", TextWrapping = TextWrapping.Wrap }, IsChecked = true, Margin = new Thickness(0, 4, 0, 4) };
+        Show(6, "Aspecto",
+            Ui.H1("Dale a Windows el estilo AUREVIX"),
+            Ui.Muted("Así se ve AUREVIX OS. Todo se puede desactivar después en Apariencia, y «Restablecer aspecto de Windows 11» lo deja como estaba."),
+            Ui.Card(
+                Ui.Text("Qué cambia"),
+                Ui.Muted("• Fondo Aurora, modo oscuro y ventanas en negro grafito con acento verde lima"),
+                Ui.Muted("• Barra de tareas limpia: iconos centrados, sin widgets, Copilot ni Vista de tareas"),
+                Ui.Muted("• Inicio sin recomendaciones ni anuncios; pantalla de bloqueo sin sugerencias"),
+                Ui.Muted("• Explorador: abre en «Este equipo», extensiones visibles, sin archivos recientes")),
+            shell, nusa,
+            Ui.Row(
+                Ui.Button("Aplicar estilo AUREVIX", async () =>
+                {
+                    var r = await Services.AurevixStyle.ApplyAsync(includeLockScreen: true);
+                    _done.Add("Estilo AUREVIX aplicado.");
+                    foreach (var sk in r.Skipped) _pending.Add($"Estilo: {sk} (Windows no lo permitió).");
+                    if (shell.IsChecked == true) { Services.AurevixShell.SetEnabled(true, restartShell: false); _done.Add("AUREVIX Shell activado."); }
+                    else Services.AurevixShell.SetEnabled(false, restartShell: false);
                     Services.AurevixStyle.RestartExplorer();
-                else _pending.Add("Cerrar sesión o reiniciar para ver la barra de tareas nueva.");
-                Summary();
-            }, primary: true),
-            Ui.Button("Mantener el aspecto de Windows", () => Summary())));
+                    if (nusa.IsChecked == true)
+                    {
+                        if (await Services.Nusa.InstallAsync()) _done.Add("Nusa instalada.");
+                        else _pending.Add("Instalar Nusa desde Microsoft Store (Apps).");
+                    }
+                    Summary();
+                }, primary: true),
+                Ui.Button("Mantener el aspecto de Windows", () => { Services.AurevixShell.SetEnabled(false, restartShell: false); Summary(); })));
+    }
 
     // 6. Resumen
     private void Summary()

@@ -24,6 +24,9 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
+      - name: Compilar AUREVIX Shell (nativo, C++)
+        shell: pwsh
+        run: ./src/Aurevix.Shell/build.ps1 -Out out/shell
       - name: Compilar Control Center y sus dependencias
         run: dotnet build src/Aurevix.ControlCenter --configuration Release
       - name: Compilar AUREVIX Core Service

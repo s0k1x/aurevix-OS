@@ -18,6 +18,7 @@ jobs:
           dotnet-version: 8.0.x
       - name: Compilar
         run: |
+          ./src/Aurevix.Shell/build.ps1 -Out out/shell
           dotnet build src/Aurevix.ControlCenter -c Release -o out/cc
           dotnet build src/Aurevix.Installer -c Release -o out/inst
       - name: Capturar pantallas
@@ -49,10 +50,78 @@ jobs:
           git commit -m "Capturas $env:GITHUB_SHA"
           git push -f origin ci-capturas
 
+  shell:
+    # Prueba real de AUREVIX Shell: barra de tareas, menú Inicio y Configuración antes y después.
+    runs-on: windows-latest
+    needs: screenshots
+    timeout-minutes: 20
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Compilar
+        shell: pwsh
+        run: |
+          ./src/Aurevix.Shell/build.ps1 -Out out/shell
+          dotnet build src/Aurevix.ControlCenter -c Release -o out/cc
+          # Las apps empaquetadas (menú Inicio, Configuración) solo cargan DLL que «ALL APPLICATION PACKAGES» pueda leer.
+          icacls out\cc\shell /grant "*S-1-15-2-1:(OI)(CI)RX" | Out-Null
+      - name: Probar AUREVIX Shell
+        shell: pwsh
+        run: |
+          Add-Type -AssemblyName System.Windows.Forms, System.Drawing
+          Add-Type 'using System; using System.Runtime.InteropServices; public static class K { [DllImport("user32.dll")] public static extern void keybd_event(byte v, byte s, uint f, UIntPtr e); }'
+          $dir = Join-Path $PWD 'shell'
+          New-Item -ItemType Directory -Force $dir | Out-Null
+          function Shot($name) {
+            $b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+            $bmp = New-Object System.Drawing.Bitmap $b.Width, $b.Height
+            $g = [System.Drawing.Graphics]::FromImage($bmp); $g.CopyFromScreen($b.Location, [System.Drawing.Point]::Empty, $b.Size)
+            $bmp.Save((Join-Path $dir "$name.png")); $g.Dispose(); $bmp.Dispose()
+          }
+          function StartMenu { [K]::keybd_event(0x5B,0,0,[UIntPtr]::Zero); [K]::keybd_event(0x5B,0,2,[UIntPtr]::Zero) }
+          "explorer: " + ((Get-Process explorer -ErrorAction SilentlyContinue | Measure-Object).Count) | Tee-Object -Append (Join-Path $dir 'info.txt')
+          [Environment]::OSVersion.VersionString | Tee-Object -Append (Join-Path $dir 'info.txt')
+          Shot 'shell-01-antes'
+          StartMenu; Start-Sleep 3; Shot 'shell-02-inicio-antes'; StartMenu; Start-Sleep 1
+          Start-Process ms-settings:personalization; Start-Sleep 6; Shot 'shell-03-config-antes'
+          Get-Process SystemSettings -ErrorAction SilentlyContinue | Stop-Process -Force; Start-Sleep 2
+          $res = Join-Path $dir 'resultado.txt'
+          $p = Start-Process out/cc/AurevixControlCenter.exe -ArgumentList '--shell-test', "`"$res`"" -PassThru
+          $p.WaitForExit(60000) | Out-Null
+          Get-Content $res -ErrorAction SilentlyContinue
+          Start-Sleep 3; Shot 'shell-04-despues'
+          # El Control Center normal aplica también menú Inicio y Configuración en segundo plano.
+          $bg = Start-Process out/cc/AurevixControlCenter.exe -ArgumentList '--background' -PassThru
+          Start-Sleep 6
+          StartMenu; Start-Sleep 4; Shot 'shell-05-inicio-despues'; StartMenu; Start-Sleep 1
+          Start-Process ms-settings:personalization; Start-Sleep 9; Shot 'shell-06-config-despues'
+          Copy-Item (Join-Path $env:TEMP 'aurevix-shell.log') $dir -ErrorAction SilentlyContinue
+          Get-ChildItem "$env:LOCALAPPDATA\Packages" -Recurse -Filter aurevix-shell.log -ErrorAction SilentlyContinue | ForEach-Object { Copy-Item $_.FullName (Join-Path $dir ("log-" + $_.Directory.Parent.Name + ".log")) }
+          Get-ChildItem "$env:LOCALAPPDATA\Aurevix\logs" -ErrorAction SilentlyContinue | Select-Object -Last 1 | ForEach-Object { Copy-Item $_.FullName (Join-Path $dir 'controlcenter.log') }
+          Get-ChildItem $dir | Format-Table Name, Length
+          Get-Content (Join-Path $dir 'aurevix-shell.log') -ErrorAction SilentlyContinue
+      - name: Añadir a la rama ci-capturas
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          $tmp = Join-Path $env:RUNNER_TEMP 'shl'
+          Copy-Item shell $tmp -Recurse
+          git fetch origin ci-capturas --depth 1
+          git checkout -B ci-capturas FETCH_HEAD
+          if (Test-Path shell) { Remove-Item shell -Recurse -Force }
+          Copy-Item $tmp shell -Recurse
+          git add -A
+          git commit -m "Prueba AUREVIX Shell $env:GITHUB_SHA"
+          git push origin ci-capturas
+
   desktop:
     # Windows 11 real (ARM64): escritorio antes y después del Estilo AUREVIX.
     runs-on: windows-11-arm
-    needs: screenshots
+    needs: [screenshots, shell]
     timeout-minutes: 25
     continue-on-error: true
     steps:
