@@ -87,6 +87,16 @@
   .opt h3{font-size:16px;font-weight:600;margin:8px 0 6px}
   .opt p{font-size:13px;color:var(--muted)}
   .more{display:flex;gap:22px;justify-content:center;margin-top:28px;flex-wrap:wrap}
+  /* Historial de versiones */
+  .versions{flex-direction:column;align-items:stretch;justify-content:center;min-height:auto;padding-top:120px;padding-bottom:120px}
+  .vlist{margin-top:28px;border-top:1px solid var(--line)}
+  .vrow{display:grid;grid-template-columns:110px minmax(0,1fr) auto;gap:24px;align-items:center;padding:18px 0;border-bottom:1px solid var(--line)}
+  .vrow .v{font-size:20px;font-weight:600;letter-spacing:-.01em}
+  .vrow .v small{display:block;font-size:12px;font-weight:400;color:var(--muted);letter-spacing:0;margin-top:2px}
+  .vrow .t{font-size:14px}
+  .vrow .t span{display:block;color:var(--muted);font-size:13px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .vrow .a{display:flex;gap:18px;align-items:center}
+  .tag{font-size:11px;color:#050506;background:var(--accent);border-radius:999px;padding:2px 9px;font-weight:600;margin-left:8px;vertical-align:middle}
   .legal{max-width:620px;margin:40px auto 0;font-size:12px;color:#5c5c66}
   footer{position:relative;z-index:1;border-top:1px solid var(--line);padding:26px 7vw 34px;color:#5c5c66;font-size:12px;display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;background:var(--bg)}
 
@@ -107,6 +117,9 @@
     .show{align-items:stretch;padding-bottom:88px}
     .show .copy{background:none;padding-top:0}
     .walls{grid-template-columns:1fr}
+    .versions{padding:72px 16px}
+    .vrow{grid-template-columns:1fr;gap:8px}
+    .vrow .t span{white-space:normal}
     .stats{gap:24px}
   }
   @media (prefers-reduced-motion:reduce){
@@ -125,6 +138,7 @@
     <a href="#escritorio">Sistema</a>
     <a href="#rendimiento">Rendimiento</a>
     <a href="#seguridad">Seguridad</a>
+    <a href="#versiones">Versiones</a>
     <a class="pill" href="#descargar">Descargar</a>
   </div>
 </nav>
@@ -234,10 +248,18 @@
     <div class="more reveal">
       <a class="ghost" id="dl-setup" href="#">Solo Control Center (.exe)</a>
       <a class="ghost" id="dl-iso" href="#">ISO Builder (avanzado)</a>
-      <a class="ghost" href="https://github.com/s0k1x/aurevix-OS/releases" rel="noopener">Todas las versiones</a>
+      <a class="ghost" href="#versiones">Todas las versiones</a>
     </div>
 
     <p class="legal reveal">Windows se descarga siempre desde Microsoft y se activa con tu propia licencia: AUREVIX no distribuye Windows ni incluye claves. Por eso no hay una ISO lista para descargar; el Installer la crea en tu PC en unos minutos.</p>
+  </section>
+  <section class="versions" id="versiones" data-shape="sphere" data-x=".5" data-dim="0">
+    <div class="head" style="max-width:620px">
+      <div class="eyebrow reveal">Versiones</div>
+      <h2 class="reveal d1">Todas las versiones publicadas.</h2>
+      <p class="body reveal d2">Cada una con su instalador. El instalador crea el USB o la ISO de AUREVIX OS en tu PC con Windows 11 oficial.</p>
+    </div>
+    <div class="vlist reveal d2" id="vlist"><div class="vrow"><div class="t"><span>Cargando versiones…</span></div></div></div>
   </section>
 </main>
 
@@ -334,7 +356,30 @@
     $('dl-hash').textContent = 'SHA-256 ' + (rel.launcher_sha256 || rel.installer_sha256 || '');
     if (safe(rel.installer_url)) $('dl-setup').href = rel.installer_url; else $('dl-setup').remove();
     if (safe(rel.isobuilder_url)) $('dl-iso').href = rel.isobuilder_url; else $('dl-iso').remove();
+    // Historial
+    const h = await fetch(`${URL_}/rest/v1/releases?select=version,released_at,title,notes,launcher_url,installer_url&channel=eq.stable&published=eq.true&order=released_at.desc&limit=12`,
+      { headers: { apikey: KEY, Authorization: 'Bearer ' + KEY } });
+    const list = h.ok ? await h.json() : [];
+    const box = $('vlist');
+    if (list.length) box.textContent = '';
+    const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+    list.forEach((v, i) => {
+      const row = el('div', 'vrow');
+      const ver = el('div', 'v', v.version);
+      ver.appendChild(el('small', '', new Date(v.released_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })));
+      const t = el('div', 't', (v.title || 'AUREVIX OS ' + v.version).replace(/^#+\s*/, ''));
+      if (i === 0) t.appendChild(el('b', 'tag', 'Última'));
+      const first = (v.notes || '').split('\n').map(x => x.replace(/^[-*#\s]+/, '').replace(/\*\*/g, '')).find(x => x && !/^AUREVIX OS/.test(x));
+      if (first) t.appendChild(el('span', '', first));
+      const a = el('div', 'a');
+      for (const [label, url] of [['Installer', v.launcher_url], ['Control Center', v.installer_url]]) {
+        if (!safe(url)) continue;
+        const link = el('a', 'ghost', label); link.href = url; a.appendChild(link);
+      }
+      row.append(ver, t, a); box.appendChild(row);
+    });
   } catch {
+    $('vlist').textContent = '';
     $('dl-badge').textContent = 'No se pudo cargar la versión';
     $('dl-main').href = 'https://github.com/s0k1x/aurevix-OS/releases/latest';
   }
