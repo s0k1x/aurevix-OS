@@ -19,6 +19,10 @@
 #include <atomic>
 #include <cstdio>
 
+// windows.h define GetCurrentTime como macro y choca con Storyboard::GetCurrentTime de C++/WinRT.
+#ifdef GetCurrentTime
+#undef GetCurrentTime
+#endif
 #include <winrt/base.h>
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Foundation.Collections.h>
