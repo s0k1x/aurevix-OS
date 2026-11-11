@@ -11,10 +11,11 @@ namespace Aurevix.ControlCenter.Views.Pages;
 /// </summary>
 public sealed class AppsPage : UserControl
 {
-    private sealed record App(string Id, string Name, string Category, string Note = "");
+    private sealed record App(string Id, string Name, string Category, string Note = "", string Source = "winget");
 
     private static readonly App[] Catalog =
     [
+        new(Services.Nusa.StoreId, "Nusa", "AUREVIX", "isla de música, letras y temporizador arriba de la pantalla (Microsoft Store)", "msstore"),
         new("Valve.Steam", "Steam", "Juegos"),
         new("EpicGames.EpicGamesLauncher", "Epic Games Launcher", "Juegos"),
         new("Discord.Discord", "Discord", "Juegos"),
@@ -74,7 +75,7 @@ public sealed class AppsPage : UserControl
         {
             _status.Text = $"Instalando {sel[i].Name} ({i + 1} de {sel.Count})…";
             _bar.Value = i;
-            var code = await WingetAsync($"install --id {sel[i].Id} --exact --source winget --silent --accept-package-agreements --accept-source-agreements");
+            var code = await WingetAsync($"install --id {sel[i].Id} --exact --source {sel[i].Source} --silent --accept-package-agreements --accept-source-agreements");
             // 0 = instalado; -1978335189 (0x8A15002B) = ya instalado / sin actualización
             if (code is 0 or -1978335189) ok++;
             _checks[sel[i].Id].IsChecked = false;

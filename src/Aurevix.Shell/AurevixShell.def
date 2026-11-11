@@ -1,0 +1,4 @@
+LIBRARY AurevixShell
+EXPORTS
+    DllGetClassObject PRIVATE
+    DllCanUnloadNow PRIVATE

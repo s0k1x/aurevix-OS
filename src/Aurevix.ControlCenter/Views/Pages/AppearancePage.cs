@@ -34,15 +34,22 @@ public sealed class AppearancePage : UserControl
                 Ui.Button(applied ? "Volver a aplicar" : "Aplicar estilo AUREVIX", () => _ = ApplyStyleAsync(), primary: true),
                 Ui.Button("Restaurar Windows original", () => _ = RestoreStyleAsync()))));
 
+        var shellOn = AppServices.Settings.ShellEnabled;
         body.Children.Add(Ui.Card(
-            Ui.Eyebrow("OPCIONAL · DE TERCEROS"),
-            Ui.H2("Barra de tareas translúcida"),
-            Ui.Muted("TranslucentTB hace la barra de tareas transparente o con desenfoque. Es gratuita y de código abierto (GPL-3.0), " +
-                     "se distribuye en Microsoft Store y se instala con winget desde su origen oficial. AUREVIX no la modifica. " +
-                     "Si una actualización de Windows le afecta, basta con desinstalarla."),
+            Ui.Eyebrow(AurevixShell.IsAvailable ? (shellOn ? "ACTIVADO" : "DESACTIVADO") : "NO DISPONIBLE EN ESTE EQUIPO"),
+            Ui.H2("AUREVIX Shell"),
+            Ui.Muted("Barra de tareas en negro grafito con indicadores verde lima y menú Inicio redondeado a juego, desde que enciendes el equipo. " +
+                     "Es un componente propio de AUREVIX: solo cambia el aspecto en memoria, no modifica archivos de Windows."),
+            Ui.Muted("Si algún juego con anticheat se queja o algo se ve raro, desactívalo: Windows 11 vuelve a verse como siempre al momento."),
             Ui.Row(
-                Ui.Button("Instalar TranslucentTB", () => Winget("install", "Instalar TranslucentTB")),
-                Ui.Button("Desinstalar", () => Winget("uninstall", "Desinstalar TranslucentTB")))));
+                Ui.Button(shellOn ? "Desactivar" : "Activar", () =>
+                {
+                    if (!AurevixShell.IsAvailable) { MessageBox.Show("AUREVIX Shell necesita Windows 11.", "Apariencia"); return; }
+                    if (MessageBox.Show("Se reiniciará la barra de tareas unos segundos (no se cierra ningún programa). ¿Continuar?", "AUREVIX Shell",
+                            MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
+                    AurevixShell.SetEnabled(!AppServices.Settings.ShellEnabled);
+                    Build();
+                }, primary: !shellOn))));
 
         body.Children.Add(Ui.Card(Ui.H2("Tema de color"),
             Ui.Muted("Cambia el modo de color de Windows y de las aplicaciones."),
@@ -78,34 +85,9 @@ public sealed class AppearancePage : UserControl
             wallRow,
             Ui.Row(Ui.Button("Restaurar fondo original", RestoreWallpaper))));
 
-        var shell = Ui.Card(
-            Ui.Eyebrow("EXPERIMENTAL · INYECCIÓN DE CÓDIGO · DE TERCEROS"),
-            Ui.H2("AUREVIX Shell: barra de tareas y menú Inicio"),
-            Ui.Muted("Para cambiar la forma de la barra de tareas y del menú Inicio hay que inyectar código en el Explorador de Windows. " +
-                     "AUREVIX usa Windhawk, una herramienta gratuita y de código abierto (GPL-3.0), con el estilo AUREVIX: barra tipo dock en negro grafito, " +
-                     "indicador verde lima y menú Inicio redondeado a juego."),
-            Ui.Muted("Riesgos: una actualización de Windows puede dejar el estilo sin efecto hasta que el mod se actualice, y algunos juegos con anticheat " +
-                     "no admiten programas que inyectan código. Para volver atrás basta con desactivar los mods o desinstalar Windhawk."),
-            Ui.Row(
-                Ui.Button("1 · Instalar Windhawk", () => WingetTool("install", ShellPresets.WindhawkWingetId, "Instalar Windhawk"), primary: true),
-                Ui.Button("Desinstalar", () => WingetTool("uninstall", ShellPresets.WindhawkWingetId, "Desinstalar Windhawk"))));
-        var shellBody = (StackPanel)shell.Child;
-        foreach (var mod in ShellPresets.Mods)
-        {
-            shellBody.Children.Add(Ui.Row(
-                Ui.Button($"2 · Abrir el mod de {mod.Name.ToLowerInvariant()}", () => SystemTools.Start(mod.Page)),
-                Ui.Button($"3 · Copiar el estilo AUREVIX ({mod.Name.ToLowerInvariant()})", () =>
-                {
-                    try { Clipboard.SetText(mod.Json); } catch { return; }
-                    MessageBox.Show($"Estilo copiado.\n\nEn Windhawk abre el mod «{mod.Name}» → Ajustes → Avanzado, borra lo que haya en «Mod settings», pega y pulsa Guardar.", "AUREVIX Shell");
-                })));
-        }
-        shellBody.Children.Add(Ui.Muted("Pasos: instala Windhawk, abre cada mod y pulsa Install, y pega su estilo en Ajustes → Avanzado. Windhawk aún no permite instalar mods de forma automática."));
-        body.Children.Add(shell);
-
-        body.Children.Add(Ui.Card(Ui.H2("Volver a la apariencia original"),
-            Ui.Muted("Deshace todos los cambios de apariencia hechos por AUREVIX, en orden inverso."),
-            Ui.Row(Ui.Button("Restaurar apariencia de Windows", RestoreAll))));
+        body.Children.Add(Ui.Card(Ui.H2("Volver a Windows 11 original"),
+            Ui.Muted("Desactiva AUREVIX Shell y deshace todos los cambios de apariencia hechos por AUREVIX, en orden inverso. Tus programas y archivos no se tocan."),
+            Ui.Row(Ui.Button("Restablecer aspecto de Windows 11", RestoreAll))));
 
         Content = root;
     }
@@ -132,40 +114,6 @@ public sealed class AppearancePage : UserControl
         if (MessageBox.Show("Restaurado. ¿Reiniciar el Explorador para ver los cambios ahora?", "Estilo AUREVIX", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
             AurevixStyle.RestartExplorer();
         Build();
-    }
-
-    /// <summary>Instala o desinstala una herramienta de terceros con winget (fuente oficial). Siempre tras confirmación.</summary>
-    private static void WingetTool(string verb, string id, string title)
-    {
-        if (MessageBox.Show($"{title} con winget (Microsoft). ¿Continuar?", "Apariencia", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
-        try
-        {
-            var args = verb == "install"
-                ? $"install --id {id} --exact --source winget --accept-package-agreements --accept-source-agreements"
-                : $"uninstall --id {id} --exact";
-            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("winget", args) { UseShellExecute = true });
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show($"No se pudo ejecutar winget: {ex.Message}\nInstala «App Installer» desde Microsoft Store.", "Apariencia");
-        }
-    }
-
-    /// <summary>Instala/desinstala TranslucentTB con winget (fuente oficial). Siempre tras confirmación.</summary>
-    private static void Winget(string verb, string title)
-    {
-        if (MessageBox.Show($"{title} con winget (Microsoft). ¿Continuar?", "Apariencia", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
-        try
-        {
-            var args = verb == "install"
-                ? "install --id CharlesMilette.TranslucentTB --exact --source winget --accept-package-agreements --accept-source-agreements"
-                : "uninstall --id CharlesMilette.TranslucentTB --exact";
-            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("winget", args) { UseShellExecute = true });
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show($"No se pudo ejecutar winget: {ex.Message}\nInstala «App Installer» desde Microsoft Store.", "Apariencia");
-        }
     }
 
     private static RegistryAction Dw(string key, string name, int v) => new() { Hive = RegistryHive.CurrentUser, Key = key, Name = name, Kind = RegistryValueKind.DWord, Value = v.ToString() };
@@ -222,9 +170,12 @@ public sealed class AppearancePage : UserControl
         File.Delete(OriginalWallpaperFile);
     }
 
-    private static void RestoreAll()
+    private static async void RestoreAll()
     {
-        if (MessageBox.Show("¿Restaurar toda la apariencia original de Windows?", "Apariencia", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
+        if (MessageBox.Show("¿Volver al aspecto original de Windows 11?\n\nSe desactiva AUREVIX Shell, se deshace el Estilo AUREVIX y se reinicia la barra de tareas unos segundos.",
+                "Apariencia", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
+        try { await AurevixStyle.RestoreAsync(); } catch (Exception ex) { Core.Logging.AurevixLog.Error("Restaurar estilo", ex); }
+        AurevixShell.SetEnabled(false, restartShell: true);
         // ListBackups está ordenado del más reciente al más antiguo: se revierte en ese orden.
         foreach (var b in AppServices.Tweaks.ListBackups().Where(b => b.Description.StartsWith(Prefix)))
         {
@@ -233,6 +184,6 @@ public sealed class AppearancePage : UserControl
             try { File.Delete(file); } catch { }
         }
         if (File.Exists(OriginalWallpaperFile)) RestoreWallpaper();
-        MessageBox.Show("Apariencia original restaurada. Algunos cambios se verán al cerrar sesión.", "Apariencia");
+        MessageBox.Show("Windows 11 original restaurado. Algunos detalles se verán al cerrar sesión.", "Apariencia");
     }
 }

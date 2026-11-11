@@ -48,6 +48,8 @@ public sealed class AurevixSettings
     public bool StartWithWindows { get; set; } = true;
     public bool Notifications { get; set; } = true;
     public bool ReduceMotion { get; set; }
+    /// <summary>AUREVIX Shell: estilo propio en la barra de tareas y el menú Inicio (activado por defecto).</summary>
+    public bool ShellEnabled { get; set; } = true;
     public string Language { get; set; } = "es-ES";
     public int LogRetentionDays { get; set; } = 14;
     /// <summary>Por defecto no se envía nada al servidor salvo la consulta del manifiesto.</summary>

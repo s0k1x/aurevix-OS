@@ -53,6 +53,9 @@ jobs:
       - name: Pruebas
         run: dotnet test tests/Aurevix.Tests --configuration Release
 
+      - name: Compilar AUREVIX Shell (nativo, C++)
+        shell: pwsh
+        run: ./src/Aurevix.Shell/build.ps1 -Out out/shell
       - name: Publicar Control Center
         run: dotnet publish src/Aurevix.ControlCenter -c Release -r win-x64 --self-contained -p:Version=${{ steps.meta.outputs.version }} -o out/app
 
