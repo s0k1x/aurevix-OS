@@ -21,6 +21,7 @@
 
 #include <winrt/base.h>
 #include <winrt/Windows.Foundation.h>
+#include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.UI.h>
 #include <winrt/Windows.UI.Xaml.h>
 #include <winrt/Windows.UI.Xaml.Media.h>
@@ -191,7 +192,7 @@ static void AnimateScale(wuxm::ScaleTransform const& st, double to, bool bounce)
 static void AddHoverZoom(wux::UIElement const& el)
 {
     wuxm::ScaleTransform st;
-    el.RenderTransformOrigin({ 0.5, 0.85 });
+    el.RenderTransformOrigin({ 0.5f, 0.85f });
     el.RenderTransform(st);
     el.PointerEntered([st](auto&&, auto&&) { try { AnimateScale(st, 1.2, true); } catch (...) {} });
     el.PointerExited([st](auto&&, auto&&) { try { AnimateScale(st, 1.0, false); } catch (...) {} });
