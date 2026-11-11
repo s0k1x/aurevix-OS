@@ -37,7 +37,6 @@ static constexpr GUID CLSID_AurevixTap = { 0x8c2d5b1e, 0x6a3f, 0x4e8b, { 0x9d, 0
 
 // Paleta AUREVIX: clara (predeterminada) u oscura, según el modo de Windows.
 static Color Graphite{ 0xF5, 0x0B, 0x0B, 0x0E };   // fondo de la barra y del menú (casi opaco: barato de dibujar)
-static Color Line{ 0xFF, 0x3C, 0x5C, 0x1E };       // borde fino (verde oscuro)
 static Color Lime{ 0xFF, 0x8D, 0xE0, 0x3C };       // acento
 static Color Page{ 0xFF, 0x0B, 0x0B, 0x0E };       // fondo de Configuración
 
@@ -49,7 +48,6 @@ static void LoadPalette()
     if (light)
     {
         Graphite = { 0xF4, 0xF1, 0xF6, 0xEA };   // blanco con un toque verde AUREVIX
-        Line = { 0xFF, 0x9C, 0xD4, 0x62 };       // borde verde suave
         Lime = { 0xFF, 0x4E, 0x9A, 0x1E };
         Page = { 0xFF, 0xF1, 0xF6, 0xEC };
     }
@@ -174,11 +172,10 @@ static void StyleElement(wux::DependencyObject const& obj, std::wstring_view nam
         {
             if (name == L"BackgroundFill" && HasAncestor(obj, L"Taskbar.TaskbarBackground"))
             {
-                // Barra flotante AUREVIX: separada de los bordes, esquinas redondeadas y borde verde.
+                // Barra flotante AUREVIX: separada de los bordes y con esquinas redondeadas, sin borde.
                 KeepFill(shape, Graphite);
                 shape.Margin(wux::ThicknessHelper::FromLengths(6, 3, 6, 3));
-                shape.Stroke(wuxm::SolidColorBrush(Line));
-                shape.StrokeThickness(1.5);
+                shape.StrokeThickness(0); // sin borde: solo el fondo AUREVIX
                 if (auto rect = obj.try_as<wuxs::Rectangle>()) { rect.RadiusX(14); rect.RadiusY(14); }
             }
             else if (name == L"BackgroundStroke" && HasAncestor(obj, L"Taskbar.TaskbarBackground"))
@@ -202,8 +199,7 @@ static void StyleElement(wux::DependencyObject const& obj, std::wstring_view nam
             {
                 KeepBorderBackground(border, Graphite);
                 border.CornerRadius(wux::CornerRadiusHelper::FromUniformRadius(16));
-                border.BorderBrush(wuxm::SolidColorBrush(Line));
-                border.BorderThickness(wux::ThicknessHelper::FromUniformLength(2));
+                border.BorderThickness(wux::ThicknessHelper::FromUniformLength(0)); // sin borde, más limpio
             }
             else if (name == L"AcrylicOverlay") border.Visibility(wux::Visibility::Collapsed);
             else if (name == L"StartDropShadow" || name == L"RootGridDropShadow" || name == L"DropShadow")
