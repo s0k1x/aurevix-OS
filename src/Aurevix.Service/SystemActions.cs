@@ -94,7 +94,7 @@ public sealed class SystemActions(string root) : ISystemActions
     private const string ShellIconsKey = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Icons";
     /// <summary>Índice de imageres/shell32 que Windows usa para cada tipo → icono AUREVIX.</summary>
     private static readonly (string Index, string Icon)[] ShellIconMap =
-        [("3", "folder"), ("4", "folder-open"), ("7", "usb"), ("8", "drive"), ("9", "network"), ("11", "disc")];
+        [("3", "folder"), ("4", "folder-open"), ("7", "usb"), ("8", "drive"), ("9", "network-drive"), ("11", "disc")];
 
     public (bool ok, string message) SetShellIcons(bool on)
     {

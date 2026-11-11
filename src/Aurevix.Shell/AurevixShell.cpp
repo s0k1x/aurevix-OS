@@ -35,10 +35,25 @@ using winrt::Windows::UI::Color;
 // {8C2D5B1E-6A3F-4E8B-9D47-A7E15C0B3F21}
 static constexpr GUID CLSID_AurevixTap = { 0x8c2d5b1e, 0x6a3f, 0x4e8b, { 0x9d, 0x47, 0xa7, 0xe1, 0x5c, 0x0b, 0x3f, 0x21 } };
 
-// Paleta AUREVIX
-static constexpr Color Graphite{ 0xF5, 0x0B, 0x0B, 0x0E };   // fondo de la barra y del menú (casi opaco: barato de dibujar)
-static constexpr Color Line{ 0xFF, 0x26, 0x26, 0x2D };       // borde fino
-static constexpr Color Lime{ 0xFF, 0x8D, 0xE0, 0x3C };       // acento
+// Paleta AUREVIX: clara (predeterminada) u oscura, según el modo de Windows.
+static Color Graphite{ 0xF5, 0x0B, 0x0B, 0x0E };   // fondo de la barra y del menú (casi opaco: barato de dibujar)
+static Color Line{ 0xFF, 0x26, 0x26, 0x2D };       // borde fino
+static Color Lime{ 0xFF, 0x8D, 0xE0, 0x3C };       // acento
+static Color Page{ 0xFF, 0x0B, 0x0B, 0x0E };       // fondo de Configuración
+
+static void LoadPalette()
+{
+    DWORD light = 1, size = sizeof(light);
+    RegGetValueW(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize", L"SystemUsesLightTheme",
+                 RRF_RT_REG_DWORD, nullptr, &light, &size);
+    if (light)
+    {
+        Graphite = { 0xF2, 0xF6, 0xF6, 0xF8 };
+        Line = { 0xFF, 0xD9, 0xDB, 0xE0 };
+        Lime = { 0xFF, 0x4E, 0x9A, 0x1E };
+        Page = { 0xFF, 0xF4, 0xF5, 0xF7 };
+    }
+}
 
 static std::atomic<bool> g_active{ false };
 static std::atomic<long> g_styled{ 0 };
@@ -140,8 +155,8 @@ static void StyleWindowRoot(wux::DependencyObject const& obj)
     if (!window) return;
     auto content = window.Content();
     if (!content || content != obj.try_as<wux::UIElement>()) return;
-    if (auto panel = obj.try_as<wuxc::Panel>()) { panel.Background(wuxm::SolidColorBrush(Color{ 0xFF, 0x0B, 0x0B, 0x0E })); g_styled++; }
-    else if (auto control = obj.try_as<wuxc::Control>()) { control.Background(wuxm::SolidColorBrush(Color{ 0xFF, 0x0B, 0x0B, 0x0E })); g_styled++; }
+    if (auto panel = obj.try_as<wuxc::Panel>()) { panel.Background(wuxm::SolidColorBrush(Page)); g_styled++; }
+    else if (auto control = obj.try_as<wuxc::Control>()) { control.Background(wuxm::SolidColorBrush(Page)); g_styled++; }
 }
 
 static void StyleElement(wux::DependencyObject const& obj, std::wstring_view name)
@@ -247,6 +262,7 @@ struct AurevixTap : winrt::implements<AurevixTap, IObjectWithSite, winrt::non_ag
             s_isExplorer = name == L"explorer.exe";
             s_isStart = name == L"startmenuexperiencehost.exe";
             s_isSettings = name == L"systemsettings.exe";
+            LoadPalette();
             Log(L"AUREVIX Shell cargado en %s", name.c_str());
             m_watcher = winrt::make_self<VisualTreeWatcher>(m_site);
             return S_OK;

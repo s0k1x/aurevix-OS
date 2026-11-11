@@ -9,7 +9,7 @@ namespace Aurevix.ControlCenter.Services;
 
 /// <summary>
 /// "Estilo AUREVIX": Windows minimalista con mecanismos OFICIALES y reversibles:
-///   - Tema .theme propio (modo oscuro, acento verde lima, fondo AUREVIX) aplicado por Windows.
+///   - Tema .theme propio (tema claro, acento verde, fondo Daylight) aplicado por Windows. El modo oscuro se elige en Apariencia.
 ///   - Barra de tareas limpia (iconos centrados, búsqueda solo icono, sin Vista de tareas ni widgets).
 ///   - Menú Inicio sin recomendaciones ni sugerencias.
 ///   - Explorador abierto en "Este equipo", extensiones visibles, sin recientes/frecuentes.
@@ -31,7 +31,7 @@ public static class AurevixStyle
     private const string Dwm = @"Software\Microsoft\Windows\DWM";
 
     /// <summary>Fondo predeterminado de AUREVIX OS (escritorio y pantalla de bloqueo).</summary>
-    public const string DefaultWallpaper = "Aurevix-Aurora";
+    public const string DefaultWallpaper = "Aurevix-Daylight";
 
     private static RegistryAction Dw(string key, string name, int v) =>
         new() { Hive = RegistryHive.CurrentUser, Key = key, Name = name, Kind = RegistryValueKind.DWord, Value = v.ToString() };
@@ -47,8 +47,8 @@ public static class AurevixStyle
     /// </summary>
     private static readonly TweakDefinition WindowFrames = new()
     {
-        Id = "style.windows", Title = "Ventanas en negro grafito AUREVIX", Category = TweakCategory.Interface,
-        Registry = [Dw(Dwm, "ColorPrevalence", 1), Color("AccentColor", 0xFF110E0E), Color("AccentColorInactive", 0xFF060505)]
+        Id = "style.windows", Title = "Ventanas AUREVIX (barra de título gris perla)", Category = TweakCategory.Interface,
+        Registry = [Dw(Dwm, "ColorPrevalence", 1), Color("AccentColor", 0xFFF2EFEC), Color("AccentColorInactive", 0xFFF9F8F7)]
     };
 
     /// <summary>Grupos de ajustes. Cada grupo es un TweakDefinition independiente: si Windows bloquea uno, los demás siguen.</summary>
@@ -56,8 +56,8 @@ public static class AurevixStyle
     [
         new()
         {
-            Id = "style.colors", Title = "Modo oscuro y transparencias", Category = TweakCategory.Interface,
-            Registry = [Dw(Personalize, "AppsUseLightTheme", 0), Dw(Personalize, "SystemUsesLightTheme", 0), Dw(Personalize, "EnableTransparency", 1)]
+            Id = "style.colors", Title = "Tema claro AUREVIX y transparencias", Category = TweakCategory.Interface,
+            Registry = [Dw(Personalize, "AppsUseLightTheme", 1), Dw(Personalize, "SystemUsesLightTheme", 1), Dw(Personalize, "EnableTransparency", 1)]
         },
         new()
         {
@@ -119,6 +119,86 @@ public static class AurevixStyle
         ]
     };
 
+    // ------------------------------------------------------------------ Iconos de Documentos, Descargas, Música…
+
+    [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
+    private static extern int SHGetKnownFolderPath([MarshalAs(UnmanagedType.LPStruct)] Guid id, uint flags, IntPtr token, out IntPtr path);
+
+    private static string? KnownFolder(Guid id)
+    {
+        if (SHGetKnownFolderPath(id, 0, IntPtr.Zero, out var p) != 0) return null;
+        try { return Marshal.PtrToStringUni(p); } finally { Marshal.FreeCoTaskMem(p); }
+    }
+
+    private static IEnumerable<(string Path, string Icon)> KnownFolders()
+    {
+        (Guid id, string icon)[] list =
+        [
+            (new("FDD39AD0-238F-46AF-ADB4-6C85480369C7"), "documents"), (new("374DE290-123F-4565-9164-39C4925E467B"), "downloads"),
+            (new("4BD8D571-6D19-48D3-BE97-422220080E43"), "music"), (new("33E28130-4E1E-4676-835A-98395C3BC3BB"), "pictures"),
+            (new("18989B1D-99B5-455B-841C-AB7C74E4DDFC"), "videos"), (new("B4BFCC3A-DB2C-424C-B029-7FE99A87C641"), "desktop"),
+        ];
+        foreach (var (id, icon) in list)
+            if (KnownFolder(id) is { } path && Directory.Exists(path)) yield return (path, icon);
+    }
+
+    private static string KnownFolderBackup => Path.Combine(AurevixPaths.Backups, "known-folder-icons.json");
+
+    /// <summary>Pone el icono AUREVIX en Documentos, Descargas, Música, Imágenes, Vídeos y Escritorio (desktop.ini). Guarda lo que había.</summary>
+    private static int ApplyKnownFolderIcons()
+    {
+        var backup = JsonStore.LoadOrDefault<Dictionary<string, string?>>(KnownFolderBackup);
+        var done = 0;
+        foreach (var (path, icon) in KnownFolders())
+        {
+            try
+            {
+                var ini = Path.Combine(path, "desktop.ini");
+                var lines = File.Exists(ini) ? File.ReadAllLines(ini).ToList() : ["[.ShellClassInfo]"];
+                if (!backup.ContainsKey(path)) backup[path] = lines.FirstOrDefault(l => l.StartsWith("IconResource=", StringComparison.OrdinalIgnoreCase));
+                lines.RemoveAll(l => l.StartsWith("IconResource=", StringComparison.OrdinalIgnoreCase));
+                var section = lines.FindIndex(l => l.Trim().Equals("[.ShellClassInfo]", StringComparison.OrdinalIgnoreCase));
+                if (section < 0) { lines.Insert(0, "[.ShellClassInfo]"); section = 0; }
+                lines.Insert(section + 1, "IconResource=" + IconPath(icon));
+                WriteDesktopIni(ini, lines);
+                File.SetAttributes(path, File.GetAttributes(path) | FileAttributes.ReadOnly);
+                done++;
+            }
+            catch (Exception ex) { AurevixLog.Warn($"Icono de {path}: {ex.Message}"); }
+        }
+        JsonStore.Save(KnownFolderBackup, backup);
+        return done;
+    }
+
+    private static void RestoreKnownFolderIcons()
+    {
+        if (!File.Exists(KnownFolderBackup)) return;
+        var backup = JsonStore.LoadOrDefault<Dictionary<string, string?>>(KnownFolderBackup);
+        foreach (var (path, original) in backup)
+        {
+            try
+            {
+                var ini = Path.Combine(path, "desktop.ini");
+                if (!File.Exists(ini)) continue;
+                var lines = File.ReadAllLines(ini).ToList();
+                var i = lines.FindIndex(l => l.StartsWith("IconResource=", StringComparison.OrdinalIgnoreCase));
+                if (i < 0) continue;
+                if (original is null) lines.RemoveAt(i); else lines[i] = original;
+                WriteDesktopIni(ini, lines);
+            }
+            catch (Exception ex) { AurevixLog.Warn($"Restaurar icono de {path}: {ex.Message}"); }
+        }
+        File.Delete(KnownFolderBackup);
+    }
+
+    /// <summary>desktop.ini va en UTF-16, oculto y de sistema (así lo crea Windows).</summary>
+    private static void WriteDesktopIni(string ini, List<string> lines)
+    {
+        if (File.Exists(ini)) File.SetAttributes(ini, FileAttributes.Normal);
+        File.WriteAllLines(ini, lines, System.Text.Encoding.Unicode);
+        File.SetAttributes(ini, FileAttributes.Hidden | FileAttributes.System);
+    }
+
     [DllImport("shell32.dll")]
     private static extern void SHChangeNotify(int eventId, uint flags, IntPtr item1, IntPtr item2);
 
@@ -165,6 +245,8 @@ public static class AurevixStyle
         (icons.Success ? applied : skipped).Add("Iconos AUREVIX del escritorio");
         var machineIcons = await CoreServiceClient.SendAsync(new CoreRequest { Op = "icons-on" }, TimeSpan.FromSeconds(20));
         (machineIcons.Ok ? applied : skipped).Add(machineIcons.Ok ? "Iconos AUREVIX de carpetas y unidades" : "Iconos de carpetas y unidades (AUREVIX Core Service no disponible)");
+        var folders = ApplyKnownFolderIcons();
+        if (folders > 0) applied.Add($"Iconos AUREVIX de Documentos, Descargas, Música, Imágenes, Vídeos y Escritorio ({folders})");
         RefreshIcons();
 
         // 3. Tema AUREVIX (.theme): Windows aplica acento, colores y fondo de forma oficial.
@@ -201,6 +283,7 @@ public static class AurevixStyle
     public static async Task RestoreAsync()
     {
         await CoreServiceClient.SendAsync(new CoreRequest { Op = "icons-off" }, TimeSpan.FromSeconds(20));
+        RestoreKnownFolderIcons();
         foreach (var b in AppServices.Tweaks.ListBackups().Where(b => b.Description.StartsWith(BackupPrefix)))
         {
             AppServices.Tweaks.Revert(b);
@@ -261,8 +344,12 @@ public static class AurevixStyle
     public static IReadOnlyList<string> Wallpapers() =>
         !Directory.Exists(WallpaperDirectory) ? [] : Directory.GetFiles(WallpaperDirectory)
             .Where(f => f.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) || f.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
-            .OrderByDescending(f => Path.GetFileNameWithoutExtension(f) == DefaultWallpaper)
-            .ThenByDescending(f => f.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase)).ThenBy(f => f).ToList();
+            .OrderBy(f => { var i = Array.IndexOf(WallpaperOrder, Path.GetFileNameWithoutExtension(f)); return i < 0 ? 99 : i; })
+            .ThenBy(f => f).ToList();
+
+    /// <summary>Claros primero (el predeterminado, Daylight, el primero) y después los oscuros.</summary>
+    private static readonly string[] WallpaperOrder =
+        ["Aurevix-Daylight", "Aurevix-Mist", "Aurevix-Sand", "Aurevix-Glacier", "Aurevix-Aurora", "Aurevix-Tide", "Aurevix-Dusk", "Aurevix-Nebula"];
 
     /// <summary>Genera AUREVIX.theme (formato .theme documentado por Microsoft).</summary>
     private static string WriteThemeFile()
@@ -286,9 +373,9 @@ public static class AurevixStyle
             ColorStyle=NormalColor
             Size=NormalSize
             AutoColorization=0
-            ColorizationColor=0XC48DE03C
-            SystemMode=Dark
-            AppMode=Dark
+            ColorizationColor=0XC44E9A1E
+            SystemMode=Light
+            AppMode=Light
             Transparency=1
 
             [MasterThemeSelector]

@@ -54,8 +54,8 @@ public sealed class AppearancePage : UserControl
         body.Children.Add(Ui.Card(Ui.H2("Tema de color"),
             Ui.Muted("Cambia el modo de color de Windows y de las aplicaciones."),
             Ui.Row(
-                Ui.Button("Modo oscuro AUREVIX", () => ApplyReg("Modo oscuro", [Dw(Personalize, "AppsUseLightTheme", 0), Dw(Personalize, "SystemUsesLightTheme", 0)]), primary: true),
-                Ui.Button("Modo claro", () => ApplyReg("Modo claro", [Dw(Personalize, "AppsUseLightTheme", 1), Dw(Personalize, "SystemUsesLightTheme", 1)])))));
+                Ui.Button("Claro (predeterminado)", () => ApplyReg("Modo claro", [Dw(Personalize, "AppsUseLightTheme", 1), Dw(Personalize, "SystemUsesLightTheme", 1)]), primary: true),
+                Ui.Button("Oscuro", () => ApplyReg("Modo oscuro", [Dw(Personalize, "AppsUseLightTheme", 0), Dw(Personalize, "SystemUsesLightTheme", 0)])))));
 
         body.Children.Add(Ui.Card(Ui.H2("Modo visual"),
             Ui.Muted("Ligero: sin transparencias ni animaciones de ventana (equipos modestos). Elegante: transparencias y animaciones de Windows 11."),
@@ -81,7 +81,7 @@ public sealed class AppearancePage : UserControl
         var wallRow = Ui.Wrap();
         foreach (var w in walls) wallRow.Children.Add(WallpaperTile(w));
         body.Children.Add(Ui.Card(Ui.H2("Fondos AUREVIX"),
-            walls.Count == 0 ? Ui.Muted("No se encontraron fondos instalados.") : Ui.Muted("Pulsa un fondo para ponerlo en el escritorio. Aurora es el predeterminado de AUREVIX OS."),
+            walls.Count == 0 ? Ui.Muted("No se encontraron fondos instalados.") : Ui.Muted("Pulsa un fondo para ponerlo en el escritorio. Daylight es el predeterminado de AUREVIX OS; los cuatro primeros son claros y los otros cuatro oscuros."),
             wallRow,
             Ui.Row(Ui.Button("Restaurar fondo original", RestoreWallpaper))));
 
