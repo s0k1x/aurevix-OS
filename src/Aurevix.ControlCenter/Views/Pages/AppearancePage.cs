@@ -78,10 +78,30 @@ public sealed class AppearancePage : UserControl
             wallRow,
             Ui.Row(Ui.Button("Restaurar fondo original", RestoreWallpaper))));
 
-        body.Children.Add(Ui.Card(Ui.H2("Menú Inicio, Explorador, iconos y cursores"),
-            Ui.Muted("En esta versión AUREVIX no sustituye el menú Inicio, el Explorador ni el shell de Windows: esas modificaciones dependen de " +
-                     "herramientas de terceros que pueden romperse con las actualizaciones de Windows. Se evaluarán una a una (licencia, reputación, " +
-                     "compatibilidad) e incluirán un modo de recuperación antes de añadirse. Ver docs/adr/0005-personalizacion-visual.md.")));
+        var shell = Ui.Card(
+            Ui.Eyebrow("EXPERIMENTAL · INYECCIÓN DE CÓDIGO · DE TERCEROS"),
+            Ui.H2("AUREVIX Shell: barra de tareas y menú Inicio"),
+            Ui.Muted("Para cambiar la forma de la barra de tareas y del menú Inicio hay que inyectar código en el Explorador de Windows. " +
+                     "AUREVIX usa Windhawk, una herramienta gratuita y de código abierto (GPL-3.0), con el estilo AUREVIX: barra tipo dock en negro grafito, " +
+                     "indicador verde lima y menú Inicio redondeado a juego."),
+            Ui.Muted("Riesgos: una actualización de Windows puede dejar el estilo sin efecto hasta que el mod se actualice, y algunos juegos con anticheat " +
+                     "no admiten programas que inyectan código. Para volver atrás basta con desactivar los mods o desinstalar Windhawk."),
+            Ui.Row(
+                Ui.Button("1 · Instalar Windhawk", () => WingetTool("install", ShellPresets.WindhawkWingetId, "Instalar Windhawk"), primary: true),
+                Ui.Button("Desinstalar", () => WingetTool("uninstall", ShellPresets.WindhawkWingetId, "Desinstalar Windhawk"))));
+        var shellBody = (StackPanel)shell.Child;
+        foreach (var mod in ShellPresets.Mods)
+        {
+            shellBody.Children.Add(Ui.Row(
+                Ui.Button($"2 · Abrir el mod de {mod.Name.ToLowerInvariant()}", () => SystemTools.Start(mod.Page)),
+                Ui.Button($"3 · Copiar el estilo AUREVIX ({mod.Name.ToLowerInvariant()})", () =>
+                {
+                    try { Clipboard.SetText(mod.Json); } catch { return; }
+                    MessageBox.Show($"Estilo copiado.\n\nEn Windhawk abre el mod «{mod.Name}» → Ajustes → Avanzado, borra lo que haya en «Mod settings», pega y pulsa Guardar.", "AUREVIX Shell");
+                })));
+        }
+        shellBody.Children.Add(Ui.Muted("Pasos: instala Windhawk, abre cada mod y pulsa Install, y pega su estilo en Ajustes → Avanzado. Windhawk aún no permite instalar mods de forma automática."));
+        body.Children.Add(shell);
 
         body.Children.Add(Ui.Card(Ui.H2("Volver a la apariencia original"),
             Ui.Muted("Deshace todos los cambios de apariencia hechos por AUREVIX, en orden inverso."),
@@ -112,6 +132,23 @@ public sealed class AppearancePage : UserControl
         if (MessageBox.Show("Restaurado. ¿Reiniciar el Explorador para ver los cambios ahora?", "Estilo AUREVIX", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
             AurevixStyle.RestartExplorer();
         Build();
+    }
+
+    /// <summary>Instala o desinstala una herramienta de terceros con winget (fuente oficial). Siempre tras confirmación.</summary>
+    private static void WingetTool(string verb, string id, string title)
+    {
+        if (MessageBox.Show($"{title} con winget (Microsoft). ¿Continuar?", "Apariencia", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
+        try
+        {
+            var args = verb == "install"
+                ? $"install --id {id} --exact --source winget --accept-package-agreements --accept-source-agreements"
+                : $"uninstall --id {id} --exact";
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("winget", args) { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"No se pudo ejecutar winget: {ex.Message}\nInstala «App Installer» desde Microsoft Store.", "Apariencia");
+        }
     }
 
     /// <summary>Instala/desinstala TranslucentTB con winget (fuente oficial). Siempre tras confirmación.</summary>
