@@ -107,7 +107,7 @@ public static class AurevixStyle
     /// <summary>Iconos AUREVIX del escritorio y del Explorador para este usuario: Este equipo, Papelera, Red y carpeta de usuario.</summary>
     private static TweakDefinition DesktopIcons() => new()
     {
-        Id = "style.icons", Title = "Iconos AUREVIX (Este equipo, Papelera, Red, usuario)", Category = TweakCategory.Interface,
+        Id = "style.icons", Title = "Iconos AUREVIX (Este equipo, Papelera, Red, usuario, Panel de control, Inicio, Galería, Impresoras)", Category = TweakCategory.Interface,
         Registry =
         [
             Sz($@"{ClsidIcons}\{{20D04FE0-3AEA-1069-A2D8-08002B30309D}}\DefaultIcon", "", IconPath("pc")),
@@ -116,6 +116,12 @@ public static class AurevixStyle
             Sz($@"{ClsidIcons}\{{645FF040-5081-101B-9F08-00AA002F954E}}\DefaultIcon", "full", IconPath("bin-full")),
             Sz($@"{ClsidIcons}\{{F02C1A0D-BE21-4350-88B0-7367FC96EF3C}}\DefaultIcon", "", IconPath("network")),
             Sz($@"{ClsidIcons}\{{59031a47-3f72-44a7-89c5-5595fe6b30ee}}\DefaultIcon", "", IconPath("user")),
+            Sz($@"{ClsidIcons}\{{5399E694-6CE5-4D6C-8FCE-1D8870FDCBA0}}\DefaultIcon", "", IconPath("control-panel")),
+            Sz($@"{ClsidIcons}\{{26EE0668-A00A-44D7-9371-BEB064C98683}}\DefaultIcon", "", IconPath("control-panel")),
+            Sz($@"{ClsidIcons}\{{21EC2020-3AEA-1069-A2DD-08002B30309D}}\DefaultIcon", "", IconPath("control-panel")),
+            Sz($@"{ClsidIcons}\{{f874310e-b6b7-47dc-bc84-b9e6b38f5903}}\DefaultIcon", "", IconPath("home")),
+            Sz($@"{ClsidIcons}\{{e88865ea-0e1c-4e20-9aa6-edcd0212c87c}}\DefaultIcon", "", IconPath("gallery")),
+            Sz($@"{ClsidIcons}\{{2227A280-3AEA-1069-A2DE-08002B30309D}}\DefaultIcon", "", IconPath("printer")),
         ]
     };
 
@@ -137,6 +143,10 @@ public static class AurevixStyle
             (new("FDD39AD0-238F-46AF-ADB4-6C85480369C7"), "documents"), (new("374DE290-123F-4565-9164-39C4925E467B"), "downloads"),
             (new("4BD8D571-6D19-48D3-BE97-422220080E43"), "music"), (new("33E28130-4E1E-4676-835A-98395C3BC3BB"), "pictures"),
             (new("18989B1D-99B5-455B-841C-AB7C74E4DDFC"), "videos"), (new("B4BFCC3A-DB2C-424C-B029-7FE99A87C641"), "desktop"),
+            (new("1777F761-68AD-4D8A-87BD-30B759FA33DD"), "favorites"), (new("56784854-C6CB-462B-8169-88E350ACB882"), "contacts"),
+            (new("4C5C32FF-BB9D-43B0-B5B4-2D72E54EAAA4"), "saved-games"), (new("31C0DD25-9439-4F12-BF41-7FF4EDA38722"), "objects-3d"),
+            (new("BFB9D5E0-C6A9-404C-B2B2-AE6DB6AF4968"), "links"), (new("7D1D3A04-DEBB-4115-95CF-2F29DA2920DA"), "searches"),
+            (new("B7BEDE81-DF94-4682-A7D8-57A52620B86F"), "screenshots"),
         ];
         foreach (var (id, icon) in list)
             if (KnownFolder(id) is { } path && Directory.Exists(path)) yield return (path, icon);
