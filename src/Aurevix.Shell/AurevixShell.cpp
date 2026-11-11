@@ -18,6 +18,7 @@
 #include <chrono>
 #include <atomic>
 #include <cstdio>
+#include <share.h>
 
 // windows.h define GetCurrentTime como macro y choca con Storyboard::GetCurrentTime de C++/WinRT.
 #ifdef GetCurrentTime
@@ -101,7 +102,7 @@ static void OpenDump(std::wstring const& process)
     wchar_t path[MAX_PATH];
     if (!GetTempPathW(MAX_PATH, path)) return;
     std::wstring out = std::wstring(path) + L"aurevix-tree-" + process + L".log";
-    _wfopen_s(&s_dump, out.c_str(), L"w, ccs=UTF-8");
+    s_dump = _wfsopen(out.c_str(), L"w, ccs=UTF-8", _SH_DENYNO); // se puede leer mientras está abierto
 }
 static void DumpElement(unsigned long long parent, unsigned long long handle, LPCWSTR type, LPCWSTR name)
 {
