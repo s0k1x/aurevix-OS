@@ -24,6 +24,7 @@ public partial class App : Application
                 return;
             }
         }
+        Aurevix.ControlCenter.Views.Ui.EnableDarkTitleBars();
         AurevixLog.Initialize(LogDir);
         AurevixLog.Info("AUREVIX Installer iniciado.");
         DispatcherUnhandledException += (_, ex) =>

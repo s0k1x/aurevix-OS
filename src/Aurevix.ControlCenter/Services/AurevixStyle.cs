@@ -14,7 +14,8 @@ namespace Aurevix.ControlCenter.Services;
 ///   - Menú Inicio sin recomendaciones ni sugerencias.
 ///   - Explorador abierto en "Este equipo", extensiones visibles, sin recientes/frecuentes.
 ///   - Animaciones y transparencias de Windows activadas.
-///   - Pantalla de bloqueo AUREVIX (API oficial Windows.System.UserProfile.LockScreen).
+///   - Ventanas con barra de título y borde en negro grafito AUREVIX (color de ventana de DWM).
+///   - Pantalla de bloqueo AUREVIX sin anuncios ni «datos curiosos» (API oficial Windows.System.UserProfile.LockScreen).
 /// Todo se guarda en una copia de seguridad (TweakEngine) y se puede deshacer.
 /// </summary>
 public static class AurevixStyle
@@ -27,11 +28,28 @@ public static class AurevixStyle
     private const string Search = @"Software\Microsoft\Windows\CurrentVersion\Search";
     private const string Cdm = @"Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager";
     private const string Themes = @"Software\Microsoft\Windows\CurrentVersion\Themes";
+    private const string Dwm = @"Software\Microsoft\Windows\DWM";
+
+    /// <summary>Fondo predeterminado de AUREVIX OS (escritorio y pantalla de bloqueo).</summary>
+    public const string DefaultWallpaper = "Aurevix-Aurora";
 
     private static RegistryAction Dw(string key, string name, int v) =>
         new() { Hive = RegistryHive.CurrentUser, Key = key, Name = name, Kind = RegistryValueKind.DWord, Value = v.ToString() };
     private static RegistryAction Sz(string key, string name, string v) =>
         new() { Hive = RegistryHive.CurrentUser, Key = key, Name = name, Kind = RegistryValueKind.String, Value = v };
+    /// <summary>Color de DWM en formato ABGR (0xAABBGGRR).</summary>
+    private static RegistryAction Color(string name, uint abgr) =>
+        new() { Hive = RegistryHive.CurrentUser, Key = Dwm, Name = name, Kind = RegistryValueKind.DWord, Value = abgr.ToString() };
+
+    /// <summary>
+    /// Se aplica DESPUÉS del tema (que restablece los colores de ventana): barra de título y borde de todas las
+    /// ventanas en negro grafito, el rasgo más reconocible de AUREVIX OS. El acento verde lima no cambia.
+    /// </summary>
+    private static readonly TweakDefinition WindowFrames = new()
+    {
+        Id = "style.windows", Title = "Ventanas en negro grafito AUREVIX", Category = TweakCategory.Interface,
+        Registry = [Dw(Dwm, "ColorPrevalence", 1), Color("AccentColor", 0xFF110E0E), Color("AccentColorInactive", 0xFF060505)]
+    };
 
     /// <summary>Grupos de ajustes. Cada grupo es un TweakDefinition independiente: si Windows bloquea uno, los demás siguen.</summary>
     public static IReadOnlyList<TweakDefinition> Groups { get; } =
@@ -44,7 +62,8 @@ public static class AurevixStyle
         new()
         {
             Id = "style.taskbar", Title = "Barra de tareas limpia", Category = TweakCategory.Interface,
-            Registry = [Dw(Advanced, "TaskbarAl", 1), Dw(Advanced, "ShowTaskViewButton", 0), Dw(Search, "SearchboxTaskbarMode", 1)]
+            Registry = [Dw(Advanced, "TaskbarAl", 1), Dw(Advanced, "ShowTaskViewButton", 0), Dw(Search, "SearchboxTaskbarMode", 1),
+                        Dw(Advanced, "ShowCopilotButton", 0)]
         },
         new()
         {
@@ -68,6 +87,11 @@ public static class AurevixStyle
             Id = "style.explorer", Title = "Explorador de archivos limpio", Category = TweakCategory.Interface,
             Registry = [Dw(Advanced, "LaunchTo", 1), Dw(Advanced, "HideFileExt", 0), Dw(Advanced, "UseCompactMode", 0),
                         Dw(Explorer, "ShowRecent", 0), Dw(Explorer, "ShowFrequent", 0)]
+        },
+        new()
+        {
+            Id = "style.lock", Title = "Pantalla de bloqueo sin anuncios ni sugerencias", Category = TweakCategory.Interface,
+            Registry = [Dw(Cdm, "RotatingLockScreenOverlayEnabled", 0), Dw(Cdm, "SubscribedContent-338387Enabled", 0)]
         },
         new()
         {
@@ -120,9 +144,15 @@ public static class AurevixStyle
         // 4. Pantalla de bloqueo.
         if (includeLockScreen)
         {
-            if (await TrySetLockScreenAsync(WallpaperPath("Aurevix-Graphite"))) applied.Add("Pantalla de bloqueo AUREVIX");
+            if (await TrySetLockScreenAsync(WallpaperPath(DefaultWallpaper))) applied.Add("Pantalla de bloqueo AUREVIX");
             else skipped.Add("Pantalla de bloqueo (Windows no lo permitió en este equipo)");
         }
+
+        // 5. Color de las ventanas: Windows tarda unos segundos en terminar de aplicar el tema y, al hacerlo,
+        //    restablece estos valores; por eso van al final.
+        await Task.Delay(4000);
+        var frames = AppServices.Tweaks.Apply([WindowFrames], $"{BackupPrefix} · {WindowFrames.Title}");
+        (frames.Success ? applied : skipped).Add(WindowFrames.Title);
 
         BroadcastSettingChange();
         AurevixLog.Info($"Estilo AUREVIX aplicado: {applied.Count} cambios, {skipped.Count} omitidos.");
@@ -178,7 +208,20 @@ public static class AurevixStyle
         public string? LockScreen { get; set; }
     }
 
-    public static string WallpaperPath(string name) => Path.Combine(AppContext.BaseDirectory, "Assets", "Wallpapers", name + ".png");
+    public static string WallpaperDirectory => Path.Combine(AppContext.BaseDirectory, "Assets", "Wallpapers");
+
+    public static string WallpaperPath(string name)
+    {
+        var jpg = Path.Combine(WallpaperDirectory, name + ".jpg");
+        return File.Exists(jpg) ? jpg : Path.Combine(WallpaperDirectory, name + ".png");
+    }
+
+    /// <summary>Fondos incluidos, con el predeterminado primero.</summary>
+    public static IReadOnlyList<string> Wallpapers() =>
+        !Directory.Exists(WallpaperDirectory) ? [] : Directory.GetFiles(WallpaperDirectory)
+            .Where(f => f.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) || f.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(f => Path.GetFileNameWithoutExtension(f) == DefaultWallpaper)
+            .ThenByDescending(f => f.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase)).ThenBy(f => f).ToList();
 
     /// <summary>Genera AUREVIX.theme (formato .theme documentado por Microsoft).</summary>
     private static string WriteThemeFile()
@@ -186,7 +229,7 @@ public static class AurevixStyle
         var dir = Path.Combine(AurevixPaths.UserRoot, "theme");
         Directory.CreateDirectory(dir);
         var path = Path.Combine(dir, "AUREVIX.theme");
-        var wall = WallpaperPath("Aurevix-Graphite");
+        var wall = WallpaperPath(DefaultWallpaper);
         File.WriteAllText(path, $"""
             ; AUREVIX OS — tema de Windows
             [Theme]
