@@ -23,6 +23,7 @@
     <Resource Include="Assets\aurevix.ico" />
     <Content Include="Assets\Wallpapers\*.png" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Assets\Wallpapers\*.jpg" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\Icons\*.ico" CopyToOutputDirectory="PreserveNewest" />
     <!-- AUREVIX Shell (nativo): lo compila src/Aurevix.Shell/build.ps1 en out/shell; si existe, se copia junto a la app. -->
     <Content Include="..\..\out\shell\AurevixShell.dll" Link="shell\AurevixShell.dll" CopyToOutputDirectory="PreserveNewest" Condition="Exists('..\..\out\shell\AurevixShell.dll')" />
   </ItemGroup>

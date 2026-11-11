@@ -45,6 +45,8 @@ public static class AurevixShell
     private static extern uint GetWindowThreadProcessId(IntPtr hwnd, out uint pid);
 
     private static InitializeXamlDiagnosticsExFn? _init;
+    /// <summary>Último resultado de un intento (para el registro y la prueba automática).</summary>
+    public static string LastResult { get; private set; } = "";
 
     /// <summary>Empieza a vigilar el Explorador y el menú Inicio (cada 3 s; coste casi nulo).</summary>
     public static void Start()
@@ -152,7 +154,9 @@ public static class AurevixShell
                 if (fn == IntPtr.Zero) { AurevixLog.Warn("AUREVIX Shell: este Windows no tiene InitializeXamlDiagnosticsEx."); Stop(); return false; }
                 _init = Marshal.GetDelegateForFunctionPointer<InitializeXamlDiagnosticsExFn>(fn);
             }
-            var hr = _init($"AurevixShell-{pid}-{Environment.TickCount64}", (uint)pid, null, DllPath, TapClsid, null);
+            // Igual que las herramientas de diagnóstico de XAML: cadenas vacías (no nulas) en los parámetros opcionales.
+            var hr = _init($"AurevixShell-{pid}-{Environment.TickCount64}", (uint)pid, "", DllPath, TapClsid, "");
+            LastResult = $"{what} pid {pid}: 0x{hr:X8}";
             if (hr >= 0)
             {
                 Injected.Add(pid);
@@ -166,6 +170,7 @@ public static class AurevixShell
         }
         catch (Exception ex)
         {
+            LastResult = $"{what} pid {pid}: {ex.GetType().Name} {ex.Message}";
             AurevixLog.Warn($"AUREVIX Shell no se pudo aplicar al {what}: {ex.Message}");
             return false;
         }
@@ -174,12 +179,13 @@ public static class AurevixShell
     /// <summary>Modo prueba (CI): aplica una vez y espera a que haga efecto.</summary>
     public static async Task<string> ApplyOnceAsync()
     {
+        Failures.Clear();
         for (var i = 0; i < 30; i++)
         {
             var pid = ExplorerPid();
             if (pid != 0 && TryInject(pid, "Explorador")) return $"OK explorer {pid}";
             await Task.Delay(1000);
         }
-        return "FAIL";
+        return $"FAIL explorer={ExplorerPid()} dll={File.Exists(DllPath)} build={Environment.OSVersion.Version.Build} last={LastResult}";
     }
 }

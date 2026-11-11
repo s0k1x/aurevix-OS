@@ -89,6 +89,41 @@ public sealed class SystemActions(string root) : ISystemActions
         }
     }
 
+    // ------------------------------------------------------------------ Iconos AUREVIX
+
+    private const string ShellIconsKey = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Icons";
+    /// <summary>Índice de imageres/shell32 que Windows usa para cada tipo → icono AUREVIX.</summary>
+    private static readonly (string Index, string Icon)[] ShellIconMap =
+        [("3", "folder"), ("4", "folder-open"), ("7", "usb"), ("8", "drive"), ("9", "network"), ("11", "disc")];
+
+    public (bool ok, string message) SetShellIcons(bool on)
+    {
+        try
+        {
+            var dir = Path.Combine(AppDir, "Assets", "Icons");
+            using var key = Microsoft.Win32.Registry.LocalMachine.CreateSubKey(ShellIconsKey, true);
+            if (on)
+            {
+                if (!Directory.Exists(dir)) return (false, "No se encontraron los iconos de AUREVIX.");
+                foreach (var (index, icon) in ShellIconMap)
+                {
+                    var file = Path.Combine(dir, icon + ".ico");
+                    if (File.Exists(file)) key.SetValue(index, file + ",0", Microsoft.Win32.RegistryValueKind.String);
+                }
+                return (true, "Iconos AUREVIX activados para carpetas y unidades.");
+            }
+            // Solo se borran los valores que apuntan a los iconos de AUREVIX.
+            foreach (var (index, _) in ShellIconMap)
+                if (key.GetValue(index) is string v && v.StartsWith(dir, StringComparison.OrdinalIgnoreCase)) key.DeleteValue(index, false);
+            return (true, "Iconos de Windows restaurados.");
+        }
+        catch (Exception ex)
+        {
+            AurevixLog.Error("Iconos AUREVIX", ex);
+            return (false, "No se pudieron cambiar los iconos.");
+        }
+    }
+
     // ------------------------------------------------------------------ Actualizaciones
 
     private sealed class UpdateState { public long LastSequence { get; set; } }

@@ -91,7 +91,8 @@
   .start .lbl{font-size:11px;color:#c9c9d0;margin:16px 4px 10px;font-weight:600}
   .start .grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px 6px}
   .start .app{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:9px;color:#a5a5ae}
-  .start .ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center}
+  .start .ic{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
+  .start .app img{filter:drop-shadow(0 3px 6px rgba(0,0,0,.6))}
   .start .user{position:absolute;left:0;right:0;bottom:0;height:46px;border-top:1px solid #1d1d22;display:flex;align-items:center;gap:10px;padding:0 18px;font-size:11px;color:#c9c9d0}
   .start .user i{width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#2a2a31,#3a3a44)}
   @keyframes start{0%,48%{opacity:0;transform:translateY(30px)}54%,86%{opacity:1;transform:none}92%,100%{opacity:0;transform:translateY(30px)}}
@@ -102,6 +103,9 @@
   .dock .d.run::after{content:"";position:absolute;bottom:-5px;left:50%;width:6px;height:3px;margin-left:-3px;border-radius:2px;background:var(--accent)}
   .dock .d.act::after{width:16px;margin-left:-8px}
   .dock .d.st{animation:press 12s infinite}
+  .dock .d .gl{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
+  .dock .d .gl svg{width:17px;height:17px}
+  .dock .d img{filter:drop-shadow(0 2px 4px rgba(0,0,0,.6))}
   .dock .tray{margin-left:10px;padding-left:12px;border-left:1px solid #26262d;font-size:11px;color:#c9c9d0;display:flex;gap:12px;align-items:center;height:30px}
   @keyframes press{0%,46%{background:transparent}49%,88%{background:#1d1d22}92%,100%{background:transparent}}
 
@@ -182,6 +186,16 @@
   .steps li.now{color:#fff;font-weight:600}.steps li.now::before{border:0;background:var(--accent);animation:pulse 1s ease-in-out infinite alternate}
   @keyframes pulse{to{opacity:.3}}
 
+  /* ---------- Iconos ---------- */
+  .icons{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-top:40px}
+  .icons figure{margin:0;border:1px solid var(--line);border-radius:20px;background:radial-gradient(120% 90% at 50% 0%,#141418,#09090b);padding:26px 10px 16px;text-align:center;
+                transition:transform .4s cubic-bezier(.2,.7,.2,1),border-color .3s}
+  .icons figure:hover{transform:translateY(-4px);border-color:#2e2e36}
+  .icons img{width:96px;height:96px;display:block;margin:0 auto;filter:drop-shadow(0 12px 18px rgba(0,0,0,.6));animation:bob 6s ease-in-out infinite}
+  .icons figure:nth-child(odd) img{animation-delay:-3s}
+  .icons figcaption{font-size:13px;color:var(--muted);margin-top:12px}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+
   /* ---------- Fondos ---------- */
   .walls{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:40px}
   .wall{position:relative;aspect-ratio:16/10;border-radius:18px;overflow:hidden;border:1px solid var(--line)}
@@ -230,6 +244,7 @@
     .bento{grid-template-columns:1fr 1fr}
     .card,.card.wide{grid-column:span 1}
     .stats{grid-template-columns:1fr 1fr}
+    .icons{grid-template-columns:repeat(3,1fr)}
   }
   @media (max-width:640px){
     nav{padding:12px 16px}
@@ -237,6 +252,7 @@
     section{padding:80px 16px}
     .bento,.walls,.options{grid-template-columns:1fr}
     .toggles{grid-template-columns:1fr}
+    .icons{grid-template-columns:repeat(2,1fr)}
     .vrow{grid-template-columns:1fr;gap:8px}
     .vrow .t span{white-space:normal}
     .inst .in{padding:20px}
@@ -258,6 +274,7 @@
   <div class="links">
     <a href="#rendimiento">Rendimiento</a>
     <a href="#funciones">Funciones</a>
+    <a href="#iconos">Iconos</a>
     <a href="#seguridad">Seguridad</a>
     <a href="#versiones">Versiones</a>
     <a class="pill" href="#descargar">Descargar</a>
@@ -269,7 +286,7 @@
     <div>
       <div class="eyebrow reveal" id="ver">AUREVIX OS</div>
       <h1 class="reveal d1">Un sistema nuevo.<br><span class="grad">Tus programas de siempre.</span></h1>
-      <p class="lead reveal d2">Windows 11 oficial con otra cara y más rendimiento. Barra de tareas, menú Inicio y Configuración rediseñados, y todo lo que no usas, fuera.</p>
+      <p class="lead reveal d2">Windows 11 oficial con otra cara y más rendimiento. Barra de tareas, menú Inicio, Configuración e iconos rediseñados, y todo lo que no usas, fuera.</p>
       <div class="row reveal d3">
         <a class="pill big" href="#descargar">Descargar AUREVIX</a>
         <a class="ghost" href="#funciones">Qué incluye</a>
@@ -356,7 +373,7 @@
       <div class="bento">
         <article class="card wide reveal">
           <h3>AUREVIX Shell</h3>
-          <p>Barra de tareas tipo dock, menú Inicio y Configuración con el diseño AUREVIX desde que enciendes. Componente propio, sin tocar archivos de Windows.</p>
+          <p>Barra de tareas tipo dock, menú Inicio, Configuración e iconos con el diseño AUREVIX desde que enciendes. Componente propio, sin tocar archivos de Windows.</p>
           <div class="viz"><div class="dock" id="dock2" style="position:absolute;bottom:14px;transform:translateX(-50%) scale(.92)"></div></div>
         </article>
         <article class="card wide reveal d1">
@@ -421,6 +438,26 @@
           <li><b>Reinstalar limpio.</b> Windows 11 desde cero, sin USB y en español.</li>
           <li><b>USB o ISO.</b> Enchufa un pendrive y lo deja listo para arrancar.</li>
         </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="iconos">
+    <div class="wrap">
+      <div class="eyebrow reveal">Iconos</div>
+      <h2 class="reveal d1">Iconos rediseñados, a juego con el sistema.</h2>
+      <p class="body reveal d2">Carpetas, unidades, Este equipo, la Papelera y la Red con el estilo AUREVIX: grafito, luz cenital y un detalle verde lima. Se aplican con el Estilo AUREVIX y se quitan con «Restablecer aspecto de Windows 11».</p>
+      <div class="icons reveal d2">
+        <figure><img src="img/icons/folder.png" alt="" width="128" height="128"><figcaption>Carpeta</figcaption></figure>
+        <figure><img src="img/icons/folder-open.png" alt="" width="128" height="128"><figcaption>Carpeta abierta</figcaption></figure>
+        <figure><img src="img/icons/pc.png" alt="" width="128" height="128"><figcaption>Este equipo</figcaption></figure>
+        <figure><img src="img/icons/drive.png" alt="" width="128" height="128"><figcaption>Disco</figcaption></figure>
+        <figure><img src="img/icons/usb.png" alt="" width="128" height="128"><figcaption>USB</figcaption></figure>
+        <figure><img src="img/icons/disc.png" alt="" width="128" height="128"><figcaption>CD y DVD</figcaption></figure>
+        <figure><img src="img/icons/bin-empty.png" alt="" width="128" height="128"><figcaption>Papelera</figcaption></figure>
+        <figure><img src="img/icons/bin-full.png" alt="" width="128" height="128"><figcaption>Papelera llena</figcaption></figure>
+        <figure><img src="img/icons/network.png" alt="" width="128" height="128"><figcaption>Red</figcaption></figure>
+        <figure><img src="img/icons/user.png" alt="" width="128" height="128"><figcaption>Tu carpeta</figcaption></figure>
       </div>
     </div>
   </section>
@@ -504,21 +541,29 @@ const I = {
   chat: svg('<path d="M21 12a8 8 0 0 1-12 7l-5 1 1-4a8 8 0 1 1 16-4z"/>'),
   code: svg('<path d="m8 8-4 4 4 4M16 8l4 4-4 4M14 4l-4 16"/>')
 };
-const dockItems = [['logo', 'Inicio', 'st'], ['folder', '', 'run act'], ['web', '', 'run'], ['game', '', 'run'], ['music', '', ''], ['term', '', ''], ['store', '', ''], ['gear', '', 'run']];
+const glyphBg = { web: 'linear-gradient(145deg,#2fbf71,#1c7a49)', mail: 'linear-gradient(145deg,#3c9de0,#245f8a)', photo: 'linear-gradient(145deg,#c43c8d,#7a2458)',
+  music: 'linear-gradient(145deg,#e0683c,#8a3f24)', game: 'linear-gradient(145deg,#3a3a44,#17171b)', term: 'linear-gradient(145deg,#2a2a31,#0e0e11)',
+  store: 'linear-gradient(145deg,#5b6cf0,#353f8f)', gear: 'linear-gradient(145deg,#3a3a44,#17171b)', calc: 'linear-gradient(145deg,#3a3a44,#17171b)',
+  chat: 'linear-gradient(145deg,#2fbf71,#1c7a49)', code: 'linear-gradient(145deg,#5b6cf0,#353f8f)' };
+const dockItems = [['logo', 'Inicio', 'st'], ['img:folder', '', 'run act'], ['img:pc', '', ''], ['web', '', 'run'], ['game', '', 'run'], ['music', '', ''], ['term', '', ''], ['gear', '', 'run'], ['img:bin-empty', '', '']];
 function buildDock(el, withTray) {
   for (const [k, , cls] of dockItems) {
     const d = document.createElement('div'); d.className = 'd ' + cls;
-    d.innerHTML = k === 'logo' ? '<img src="logo.png" alt="" width="20" height="20">' : I[k];
+    d.innerHTML = k === 'logo' ? '<img src="logo.png" alt="" width="20" height="20">'
+      : k.startsWith('img:') ? `<img src="img/icons/${k.slice(4)}.png" alt="" width="30" height="30">`
+      : `<span class="gl" style="background:${glyphBg[k] || '#2a2a31'}">${I[k]}</span>`;
     el.appendChild(d);
   }
   if (withTray) { const t = document.createElement('div'); t.className = 'tray'; t.innerHTML = '<span>ES</span><span>⌁ ◔</span><span id="clock">21:47</span>'; el.appendChild(t); }
 }
 buildDock(document.getElementById('dock'), true);
 buildDock(document.getElementById('dock2'), false);
-const apps = [['folder', 'Explorador', '#3c6df0'], ['web', 'Navegador', '#2fbf71'], ['mail', 'Correo', '#3c9de0'], ['photo', 'Fotos', '#c43c8d'], ['music', 'Música', '#e0683c'], ['game', 'Juegos', '#8de03c'],
-              ['term', 'Terminal', '#2a2a31'], ['code', 'Código', '#5b6cf0'], ['calc', 'Calculadora', '#3a3a44'], ['chat', 'Mensajes', '#2fbf71'], ['store', 'Store', '#3c6df0'], ['gear', 'Ajustes', '#3a3a44']];
+const apps = [['img:folder', 'Explorador'], ['img:pc', 'Este equipo'], ['web', 'Navegador'], ['mail', 'Correo'], ['photo', 'Fotos'], ['music', 'Música'],
+              ['game', 'Juegos'], ['term', 'Terminal'], ['img:network', 'Red'], ['img:user', 'Tu carpeta'], ['store', 'Store'], ['gear', 'Ajustes']];
 const sg = document.getElementById('startgrid');
-for (const [k, n, c] of apps) sg.insertAdjacentHTML('beforeend', `<div class="app"><div class="ic" style="background:linear-gradient(145deg,${c},${c}cc)">${I[k]}</div>${n}</div>`);
+for (const [k, n] of apps) sg.insertAdjacentHTML('beforeend', k.startsWith('img:')
+  ? `<div class="app"><img src="img/icons/${k.slice(4)}.png" alt="" width="38" height="38">${n}</div>`
+  : `<div class="app"><div class="ic" style="background:${glyphBg[k]}">${I[k]}</div>${n}</div>`);
 document.getElementById('band').innerHTML = (b => b + b)(['<span><b>Windows 11</b>oficial de Microsoft</span>', '<span><b>AUREVIX Shell</b>barra, Inicio y Configuración</span>', '<span><b>88</b>ajustes reversibles</span>',
   '<span><b>Game Boost</b>prioridad automática</span>', '<span><b>Nusa</b>isla de música</span>', '<span><b>0</b>datos enviados</span>', '<span><b>Firmado</b>cada actualización</span>'].join(''));
 
