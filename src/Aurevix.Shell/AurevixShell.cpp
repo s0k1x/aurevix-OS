@@ -35,6 +35,10 @@
 #include <winrt/Windows.UI.Xaml.Controls.h>
 #include <winrt/Windows.UI.Xaml.Input.h>
 #include <winrt/Windows.UI.Xaml.Media.Animation.h>
+#include <winrt/Windows.UI.Xaml.Media.Imaging.h>
+#include <winrt/Windows.Storage.Streams.h>
+#include <shlwapi.h>
+#include <shcore.h>
 
 namespace wux = winrt::Windows::UI::Xaml;
 namespace wuxm = winrt::Windows::UI::Xaml::Media;
@@ -232,6 +236,42 @@ static void AddHoverZoom(wux::UIElement const& el)
     g_styled++;
 }
 
+static HMODULE g_moduleForFiles() { return g_module; }
+
+static bool HasNamedAncestor(wux::DependencyObject el, std::wstring_view name, int maxDepth = 6)
+{
+    for (int i = 0; i < maxDepth && el; i++)
+    {
+        el = wuxm::VisualTreeHelper::GetParent(el);
+        if (auto fe = el.try_as<wux::FrameworkElement>(); fe && fe.Name() == name) return true;
+    }
+    return false;
+}
+
+// Logo AUREVIX (start-logo.png, junto a la DLL) en el botón de Inicio de la barra de tareas.
+static void SetStartLogo(wuxc::Border const& host)
+{
+    wchar_t dll[MAX_PATH]{};
+    GetModuleFileNameW(g_moduleForFiles(), dll, MAX_PATH);
+    std::wstring path(dll);
+    path = path.substr(0, path.find_last_of(L"\\/") + 1) + L"start-logo.png";
+    winrt::com_ptr<IStream> stream;
+    if (FAILED(SHCreateStreamOnFileEx(path.c_str(), STGM_READ | STGM_SHARE_DENY_WRITE, 0, FALSE, nullptr, stream.put()))) { Log(L"Logo: no se encontró %s", path.c_str()); return; }
+    winrt::Windows::Storage::Streams::IRandomAccessStream ras{ nullptr };
+    if (FAILED(CreateRandomAccessStreamOverStream(stream.get(), BSOS_DEFAULT, winrt::guid_of<winrt::Windows::Storage::Streams::IRandomAccessStream>(), winrt::put_abi(ras)))) return;
+    winrt::Windows::UI::Xaml::Media::Imaging::BitmapImage bmp;
+    bmp.SetSource(ras);
+    wuxc::Image img;
+    img.Source(bmp);
+    img.Width(22); img.Height(22);
+    img.HorizontalAlignment(wux::HorizontalAlignment::Center);
+    img.VerticalAlignment(wux::VerticalAlignment::Center);
+    img.IsHitTestVisible(false);
+    host.Child(img);
+    g_styled++;
+    Log(L"Botón de Inicio: logo AUREVIX");
+}
+
 // Inicio AUREVIX: sin «Recomendado», las apps ancladas ocupan todo el alto.
 static void CompactStart(wuxc::Grid const& root)
 {
@@ -248,7 +288,12 @@ static void CompactStart(wuxc::Grid const& root)
             std::wstring_view n = fe.Name();
             bool suggestions = n == L"TopLevelSuggestionsListHeader" || n == L"ShowMoreSuggestions";
             if (!suggestions && n.empty())
-                suggestions = static_cast<bool>(fe.FindName(L"TopLevelSuggestionsContainer"));
+            {
+                int count = wuxm::VisualTreeHelper::GetChildrenCount(fe);
+                for (int i = 0; i < count && !suggestions; i++)
+                    if (auto c = wuxm::VisualTreeHelper::GetChild(fe, i).try_as<wux::FrameworkElement>())
+                        suggestions = c.Name() == L"TopLevelSuggestionsContainer";
+            }
             if (suggestions) { rows.GetAt(row).Height(wux::GridLengthHelper::FromPixels(0)); fe.Visibility(wux::Visibility::Collapsed); }
             else if (n == L"StartMenuPinnedList")
             {
@@ -278,6 +323,10 @@ static void StyleElement(wux::DependencyObject const& obj, std::wstring_view nam
                 shape.Visibility(wux::Visibility::Collapsed); // la línea de Windows sobra con el borde redondeado
             else if (name == L"RunningIndicator") KeepFill(shape, Lime);
         }
+        if (name == L"Icon" && HasNamedAncestor(obj, L"LaunchListButton"))
+            if (auto ui = obj.try_as<wux::UIElement>()) { ui.Opacity(0); g_styled++; }
+        if (name == L"BackgroundElement" && HasNamedAncestor(obj, L"LaunchListButton"))
+            if (auto border = obj.try_as<wuxc::Border>()) { try { SetStartLogo(border); } catch (...) {} }
         return;
     }
     if (s_isSettings)
@@ -289,6 +338,14 @@ static void StyleElement(wux::DependencyObject const& obj, std::wstring_view nam
     }
     if (s_isStart)
     {
+        if (name == L"RootPanel")
+            if (auto grid = obj.try_as<wuxc::Grid>())
+                if (auto parent = wuxm::VisualTreeHelper::GetParent(grid); parent && winrt::get_class_name(parent) == L"StartDocked.LauncherFrame")
+                {
+                    grid.VerticalAlignment(wux::VerticalAlignment::Bottom);
+                    grid.Height(500); // buscador + 3 filas de apps ancladas + usuario
+                    g_styled++;
+                }
         if (name == L"TopLevelRoot")
             if (auto grid = obj.try_as<wuxc::Grid>())
             {
