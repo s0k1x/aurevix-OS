@@ -272,7 +272,7 @@ static void SetStartLogo(wuxc::Border const& host)
     Log(L"Botón de Inicio: logo AUREVIX");
 }
 
-// Inicio AUREVIX: sin «Recomendado», las apps ancladas ocupan todo el alto.
+// Inicio AUREVIX: sin «Recomendado» (su fila queda a 0); la lista de ancladas conserva su tamaño.
 static void CompactStart(wuxc::Grid const& root)
 {
     try
@@ -295,11 +295,7 @@ static void CompactStart(wuxc::Grid const& root)
                         suggestions = c.Name() == L"TopLevelSuggestionsContainer";
             }
             if (suggestions) { rows.GetAt(row).Height(wux::GridLengthHelper::FromPixels(0)); fe.Visibility(wux::Visibility::Collapsed); }
-            else if (n == L"StartMenuPinnedList")
-            {
-                rows.GetAt(row).Height(wux::GridLengthHelper::FromValueAndType(1, wux::GridUnitType::Star));
-                fe.VerticalAlignment(wux::VerticalAlignment::Stretch);
-            }
+
         }
     }
     catch (...) {}
@@ -353,8 +349,6 @@ static void StyleElement(wux::DependencyObject const& obj, std::wstring_view nam
                 grid.SizeChanged([grid](auto&&, auto&&) { CompactStart(grid); });
                 CompactStart(grid);
             }
-        if (name == L"PinnedList")
-            if (auto fe = obj.try_as<wux::FrameworkElement>()) { fe.VerticalAlignment(wux::VerticalAlignment::Stretch); fe.Height(std::numeric_limits<double>::quiet_NaN()); }
         // Menú Inicio AUREVIX: sin la sección «Recomendado»; solo tus apps.
         if (name == L"TopLevelSuggestionsContainer" || name == L"TopLevelSuggestionsListHeader" || name == L"ShowMoreSuggestions" ||
             name == L"NoTopLevelSuggestionsText" || name == L"NoSuggestionsShowSettings")
