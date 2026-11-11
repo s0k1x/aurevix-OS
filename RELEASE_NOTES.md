@@ -1,6 +1,8 @@
-## AUREVIX OS 0.5.1 — AUREVIX Shell (experimental)
+## AUREVIX OS 0.6.0 — AUREVIX Shell
 
-- **AUREVIX Shell**: en Apariencia, una guía para cambiar la forma de la barra de tareas (tipo dock, negro grafito, indicador verde lima) y del menú Inicio (redondeado, a juego) con Windhawk, una herramienta de código abierto que inyecta código en el Explorador. Es opcional y se deshace desactivando los mods.
-- **Web**: nueva sección con todas las versiones publicadas y su instalador.
-
-Incluye lo de la 0.5.0: fondo Aurora 4K, ventanas en negro grafito, bloqueo sin anuncios y barras de título oscuras.
+- **AUREVIX Shell, propio y activado por defecto**: barra de tareas en negro grafito con indicadores verde lima, menú Inicio redondeado a juego y Configuración con fondo AUREVIX, desde que inicias sesión. Es un componente nativo de AUREVIX que cambia el aspecto en memoria: no modifica archivos de Windows.
+- **Volver a Windows 11 en un clic**: en Apariencia puedes desactivar AUREVIX Shell o «Restablecer aspecto de Windows 11» (deshace también el Estilo AUREVIX). Si el Explorador fallase varias veces seguidas, AUREVIX Shell se desactiva solo.
+- **Optimizado por defecto**: el asistente aplica el nivel Rendimiento (reversible) y las instalaciones limpias quitan las apps promocionales preinstaladas.
+- **Nusa incluida**: el asistente instala Nusa (isla de música, letras y temporizador) desde Microsoft Store. También está en Apps.
+- **Web nueva** con escenas animadas del sistema en lugar de capturas.
+- Fuera las herramientas de terceros (Windhawk, TranslucentTB).
