@@ -53,6 +53,9 @@ public static class AurevixShell
     public static void Start()
     {
         if (!AppServices.Settings.ShellEnabled || !IsAvailable) return;
+        // Con permisos de administrador Windows no deja que la barra de tareas (sin permisos) se conecte: se avisa en el registro.
+        if (AppServices.IsAdmin)
+            AurevixLog.Warn("AUREVIX Shell: el Control Center se está ejecutando como administrador; ábrelo normalmente para que se aplique el estilo.");
         _timer ??= new System.Threading.Timer(_ => Tick(), null, TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(3));
         AurevixLog.Info("AUREVIX Shell activo.");
     }
@@ -194,9 +197,9 @@ public static class AurevixShell
         for (var i = 0; i < 30; i++)
         {
             var pid = ExplorerPid();
-            if (pid != 0 && TryInject(pid, "Explorador")) return $"OK explorer {pid}";
+            if (pid != 0 && TryInject(pid, "Explorador")) return $"OK explorer {pid} admin={AppServices.IsAdmin} {LastResult}";
             await Task.Delay(1000);
         }
-        return $"FAIL explorer={ExplorerPid()} dll={File.Exists(DllPath)} build={Environment.OSVersion.Version.Build} last={LastResult}";
+        return $"FAIL explorer={ExplorerPid()} admin={AppServices.IsAdmin} dll={File.Exists(DllPath)} build={Environment.OSVersion.Version.Build} last={LastResult}";
     }
 }

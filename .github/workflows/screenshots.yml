@@ -89,19 +89,29 @@ jobs:
           Start-Process ms-settings:personalization; Start-Sleep 6; Shot 'shell-03-config-antes'
           Get-Process SystemSettings -ErrorAction SilentlyContinue | Stop-Process -Force; Start-Sleep 2
           $res = Join-Path $dir 'resultado.txt'
-          $p = Start-Process out/cc/AurevixControlCenter.exe -ArgumentList '--shell-test', "`"$res`"" -PassThru
-          $p.WaitForExit(60000) | Out-Null
+          # Como en un PC normal: sin permisos de administrador. Lo que lanza el Explorador hereda su nivel (medio);
+          # lo que lanza el runner directamente es de administrador y Windows no deja que la barra de tareas se conecte a él.
+          $cc = (Resolve-Path out/cc/AurevixControlCenter.exe).Path
+          function AsUser($argsLine, $name) {
+            $cmd = Join-Path $env:TEMP "$name.cmd"
+            Set-Content -Path $cmd -Value "@echo off`r`nstart `"`" `"$cc`" $argsLine" -Encoding ascii
+            Start-Process explorer.exe -ArgumentList "`"$cmd`""
+          }
+          AsUser "--shell-test `"$res`"" 'shelltest'
+          for ($i = 0; $i -lt 70 -and -not (Test-Path $res); $i++) { Start-Sleep 1 }
+          Start-Sleep 9
           Get-Content $res -ErrorAction SilentlyContinue
           Start-Sleep 3; Shot 'shell-04-despues'
           # El Control Center normal aplica también menú Inicio y Configuración en segundo plano.
-          $bg = Start-Process out/cc/AurevixControlCenter.exe -ArgumentList '--background' -PassThru
-          Start-Sleep 6
+          AsUser '--background' 'bg'
+          Start-Sleep 10
           StartMenu; Start-Sleep 4; Shot 'shell-05-inicio-despues'; StartMenu; Start-Sleep 1
           Start-Process ms-settings:personalization; Start-Sleep 9; Shot 'shell-06-config-despues'
           Copy-Item (Join-Path $env:TEMP 'aurevix-shell.log') $dir -ErrorAction SilentlyContinue
           Get-ChildItem "$env:LOCALAPPDATA\Packages" -Recurse -Filter aurevix-shell.log -ErrorAction SilentlyContinue | ForEach-Object { Copy-Item $_.FullName (Join-Path $dir ("log-" + $_.Directory.Parent.Name + ".log")) }
           Get-ChildItem "$env:LOCALAPPDATA\Aurevix\logs" -ErrorAction SilentlyContinue | Select-Object -Last 1 | ForEach-Object { Copy-Item $_.FullName (Join-Path $dir 'controlcenter.log') }
           Get-ChildItem $dir | Format-Table Name, Length
+          Get-Process AurevixControlCenter -IncludeUserName -ErrorAction SilentlyContinue | Format-Table Id, UserName, StartTime
           Get-Content (Join-Path $dir 'aurevix-shell.log') -ErrorAction SilentlyContinue
           Get-Content (Join-Path $dir 'controlcenter.log') -ErrorAction SilentlyContinue
       - name: Añadir a la rama ci-capturas
