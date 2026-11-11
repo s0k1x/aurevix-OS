@@ -257,6 +257,13 @@ static void StyleElement(wux::DependencyObject const& obj, std::wstring_view nam
     }
     if (s_isStart)
     {
+        // Menú Inicio AUREVIX: sin la sección «Recomendado»; solo tus apps.
+        if (name == L"TopLevelSuggestionsContainer" || name == L"TopLevelSuggestionsListHeader" || name == L"ShowMoreSuggestions" ||
+            name == L"NoTopLevelSuggestionsText" || name == L"NoSuggestionsShowSettings")
+        {
+            if (auto ui = obj.try_as<wux::UIElement>()) { ui.Visibility(wux::Visibility::Collapsed); g_styled++; }
+            return;
+        }
         if (auto border = obj.try_as<wuxc::Border>())
         {
             if (name == L"AcrylicBorder")
@@ -266,6 +273,7 @@ static void StyleElement(wux::DependencyObject const& obj, std::wstring_view nam
                 border.BorderThickness(wux::ThicknessHelper::FromUniformLength(0)); // sin borde, más limpio
             }
             else if (name == L"AcrylicOverlay") border.Visibility(wux::Visibility::Collapsed);
+            else if (name == L"TopLevelSuggestionsBackground") border.Visibility(wux::Visibility::Collapsed);
             else if (name == L"StartDropShadow" || name == L"RootGridDropShadow" || name == L"DropShadow")
                 border.CornerRadius(wux::CornerRadiusHelper::FromUniformRadius(16));
         }
