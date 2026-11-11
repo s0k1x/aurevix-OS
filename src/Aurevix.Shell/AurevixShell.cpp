@@ -15,6 +15,7 @@
 #include <inspectable.h>
 #include <xamlOM.h>
 #include <string>
+#include <chrono>
 #include <atomic>
 #include <cstdio>
 
@@ -25,11 +26,14 @@
 #include <winrt/Windows.UI.Xaml.Media.h>
 #include <winrt/Windows.UI.Xaml.Shapes.h>
 #include <winrt/Windows.UI.Xaml.Controls.h>
+#include <winrt/Windows.UI.Xaml.Input.h>
+#include <winrt/Windows.UI.Xaml.Media.Animation.h>
 
 namespace wux = winrt::Windows::UI::Xaml;
 namespace wuxm = winrt::Windows::UI::Xaml::Media;
 namespace wuxs = winrt::Windows::UI::Xaml::Shapes;
 namespace wuxc = winrt::Windows::UI::Xaml::Controls;
+namespace wuxa = winrt::Windows::UI::Xaml::Media::Animation;
 using winrt::Windows::UI::Color;
 
 // {8C2D5B1E-6A3F-4E8B-9D47-A7E15C0B3F21}
@@ -164,6 +168,68 @@ static void StyleSettingsContent()
     catch (...) {}
 }
 
+// ------------------------------------------------------------------ dock AUREVIX (barra pequeña y centrada)
+
+static winrt::weak_ref<wuxs::Shape> s_fill;
+static winrt::weak_ref<wux::FrameworkElement> s_apps;
+
+// El fondo de la barra se ajusta al ancho de los iconos anclados y abiertos, como un dock.
+static void UpdateDock()
+{
+    try
+    {
+        auto fill = s_fill.get();
+        auto apps = s_apps.get();
+        if (!fill || !apps || apps.ActualWidth() <= 0) return;
+        auto parent = wuxm::VisualTreeHelper::GetParent(fill).try_as<wux::UIElement>();
+        if (!parent) return;
+        auto origin = apps.TransformToVisual(parent).TransformPoint({ 0, 0 });
+        const double pad = 10;
+        fill.HorizontalAlignment(wux::HorizontalAlignment::Left);
+        fill.Width(apps.ActualWidth() + pad * 2);
+        fill.Margin(wux::ThicknessHelper::FromLengths(origin.X - pad, 3, 0, 3));
+    }
+    catch (...) {}
+}
+
+static void WatchDockApps(wux::FrameworkElement const& apps)
+{
+    s_apps = winrt::make_weak(apps);
+    apps.SizeChanged([](auto&&, auto&&) { UpdateDock(); });
+    apps.LayoutUpdated([](auto&&, auto&&) { UpdateDock(); });
+    Log(L"Dock: iconos encontrados");
+    UpdateDock();
+}
+
+// Animación al pasar el ratón: el icono crece un poco con un pequeño rebote y vuelve suave.
+static void AnimateScale(wuxm::ScaleTransform const& st, double to, bool bounce)
+{
+    wuxa::Storyboard sb;
+    for (auto prop : { L"ScaleX", L"ScaleY" })
+    {
+        wuxa::DoubleAnimation a;
+        a.To(to);
+        a.Duration(wux::DurationHelper::FromTimeSpan(std::chrono::milliseconds(bounce ? 260 : 200)));
+        if (bounce) { wuxa::BackEase e; e.Amplitude(0.45); e.EasingMode(wuxa::EasingMode::EaseOut); a.EasingFunction(e); }
+        else { wuxa::CubicEase e; e.EasingMode(wuxa::EasingMode::EaseOut); a.EasingFunction(e); }
+        wuxa::Storyboard::SetTarget(a, st);
+        wuxa::Storyboard::SetTargetProperty(a, prop);
+        sb.Children().Append(a);
+    }
+    sb.Begin();
+}
+
+static void AddHoverZoom(wux::UIElement const& el)
+{
+    wuxm::ScaleTransform st;
+    el.RenderTransformOrigin({ 0.5, 0.85 });
+    el.RenderTransform(st);
+    el.PointerEntered([st](auto&&, auto&&) { try { AnimateScale(st, 1.2, true); } catch (...) {} });
+    el.PointerExited([st](auto&&, auto&&) { try { AnimateScale(st, 1.0, false); } catch (...) {} });
+    el.PointerCanceled([st](auto&&, auto&&) { try { AnimateScale(st, 1.0, false); } catch (...) {} });
+    g_styled++;
+}
+
 static void StyleElement(wux::DependencyObject const& obj, std::wstring_view name)
 {
     if (s_isExplorer)
@@ -172,16 +238,20 @@ static void StyleElement(wux::DependencyObject const& obj, std::wstring_view nam
         {
             if (name == L"BackgroundFill" && HasAncestor(obj, L"Taskbar.TaskbarBackground"))
             {
+                s_fill = winrt::make_weak(shape);
                 // Barra flotante AUREVIX: separada de los bordes y con esquinas redondeadas, sin borde.
                 KeepFill(shape, Graphite);
                 shape.Margin(wux::ThicknessHelper::FromLengths(6, 3, 6, 3));
                 shape.StrokeThickness(0); // sin borde: solo el fondo AUREVIX
                 if (auto rect = obj.try_as<wuxs::Rectangle>()) { rect.RadiusX(14); rect.RadiusY(14); }
+                UpdateDock();
             }
             else if (name == L"BackgroundStroke" && HasAncestor(obj, L"Taskbar.TaskbarBackground"))
                 shape.Visibility(wux::Visibility::Collapsed); // la línea de Windows sobra con el borde redondeado
             else if (name == L"RunningIndicator") KeepFill(shape, Lime);
         }
+        if (name == L"TaskbarFrameRepeater")
+            if (auto fe = obj.try_as<wux::FrameworkElement>()) WatchDockApps(fe);
         return;
     }
     if (s_isSettings)
@@ -233,6 +303,21 @@ struct VisualTreeWatcher : winrt::implements<VisualTreeWatcher, IVisualTreeServi
     {
         if (mutation != Add) return S_OK;
         if (s_isSettings) StyleSettingsContent();
+        // Iconos de la barra (apps y botón de Inicio): animación al pasar el ratón.
+        if (s_isExplorer && element.Type)
+        {
+            std::wstring_view type(element.Type);
+            if (type == L"Taskbar.TaskListButton" || type == L"Taskbar.ExperienceToggleButton")
+            {
+                try
+                {
+                    winrt::Windows::Foundation::IInspectable o;
+                    if (SUCCEEDED(m_diag->GetIInspectableFromHandle(element.Handle, reinterpret_cast<::IInspectable**>(winrt::put_abi(o)))) && o)
+                        if (auto ui = o.try_as<wux::UIElement>()) AddHoverZoom(ui);
+                }
+                catch (...) {}
+            }
+        }
         if (!element.Name || !*element.Name) return S_OK;
         try
         {
