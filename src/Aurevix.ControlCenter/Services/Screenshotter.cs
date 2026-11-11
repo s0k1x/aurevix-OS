@@ -130,11 +130,14 @@ public static class Screenshotter
         var log = new List<string>();
         var r = await AurevixStyle.ApplyAsync(includeLockScreen: false);
         log.Add($"aplicado: {string.Join(", ", r.Applied)}"); log.Add($"omitido: {string.Join(", ", r.Skipped)}");
+        Views.Ui.ApplyTheme(); // el Control Center pasa a claro igual que Windows
         AppServices.Settings.ShellEnabled = true;
         AurevixShell.Start();
         Kill("SystemSettings");
         AurevixStyle.RestartExplorer();
         await Task.Delay(15000);
+        ShellCall("MinimizeAll"); // escritorio despejado (en la máquina de pruebas hay una consola abierta)
+        await Task.Delay(2500);
         CaptureScreen(Path.Combine(outDir, "todo-01-escritorio.png"));
         StartMenu(); await Task.Delay(4000);
         CaptureScreen(Path.Combine(outDir, "todo-02-inicio.png"));
@@ -142,10 +145,10 @@ public static class Screenshotter
 
         Open("shell:MyComputerFolder"); await Task.Delay(6000);
         CaptureScreen(Path.Combine(outDir, "todo-03-este-equipo.png"));
+        CloseExplorerWindows();
         Open("shell:UsersFilesFolder"); await Task.Delay(6000);
         CaptureScreen(Path.Combine(outDir, "todo-04-carpeta-usuario.png"));
-        foreach (var p in System.Diagnostics.Process.GetProcessesByName("explorer"))
-            try { if (p.MainWindowHandle != IntPtr.Zero && p.MainWindowTitle.Length > 0) p.CloseMainWindow(); } catch { }
+        CloseExplorerWindows();
         await Task.Delay(2000);
 
         Open("ms-settings:personalization"); await Task.Delay(9000);
@@ -154,13 +157,40 @@ public static class Screenshotter
         CaptureScreen(Path.Combine(outDir, "todo-06-configuracion-colores.png"));
         Kill("SystemSettings"); await Task.Delay(1500);
 
-        var main = new MainWindow { Left = 60, Top = 40 };
+        var main = new MainWindow { WindowState = WindowState.Maximized };
         main.Show(); main.Activate();
         await Task.Delay(4000);
         CaptureScreen(Path.Combine(outDir, "todo-07-control-center.png"));
+        main.WindowState = WindowState.Normal; main.Width = 860; main.Height = 560; main.Left = 80; main.Top = 60;
+        await Task.Delay(2500);
+        CaptureScreen(Path.Combine(outDir, "todo-08-control-center-escritorio.png"));
         main.Close();
         log.Add($"shell: {AurevixShell.LastResult}");
         File.WriteAllLines(Path.Combine(outDir, "todo-info.txt"), log);
+    }
+
+    private static void ShellCall(string method)
+    {
+        try
+        {
+            var t = Type.GetTypeFromProgID("Shell.Application");
+            if (t is null) return;
+            dynamic sh = Activator.CreateInstance(t)!;
+            if (method == "MinimizeAll") sh.MinimizeAll();
+        }
+        catch { }
+    }
+
+    private static void CloseExplorerWindows()
+    {
+        try
+        {
+            var t = Type.GetTypeFromProgID("Shell.Application");
+            if (t is null) return;
+            dynamic sh = Activator.CreateInstance(t)!;
+            foreach (dynamic w in sh.Windows()) { try { w.Quit(); } catch { } }
+        }
+        catch { }
     }
 
     public static void Save(Window w, string path)

@@ -126,6 +126,8 @@ jobs:
           New-Item -Path $k -Force | Out-Null
           $map = @{ '0'='file'; '1'='file-text'; '2'='app'; '3'='folder'; '4'='folder-open'; '7'='usb'; '8'='drive'; '9'='network-drive'; '11'='disc'; '15'='pc'; '16'='printer'; '17'='network'; '29'='shortcut'; '34'='desktop'; '43'='favorites'; '47'='lock' }
           foreach ($i in $map.Keys) { Set-ItemProperty -Path $k -Name $i -Value "$icons\$($map[$i]).ico,0" }
+          New-Item -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\DriveIcons\C\DefaultIcon' -Force | Out-Null
+          Set-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\DriveIcons\C\DefaultIcon' -Name '(default)' -Value "$icons\ssd.ico,0"
           $cc = (Resolve-Path out/cc/AurevixControlCenter.exe).Path
           $cmd = Join-Path $env:TEMP 'todo.cmd'
           Set-Content -Path $cmd -Value "@echo off`r`nstart `"`" `"$cc`" --render-installed `"$dir`"" -Encoding ascii

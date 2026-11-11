@@ -50,6 +50,7 @@ public partial class App : Application
             ex.Handled = true;
         };
 
+        Views.Ui.ApplyTheme();
         Views.Ui.EnableDarkTitleBars();
         AppServices.Initialize();
         Views.Ui.ReduceMotion = AppServices.Settings.ReduceMotion;

@@ -37,7 +37,7 @@ static constexpr GUID CLSID_AurevixTap = { 0x8c2d5b1e, 0x6a3f, 0x4e8b, { 0x9d, 0
 
 // Paleta AUREVIX: clara (predeterminada) u oscura, según el modo de Windows.
 static Color Graphite{ 0xF5, 0x0B, 0x0B, 0x0E };   // fondo de la barra y del menú (casi opaco: barato de dibujar)
-static Color Line{ 0xFF, 0x26, 0x26, 0x2D };       // borde fino
+static Color Line{ 0xFF, 0x3C, 0x5C, 0x1E };       // borde fino (verde oscuro)
 static Color Lime{ 0xFF, 0x8D, 0xE0, 0x3C };       // acento
 static Color Page{ 0xFF, 0x0B, 0x0B, 0x0E };       // fondo de Configuración
 
@@ -172,8 +172,17 @@ static void StyleElement(wux::DependencyObject const& obj, std::wstring_view nam
     {
         if (auto shape = obj.try_as<wuxs::Shape>())
         {
-            if (name == L"BackgroundFill" && HasAncestor(obj, L"Taskbar.TaskbarBackground")) KeepFill(shape, Graphite);
-            else if (name == L"BackgroundStroke" && HasAncestor(obj, L"Taskbar.TaskbarBackground")) KeepFill(shape, Lime); // línea verde AUREVIX
+            if (name == L"BackgroundFill" && HasAncestor(obj, L"Taskbar.TaskbarBackground"))
+            {
+                // Barra flotante AUREVIX: separada de los bordes, esquinas redondeadas y borde verde.
+                KeepFill(shape, Graphite);
+                shape.Margin(wux::ThicknessHelper::FromLengths(6, 3, 6, 3));
+                shape.Stroke(wuxm::SolidColorBrush(Line));
+                shape.StrokeThickness(1.5);
+                if (auto rect = obj.try_as<wuxs::Rectangle>()) { rect.RadiusX(14); rect.RadiusY(14); }
+            }
+            else if (name == L"BackgroundStroke" && HasAncestor(obj, L"Taskbar.TaskbarBackground"))
+                shape.Visibility(wux::Visibility::Collapsed); // la línea de Windows sobra con el borde redondeado
             else if (name == L"RunningIndicator") KeepFill(shape, Lime);
         }
         return;
