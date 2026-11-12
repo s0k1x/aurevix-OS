@@ -58,11 +58,27 @@ public static class HardwareChecks
         var mods = Query("SELECT BankLabel, DeviceLocator FROM Win32_PhysicalMemory");
         if (mods.Count == 0) yield break;
         var where = string.Join(", ", mods.Select(m => $"{m["DeviceLocator"]}".Trim()).Where(x => x.Length > 0));
-        if (mods.Count == 1)
+        if (mods.Count == 1 && IsLaptop())
+            yield return new("Canales de memoria", "info", $"Un solo módulo en {where}. En portátiles suele ir soldado: no hace falta hacer nada.", "");
+        else if (mods.Count == 1)
             yield return new("Canales de memoria", "review", $"Un solo módulo: memoria en un canal ({where}).",
-                "Con dos módulos iguales la RAM rinde casi el doble en juegos.");
+                "Si puedes, usa dos módulos iguales: la RAM en dos canales rinde bastante más en juegos.");
         else
             yield return new("Canales de memoria", "ok", $"{mods.Count} módulos de RAM ({where}).", "");
+    }
+
+    /// <summary>Portátil o tableta: tipo de chasis móvil o batería presente.</summary>
+    private static bool IsLaptop()
+    {
+        try
+        {
+            int[] mobile = [8, 9, 10, 11, 12, 14, 18, 21, 30, 31, 32];
+            foreach (var e in Query("SELECT ChassisTypes FROM Win32_SystemEnclosure"))
+                if (e["ChassisTypes"] is ushort[] types && types.Any(t => mobile.Contains(t))) return true;
+        }
+        catch { }
+        try { return Query("SELECT DeviceID FROM Win32_Battery").Count > 0; }
+        catch { return false; }
     }
 
     private static IEnumerable<HardwareCheck> DiskHealth()

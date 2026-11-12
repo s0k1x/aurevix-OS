@@ -43,15 +43,24 @@ public sealed class MaintenanceRunner : IMaintenanceRunner
                 args = Environment.ExpandEnvironmentVariables(args);
             }
             using var p = Process.Start(new ProcessStartInfo(c.file, args) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true })!;
-            var stdout = p.StandardOutput.ReadToEnd();
-            p.WaitForExit(30 * 60 * 1000);
+            // Se leen stdout y stderr a la vez para que ninguno bloquee al proceso
+            var outTask = p.StandardOutput.ReadToEndAsync();
+            var errTask = p.StandardError.ReadToEndAsync();
+            if (!p.WaitForExit(30 * 60 * 1000))
+            {
+                try { p.Kill(entireProcessTree: true); } catch { }
+                return (false, "Tardó demasiado y se ha detenido.");
+            }
+            var stdout = outTask.GetAwaiter().GetResult();
+            var stderr = errTask.GetAwaiter().GetResult();
             AurevixLog.Info($"Mantenimiento {action}: código {p.ExitCode}");
             var text = p.ExitCode == 0
                 ? $"{CoreServiceProtocol.MaintenanceActions[action]}: completado."
                 : $"{CoreServiceProtocol.MaintenanceActions[action]}: terminó con código {p.ExitCode}.";
             if (WithOutput.Contains(action))
             {
-                var tail = string.Join("\n", stdout.Split('\n').Select(l => l.TrimEnd('\r')).Where(l => l.Length > 0).TakeLast(60));
+                var source = stdout.Trim().Length == 0 && stderr.Trim().Length > 0 ? stderr : stdout;
+                var tail = string.Join("\n", source.Split('\n').Select(l => l.TrimEnd('\r')).Where(l => l.Length > 0).TakeLast(60));
                 if (tail.Length > 0) text += "\n\n" + tail;
             }
             return (p.ExitCode == 0, text);

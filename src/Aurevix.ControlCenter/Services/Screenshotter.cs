@@ -204,9 +204,13 @@ public static class Screenshotter
     {
         w.UpdateLayout();
         var tb = FindText(w.Content as DependencyObject, text);
+        System.Windows.Controls.ScrollViewer? sv = null;
         DependencyObject? cur = tb;
         while (cur is not null && cur is not System.Windows.Controls.ScrollViewer) cur = VisualTreeHelper.GetParent(cur);
-        if (cur is not System.Windows.Controls.ScrollViewer sv) return;
+        sv = cur as System.Windows.Controls.ScrollViewer;
+        // Sin texto: primer ScrollViewer del árbol visual con el desplazamiento de reserva
+        sv ??= FindDescendant<System.Windows.Controls.ScrollViewer>(w.Content as DependencyObject);
+        if (sv is null) return;
         var offset = fallback;
         if (tb is not null)
         {
@@ -215,6 +219,19 @@ public static class Screenshotter
         }
         sv.ScrollToVerticalOffset(offset);
         sv.UpdateLayout();
+    }
+
+    private static T? FindDescendant<T>(DependencyObject? root) where T : DependencyObject
+    {
+        if (root is null) return null;
+        if (root is T t) return t;
+        var n = VisualTreeHelper.GetChildrenCount(root);
+        for (var k = 0; k < n; k++)
+        {
+            var r = FindDescendant<T>(VisualTreeHelper.GetChild(root, k));
+            if (r is not null) return r;
+        }
+        return null;
     }
 
     private static System.Windows.Controls.TextBlock? FindText(DependencyObject? root, string text)
