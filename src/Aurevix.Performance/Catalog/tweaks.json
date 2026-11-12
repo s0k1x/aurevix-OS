@@ -2357,5 +2357,181 @@
         "value": "0"
       }
     ]
+  },
+  {
+    "id": "privacy.location.off",
+    "category": "privacy",
+    "levels": [],
+    "title": "Sin acceso a la ubicación para las apps",
+    "description": "Deniega a todas las aplicaciones el acceso a tu ubicación.",
+    "expectedEffect": "Las apps dejan de saber dónde estás.",
+    "possibleImpact": "Mapas, tiempo local y «Buscar mi dispositivo» no sabrán dónde estás.",
+    "registry": [
+      {
+        "hive": "currentUser",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\location",
+        "name": "Value",
+        "kind": "string",
+        "value": "Deny"
+      }
+    ]
+  },
+  {
+    "id": "privacy.camera.off",
+    "category": "privacy",
+    "levels": [],
+    "risk": "medium",
+    "title": "Sin acceso a la cámara para las apps",
+    "description": "Deniega a todas las aplicaciones el acceso a la cámara.",
+    "expectedEffect": "Ninguna app podrá activar la cámara a escondidas.",
+    "possibleImpact": "Ninguna app podrá usar la cámara (videollamadas incluidas) hasta que lo desactives.",
+    "registry": [
+      {
+        "hive": "currentUser",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\webcam",
+        "name": "Value",
+        "kind": "string",
+        "value": "Deny"
+      }
+    ]
+  },
+  {
+    "id": "privacy.microphone.off",
+    "category": "privacy",
+    "levels": [],
+    "risk": "medium",
+    "title": "Sin acceso al micrófono para las apps",
+    "description": "Deniega a todas las aplicaciones el acceso al micrófono.",
+    "expectedEffect": "Ninguna app podrá escucharte sin que lo sepas.",
+    "possibleImpact": "Ninguna app podrá usar el micrófono (llamadas, Discord, juegos con voz).",
+    "registry": [
+      {
+        "hive": "currentUser",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\microphone",
+        "name": "Value",
+        "kind": "string",
+        "value": "Deny"
+      }
+    ]
+  },
+  {
+    "id": "interface.windows-tips.off",
+    "category": "interface",
+    "levels": [
+      "recommended",
+      "performance",
+      "maximum"
+    ],
+    "title": "Sin consejos ni sugerencias en notificaciones",
+    "description": "Quita los consejos, trucos y sugerencias de Windows que aparecen como avisos.",
+    "expectedEffect": "Menos avisos molestos mientras trabajas o juegas.",
+    "possibleImpact": "Ninguno.",
+    "registry": [
+      {
+        "hive": "currentUser",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+        "name": "SubscribedContent-310093Enabled",
+        "kind": "dword",
+        "value": "0"
+      },
+      {
+        "hive": "currentUser",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+        "name": "SubscribedContent-338388Enabled",
+        "kind": "dword",
+        "value": "0"
+      },
+      {
+        "hive": "currentUser",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\UserProfileEngagement",
+        "name": "ScoobeSystemSettingEnabled",
+        "kind": "dword",
+        "value": "0"
+      }
+    ]
+  },
+  {
+    "id": "interface.notifications.off",
+    "category": "interface",
+    "levels": [],
+    "title": "Desactivar todas las notificaciones",
+    "description": "Apaga los avisos emergentes de todas las aplicaciones y del sistema.",
+    "expectedEffect": "Cero interrupciones en pantalla.",
+    "possibleImpact": "No verás avisos de ninguna app (correo, mensajes, Windows Update).",
+    "registry": [
+      {
+        "hive": "currentUser",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\PushNotifications",
+        "name": "ToastEnabled",
+        "kind": "dword",
+        "value": "0"
+      }
+    ]
+  },
+  {
+    "id": "privacy.settings-sync.off",
+    "category": "privacy",
+    "levels": [],
+    "title": "Sin sincronizar la configuración entre equipos",
+    "description": "Impide que Windows copie tu configuración a la nube y a tus otros equipos.",
+    "expectedEffect": "Menos datos personales enviados a la nube.",
+    "possibleImpact": "Tu tema, contraseñas de Wi-Fi e idioma no se copian a tus otros PCs.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\SettingSync",
+        "name": "DisableSettingSync",
+        "kind": "dword",
+        "value": "2"
+      },
+      {
+        "hive": "localMachine",
+        "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\SettingSync",
+        "name": "DisableSettingSyncUserOverride",
+        "kind": "dword",
+        "value": "1"
+      }
+    ]
+  },
+  {
+    "id": "services.xbox.off",
+    "category": "startup",
+    "levels": [],
+    "requiresRestart": true,
+    "risk": "medium",
+    "title": "Desactivar servicios de Xbox (si no los usas)",
+    "description": "Desactiva los servicios de Xbox que se ejecutan en segundo plano.",
+    "expectedEffect": "Algunos servicios menos en segundo plano.",
+    "possibleImpact": "Juegos de Xbox/Game Pass, logros y mandos de Xbox por cable/inalámbrico pueden dejar de funcionar.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Services\\XblAuthManager",
+        "name": "Start",
+        "kind": "dword",
+        "value": "4"
+      },
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Services\\XblGameSave",
+        "name": "Start",
+        "kind": "dword",
+        "value": "4"
+      },
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Services\\XboxNetApiSvc",
+        "name": "Start",
+        "kind": "dword",
+        "value": "4"
+      },
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Services\\XboxGipSvc",
+        "name": "Start",
+        "kind": "dword",
+        "value": "4"
+      }
+    ]
   }
 ]

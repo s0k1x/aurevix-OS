@@ -12,6 +12,7 @@ namespace Aurevix.ControlCenter.Views.Pages;
 public sealed class DiagnosticsPage : UserControl
 {
     private readonly StackPanel _results = new();
+    private readonly StackPanel _hardware = new();
     private readonly Button _run;
     private readonly ProgressBar _progress = new() { IsIndeterminate = true, Visibility = Visibility.Collapsed, Margin = new Thickness(0, 12, 0, 0) };
 
@@ -24,6 +25,8 @@ public sealed class DiagnosticsPage : UserControl
             Ui.Row(_run, Ui.Button("Abrir carpeta de informes", () => SystemTools.OpenFolder(AurevixPaths.Reports))),
             _progress));
         body.Children.Add(_results);
+        body.Children.Add(_hardware);
+        _ = LoadHardwareAsync();
 
         var history = ReportWriter.ListReports(AurevixPaths.Reports).Take(8).ToList();
         if (history.Count > 0)
@@ -42,6 +45,40 @@ public sealed class DiagnosticsPage : UserControl
 
         if (AppServices.LastReport is { } last) Render(last);
         Content = root;
+    }
+
+    /// <summary>Revisión de hardware en segundo plano; no bloquea la interfaz.</summary>
+    private async Task LoadHardwareAsync()
+    {
+        try
+        {
+            var checks = await HardwareChecks.RunAsync();
+            if (checks.Count == 0) return;
+            var card = Ui.Card(Ui.H2("Revisión de tu hardware"));
+            var sp = (StackPanel)card.Child;
+            foreach (var c in checks)
+            {
+                var (label, key) = c.Status switch
+                {
+                    "ok" => ("Correcto", "Ok"),
+                    "review" => ("Revisar", "Review"),
+                    _ => ("Consejo", "Unavailable")
+                };
+                var text = new StackPanel();
+                text.Children.Add(Ui.Text(c.Title, 14, FontWeights.SemiBold));
+                text.Children.Add(Ui.Muted(c.Detail));
+                if (!string.IsNullOrEmpty(c.Advice)) text.Children.Add(Ui.Muted("→ " + c.Advice));
+                var row = new DockPanel { Margin = new Thickness(0, 6, 0, 6) };
+                var pill = Ui.Pill(label, Ui.Brush(key));
+                DockPanel.SetDock(pill, Dock.Left);
+                row.Children.Add(pill);
+                row.Children.Add(text);
+                sp.Children.Add(row);
+            }
+            _hardware.Children.Clear();
+            _hardware.Children.Add(card);
+        }
+        catch { /* la revisión es opcional */ }
     }
 
     private async Task RunAsync()
