@@ -275,52 +275,63 @@
   .cats span{font-size:12.5px;color:var(--muted);border:1px solid var(--line2);padding:6px 11px;border-radius:999px}
   .cats b{color:var(--text);font-weight:600;margin-left:4px}
 
-  /* ---------- Nusa ---------- */
+  /* ---------- Nusa (recreación de su isla: cuelga del borde superior, con esquinas que se funden con el borde) ---------- */
   .nusa-sec{text-align:center}
-  .nstage{position:relative;margin:54px auto 0;width:min(1000px,100%);height:440px;border-radius:28px;overflow:hidden;border:1px solid var(--line2);
-          background:url(img/fondo-nebula.webp) center/cover}
-  .nstage::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,transparent 30%,rgba(0,0,0,.55))}
-  .island{position:absolute;left:50%;top:18px;transform:translateX(-50%);z-index:2;background:#000;color:#fff;border-radius:22px;overflow:hidden;
-          width:210px;height:38px;transition:width .6s var(--spring),height .6s var(--spring),border-radius .6s var(--spring);box-shadow:0 20px 60px rgba(0,0,0,.6);text-align:left}
-  .island .st{position:absolute;inset:0;opacity:0;transition:opacity .35s;pointer-events:none;padding:14px}
-  .island .st.on{opacity:1;transition-delay:.25s}
-  .island .mini{display:flex;align-items:center;gap:10px;padding:7px 14px 7px 7px;font-size:13px}
-  .cover{border-radius:10px;background:conic-gradient(from 210deg,#ff7a59,#ffcf4a,#8de03c,#2ec4b6,#7a5cff,#ff7a59);flex:none}
-  .island .mini .cover{width:24px;height:24px;border-radius:7px}
-  .island .mini .eq{margin-left:auto;display:flex;gap:2px;align-items:flex-end;height:16px}
-  .island .mini .eq i{width:3px;border-radius:2px;background:var(--accent);animation:eq 1s ease-in-out infinite}
-  .island .mini .eq i:nth-child(2){animation-delay:-.3s}.island .mini .eq i:nth-child(3){animation-delay:-.6s}.island .mini .eq i:nth-child(4){animation-delay:-.2s}
-  .player{display:grid;grid-template-columns:76px 1fr;gap:16px;align-items:center}
-  .player .cover{width:76px;height:76px;border-radius:16px;animation:spinc 12s linear infinite}
-  @keyframes spinc{to{filter:hue-rotate(360deg)}}
-  .player b{font-size:17px;display:block}.player small{color:#9aa0a8;font-size:13px}
-  .prog{grid-column:1/-1;display:flex;align-items:center;gap:10px;font-size:11.5px;color:#9aa0a8}
-  .prog .pb{flex:1;height:5px;border-radius:3px;background:#26292d;overflow:hidden}
-  .prog .pb i{display:block;height:100%;width:38%;background:#fff;border-radius:3px;animation:prog 9s linear infinite}
-  @keyframes prog{from{width:20%}to{width:70%}}
-  .ctrls{grid-column:1/-1;display:flex;justify-content:center;gap:34px;font-size:20px;margin-top:2px}
-  .lyr{font-size:22px;font-weight:650;line-height:1.35;text-align:center;padding-top:6px}
-  .lyr span{display:block;color:#5d6168;transition:color .4s}
-  .lyr span.on{color:#fff}
-  .lyr span.nx{color:#8a8f96;font-size:16px}
-  .tmr{display:flex;align-items:center;gap:22px;height:100%;justify-content:center}
-  .tmr svg{width:96px;height:96px;transform:rotate(-90deg)}
-  .tmr circle{fill:none;stroke-width:8}
-  .tmr .bgc{stroke:#24272b}.tmr .fg{stroke:var(--accent);stroke-linecap:round;stroke-dasharray:264;stroke-dashoffset:66;animation:tm 6s linear infinite}
-  @keyframes tm{from{stroke-dashoffset:40}to{stroke-dashoffset:200}}
-  .tmr b{font-size:38px;font-variant-numeric:tabular-nums;font-weight:650}.tmr small{display:block;color:#9aa0a8;font-size:13px}
-  .files{display:flex;gap:14px;justify-content:center;align-items:center;height:100%}
-  .file{width:70px;height:86px;border-radius:12px;background:#15181b;border:1px solid #2a2e33;display:grid;place-items:center;font-size:11px;color:#9aa0a8;animation:drop 3s var(--spring) infinite}
-  .file:nth-child(2){animation-delay:.15s}.file:nth-child(3){animation-delay:.3s}
-  .file b{display:block;color:#fff;font-size:20px;margin-bottom:-14px}
-  @keyframes drop{0%{transform:translateY(-30px);opacity:0}20%,80%{transform:none;opacity:1}100%{transform:translateY(10px);opacity:0}}
+  .nstage{position:relative;margin:54px auto 0;width:min(1000px,100%);aspect-ratio:16/9;border-radius:24px;overflow:hidden;border:1px solid var(--line2);
+          background:radial-gradient(70% 55% at 50% -10%,#fff 0%,rgba(255,255,255,.6) 30%,transparent 62%),linear-gradient(180deg,#dbe7ff 0%,#b7cdff 30%,#7e95ff 62%,#4b3fd0 100%);text-align:left}
+  .nstage .petals{position:absolute;inset:0;pointer-events:none}
+  .nstage .petals i{position:absolute;left:50%;top:62%;width:16%;height:62%;margin-left:-8%;transform-origin:50% 0;border-radius:50% 50% 46% 46%/64% 64% 36% 36%;
+          background:linear-gradient(0deg,rgba(123,75,255,.95),rgba(45,91,255,.92) 38%,rgba(25,184,255,.88) 72%,rgba(210,240,255,.95));opacity:.85;filter:blur(.5px)}
+  .nstage .petals i:nth-child(1){transform:rotate(150deg)}.nstage .petals i:nth-child(2){transform:rotate(180deg)}.nstage .petals i:nth-child(3){transform:rotate(210deg)}
+  .nstage .petals i:nth-child(4){transform:rotate(125deg);opacity:.5;filter:blur(3px)}.nstage .petals i:nth-child(5){transform:rotate(235deg);opacity:.5;filter:blur(3px)}
+  .mnh{position:absolute;top:0;left:50%;transform:translateX(-50%) scale(var(--u,1));transform-origin:top center;z-index:2}
+  .mn{--w:150px;--h:30px;--r:14px;--e:10px;--sp:cubic-bezier(.32,1.42,.48,1);position:relative;width:var(--w);height:var(--h);background:#000;border-radius:0 0 var(--r) var(--r);
+      transition:width .62s var(--sp),height .62s var(--sp),border-radius .45s ease;color:#fff;font-size:13px;line-height:1;box-shadow:0 14px 34px -16px rgba(0,0,0,.95);
+      font-family:"Segoe UI Variable Text","Segoe UI",Inter,system-ui,sans-serif}
+  .mn::before,.mn::after{content:"";position:absolute;top:0;width:var(--e);height:var(--e);transition:width .45s,height .45s}
+  .mn::before{right:100%;background:radial-gradient(circle at 0 100%,transparent calc(var(--e) - .5px),#000 var(--e))}
+  .mn::after{left:100%;background:radial-gradient(circle at 100% 100%,transparent calc(var(--e) - .5px),#000 var(--e))}
+  .mn[data-s="music"],.mn[data-s="timer"],.mn[data-s="files"]{--w:420px;--h:140px;--r:32px;--e:22px}
+  .mn[data-s="lyrics"]{--w:520px;--h:140px;--r:32px;--e:22px}
+  .mn[data-s="peek"]{--w:310px;--h:60px;--r:19px;--e:13px}
+  .ly{position:absolute;inset:0;overflow:hidden;border-radius:inherit;opacity:0;pointer-events:none;transform:scale(.86,.9);transform-origin:50% 0;transition:opacity .16s ease,transform .2s ease}
+  .mn[data-s="idle"] .l-idle,.mn[data-s="music"] .l-music,.mn[data-s="lyrics"] .l-lyrics,.mn[data-s="timer"] .l-timer,.mn[data-s="files"] .l-files,.mn[data-s="peek"] .l-peek,
+  .mn:is([data-s="music"],[data-s="timer"],[data-s="files"]) .l-hdr{opacity:1;transform:none;transition:opacity .55s ease .1s,transform .5s cubic-bezier(.2,.85,.25,1) .05s}
+  .mn .a{position:absolute}.mn .c{transform:translate(-50%,-50%)}.mn .vc{transform:translateY(-50%)}.mn .dim{color:rgba(255,255,255,.5)}.mn .sb{font-weight:600}.mn .b{font-weight:700}
+  .mn .ring{width:15px;height:15px;border-radius:50%;background:conic-gradient(#33e07a 0 72%,rgba(51,224,122,.28) 0);-webkit-mask:radial-gradient(circle,transparent 4.6px,#000 5px);mask:radial-gradient(circle,transparent 4.6px,#000 5px)}
+  .mn .bars{display:flex;gap:2px;align-items:center;height:14px}
+  .mn .bars i{width:2.2px;border-radius:2px;background:#fff;height:30%;animation:neq .9s ease-in-out infinite alternate}
+  .mn .bars i:nth-child(2){animation-delay:-.3s}.mn .bars i:nth-child(3){animation-delay:-.6s}.mn .bars i:nth-child(4){animation-delay:-.15s}.mn .bars i:nth-child(5){animation-delay:-.45s}
+  @keyframes neq{to{height:100%}}
+  .mn .art{border-radius:10px;background:radial-gradient(circle at 70% 28%,#ffe9a8 0 12%,transparent 13%),linear-gradient(170deg,#ffb36b 0%,#ff6f7d 45%,#7a4dff 100%)}
+  .mn .prog{height:4px;border-radius:2px;background:rgba(255,255,255,.22);overflow:hidden}
+  .mn .prog i{display:block;height:100%;background:#fff;border-radius:2px;animation:nplay 40s linear infinite}
+  @keyframes nplay{from{width:52%}to{width:100%}}
+  .mn svg.ctl{width:17px;height:17px;fill:#fff}
+  .mn .arw{width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.28);display:grid;place-items:center}
+  .mn .arw svg{width:9px;height:9px;stroke:#fff;stroke-width:2.4;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .mn .dots{display:flex;gap:4.5px;align-items:center}
+  .mn .dots i{width:3.6px;height:3.6px;border-radius:2px;background:rgba(255,255,255,.45);transition:width .4s,background .3s}
+  .mn .dots i.on{width:15px;background:#fff}
+  .mn .ambient{position:absolute;left:0;right:0;top:0;height:82%;background:linear-gradient(90deg,#c2495d,#e0716a 50%,#8a4fd8);opacity:.9}
+  .mn .lyr{left:264px;width:234px;top:16px;bottom:4px;overflow:hidden;-webkit-mask:linear-gradient(transparent,#000 22%,#000 78%,transparent);mask:linear-gradient(transparent,#000 22%,#000 78%,transparent)}
+  .mn .lyr ol{list-style:none;margin:0;padding:0;transition:transform .7s var(--sp)}
+  .mn .lyr li{font-weight:700;font-size:16px;line-height:1.25;padding:4.5px 0;color:rgba(255,255,255,.3);transform:scale(.93);transform-origin:left center;transition:color .5s,transform .5s}
+  .mn .lyr li.on{color:#fff;transform:scale(1)}
+  .mn .pring{width:64px;height:64px;border-radius:50%;background:conic-gradient(from 200deg,#ff5a6e,#ff3a3a,#ff6b5f,#ff5a6e);-webkit-mask:radial-gradient(circle,transparent 25.4px,#000 25.8px);mask:radial-gradient(circle,transparent 25.4px,#000 25.8px);box-shadow:0 0 18px rgba(255,70,70,.35)}
+  .mn .zone{border-radius:16px;border:1.4px dashed rgba(255,255,255,.3);background:rgba(255,255,255,.03)}
+  .mn .fcard{width:62px;display:flex;flex-direction:column;align-items:center;animation:nfall .75s cubic-bezier(.34,1.6,.5,1) both}
+  .mn .fcard:nth-child(2){animation-delay:.12s}.mn .fcard:nth-child(3){animation-delay:.24s}
+  .mn .fcard i{width:36px;height:36px;border-radius:8px;display:block}
+  .mn .fcard span{margin-top:6px;font-size:10px;font-weight:600}.mn .fcard small{white-space:nowrap;margin-top:3px;font-size:9px;color:rgba(255,255,255,.5)}
+  @keyframes nfall{from{transform:translateY(-34px) scale(.7);opacity:0}35%{opacity:1}to{transform:none;opacity:1}}
   .nlabels{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:22px}
   .nlabels button{padding:8px 14px;border-radius:999px;border:1px solid var(--line2);color:var(--muted);font-size:13.5px;transition:all .25s}
   .nlabels button[aria-pressed="true"]{background:var(--text);color:#08090a;border-color:var(--text);font-weight:600}
   .nfeats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:40px;text-align:left}
   .nfeats div{padding:18px;border-radius:16px;border:1px solid var(--line);background:rgba(255,255,255,.02)}
   .nfeats b{display:block;font-size:15px;margin-bottom:4px}.nfeats span{color:var(--muted);font-size:13.5px}
-  @media (max-width:820px){.nfeats{grid-template-columns:1fr 1fr}.nstage{height:340px}}
+  @media (max-width:820px){.nfeats{grid-template-columns:1fr 1fr}}
 
   /* ---------- Funciones ---------- */
   .bento{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-top:46px}
@@ -571,29 +582,90 @@
     <div class="wrap">
       <div class="eyebrow reveal">Nusa, incluida</div>
       <h2 class="reveal d1">La parte de arriba de tu pantalla, viva.</h2>
-      <p class="body reveal d2" style="margin-inline:auto">Nusa convierte la zona superior en una isla que se adapta a lo que estás haciendo: tu música con letras sincronizadas, un temporizador o los archivos que arrastras. El asistente de AUREVIX la instala desde Microsoft Store.</p>
-      <div class="nstage reveal d2">
-        <div class="island" id="island" aria-live="polite">
-          <div class="st on" data-s="mini" style="padding:0"><div class="mini"><span class="cover"></span>Golden Hour · Lumen<span class="eq"><i></i><i></i><i></i><i></i></span></div></div>
-          <div class="st" data-s="player"><div class="player"><span class="cover"></span><div><b>Golden Hour</b><small>Lumen · Afterglow</small></div>
-            <div class="prog">1:24<span class="pb"><i></i></span>3:47</div><div class="ctrls">⏮ &nbsp;⏸&nbsp; ⏭</div></div></div>
-          <div class="st" data-s="lyrics"><div class="lyr" id="lyr"></div></div>
-          <div class="st" data-s="timer"><div class="tmr"><svg viewBox="0 0 96 96"><circle class="bgc" cx="48" cy="48" r="42"/><circle class="fg" cx="48" cy="48" r="42"/></svg><div><b id="tmr">24:59</b><small>Concentración · Pomodoro</small></div></div></div>
-          <div class="st" data-s="files"><div class="files"><div class="file"><div><b>▤</b><br>informe.pdf</div></div><div class="file"><div><b>▧</b><br>foto.png</div></div><div class="file"><div><b>♪</b><br>demo.mp3</div></div></div></div>
+      <p class="body reveal d2" style="margin-inline:auto">Nusa convierte la zona superior en una isla que cuelga del borde de la pantalla y crece según lo que haces: tu música con letras sincronizadas, un temporizador, los archivos que arrastras o un aviso. El asistente de AUREVIX la instala desde Microsoft Store.</p>
+      <div class="nstage reveal d2" id="nstage">
+        <div class="petals" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="mnh" id="mnh">
+          <div class="mn" id="mn" data-s="idle" aria-live="polite">
+            <div class="ly l-idle">
+              <span class="a ring c" style="left:20px;top:15px"></span>
+              <span class="a b c js-time" style="left:75px;top:15px;font-size:16px">18:55</span>
+              <span class="a bars c" style="left:131px;top:15px"><i></i><i></i><i></i><i></i><i></i></span>
+            </div>
+            <div class="ly l-hdr">
+              <span class="a ring c" style="left:146px;top:18px"></span>
+              <span class="a vc" style="left:163px;top:18px"><span class="js-date">jue 12 nov</span>&nbsp; <b class="js-time">18:55</b></span>
+              <span class="a bars c" style="left:396px;top:18px"><i></i><i></i><i></i><i></i><i></i></span>
+              <span class="a dots c" style="left:210px;top:133px" id="ndots"><i></i><i></i><i></i></span>
+            </div>
+            <div class="ly l-music">
+              <span class="a art" style="left:22px;top:12px;width:62px;height:62px"></span>
+              <span class="a vc sb" style="left:100px;top:47px;font-size:15px">Golden Hour</span>
+              <span class="a vc dim" style="left:100px;top:63px;font-size:11.5px">Lumen · Afterglow</span>
+              <span class="a arw c" style="left:395px;top:70px"><svg viewBox="0 0 10 10"><path d="M2.5 1 L7.5 5.5 L2.5 10"/></svg></span>
+              <span class="a vc" style="left:25px;top:91px;font-size:12px">02:14</span>
+              <span class="a prog vc" style="left:77px;top:91px;width:260px"><i></i></span>
+              <span class="a vc" style="right:25px;top:91px;font-size:12px">-01:33</span>
+              <svg class="a ctl c" style="left:162.5px;top:118px" viewBox="0 0 24 24"><path d="M6 5h2v14H6zM9.5 12 19 5v14z"/></svg>
+              <svg class="a ctl c" style="left:210px;top:118px" viewBox="0 0 24 24"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></svg>
+              <svg class="a ctl c" style="left:257.5px;top:118px" viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM14.5 12 5 19V5z"/></svg>
+            </div>
+            <div class="ly l-lyrics">
+              <div class="ambient"></div>
+              <span class="a art" style="left:22px;top:12px;width:62px;height:62px"></span>
+              <span class="a vc sb" style="left:100px;top:47px;font-size:15px">Golden Hour</span>
+              <span class="a vc dim" style="left:100px;top:63px;font-size:11.5px">Lumen · Afterglow</span>
+              <span class="a vc" style="left:25px;top:91px;font-size:12px">02:31</span>
+              <span class="a prog vc" style="left:76px;top:91px;width:108px"><i></i></span>
+              <svg class="a ctl c" style="left:91px;top:118px" viewBox="0 0 24 24"><path d="M6 5h2v14H6zM9.5 12 19 5v14z"/></svg>
+              <svg class="a ctl c" style="left:131px;top:118px" viewBox="0 0 24 24"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></svg>
+              <svg class="a ctl c" style="left:171px;top:118px" viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM14.5 12 5 19V5z"/></svg>
+              <span class="a" style="left:252px;top:22px;width:1px;height:102px;background:rgba(255,255,255,.14)"></span>
+              <div class="a lyr"><ol id="nlyr">
+                <li>doblamos la luz de verano</li><li>en pájaros de papel</li><li>y los mandamos por el cielo</li>
+                <li>a buscarte junto al mar</li><li>cada ala una canción</li><li>que nos lleva hasta el sol</li>
+              </ol></div>
+            </div>
+            <div class="ly l-timer">
+              <span class="a sb" style="left:22px;top:16px;font-size:15px">Pomodoro</span>
+              <span class="a pring c" style="left:80px;top:80px"></span>
+              <span class="a dim" style="left:150px;top:46px;font-size:10.5px">Concentración · 2 de 4</span>
+              <span class="a b" style="left:149px;top:58px;font-size:30px;font-variant-numeric:tabular-nums" id="ntimer">18:42</span>
+              <span class="a sb" style="left:150px;top:96px;font-size:12px;color:#ff8a8a">hasta el descanso</span>
+            </div>
+            <div class="ly l-files">
+              <span class="a sb" style="left:22px;top:16px;font-size:15px">Estantería</span>
+              <span class="a zone" style="left:44px;top:33px;width:336px;height:90px"></span>
+              <span class="a" style="left:60px;top:40px;display:flex;gap:16px">
+                <span class="fcard"><i style="background:linear-gradient(180deg,#56c2ff 0 55%,#f3d38f 55% 70%,#2e9bd6 70%)"></i><span>playa.jpg</span><small>2,4 MB</small></span>
+                <span class="fcard"><i style="background:linear-gradient(160deg,#ff6b6b,#c0392b)"></i><span>informe.pdf</span><small>820 KB</small></span>
+                <span class="fcard"><i style="background:linear-gradient(160deg,#8de03c,#4e9a1e)"></i><span>demo.mp3</span><small>6,1 MB</small></span>
+              </span>
+            </div>
+            <div class="ly l-peek">
+              <span class="a" style="left:16px;top:14px;width:32px;height:32px;border-radius:8.5px;background:#1d2a14"></span>
+              <img class="a" src="logo.png" alt="" style="left:22px;top:20px;width:20px;height:20px">
+              <span class="a dim" style="left:58px;top:12px;font-size:9.5px">AUREVIX</span>
+              <span class="a b" style="left:58px;top:24px;font-size:13px">Game Boost activado</span>
+              <span class="a" style="left:58px;top:41px;font-size:11px;color:rgba(255,255,255,.66)">Prioridad al juego</span>
+              <span class="a dim" style="right:20px;top:12px;font-size:9.5px">ahora</span>
+            </div>
+          </div>
         </div>
       </div>
       <div class="nlabels" id="nlabels" role="group" aria-label="Modos de Nusa">
-        <button type="button" data-s="mini" aria-pressed="true">Reposo</button>
-        <button type="button" data-s="player" aria-pressed="false">Música</button>
+        <button type="button" data-s="idle" aria-pressed="true">Reposo</button>
+        <button type="button" data-s="music" aria-pressed="false">Música</button>
         <button type="button" data-s="lyrics" aria-pressed="false">Letras</button>
-        <button type="button" data-s="timer" aria-pressed="false">Temporizador</button>
+        <button type="button" data-s="timer" aria-pressed="false">Pomodoro</button>
         <button type="button" data-s="files" aria-pressed="false">Archivos</button>
+        <button type="button" data-s="peek" aria-pressed="false">Avisos</button>
       </div>
       <div class="nfeats">
         <div class="reveal"><b>Música</b><span>Spotify, Apple Music, YouTube Music y más, con controles.</span></div>
-        <div class="reveal d1"><b>Letras</b><span>Sincronizadas, línea a línea, sin abrir otra ventana.</span></div>
-        <div class="reveal d2"><b>Temporizador</b><span>Pomodoro y cuenta atrás siempre a la vista.</span></div>
-        <div class="reveal d3"><b>Archivos</b><span>Suelta archivos en la isla y llévalos donde quieras.</span></div>
+        <div class="reveal d1"><b>Letras</b><span>Sincronizadas, línea a línea, con el color de la portada.</span></div>
+        <div class="reveal d2"><b>Pomodoro</b><span>Concentración y descansos siempre a la vista.</span></div>
+        <div class="reveal d3"><b>Archivos y avisos</b><span>Suelta archivos en la isla; los avisos asoman y se van.</span></div>
       </div>
     </div>
   </section>
@@ -848,25 +920,32 @@ const perfObs = new IntersectionObserver(es => es.forEach(e => { if (!e.isInters
 perfObs.observe($('tweaks'));
 $('cats').innerHTML = [['Juegos', 16], ['Inicio y fondo', 15], ['Interfaz', 14], ['Energía', 13], ['Privacidad', 13], ['Planes de energía', 7], ['Gráficos', 5], ['Ratón y USB', 5], ['Modos', 5], ['Red', 4], ['Almacenamiento', 2], ['Mantenimiento', 2]].map(([n, c]) => `<span>${n}<b>${c}</b></span>`).join('');
 
-/* ---------- Nusa: la isla cambia de forma según lo que hace ---------- */
-const shapes = { mini: [240, 38, 22], player: [440, 190, 34], lyrics: [500, 150, 34], timer: [420, 150, 34], files: [380, 140, 30] };
-const isl = $('island');
-let nState = 'mini', nTouched = false;
-function nusa(s) {
-  nState = s; const [w, h, r] = shapes[s];
-  isl.style.width = w + 'px'; isl.style.height = h + 'px'; isl.style.borderRadius = r + 'px';
-  isl.querySelectorAll('.st').forEach(e => e.classList.toggle('on', e.dataset.s === s));
-  document.querySelectorAll('#nlabels button').forEach(b => b.setAttribute('aria-pressed', b.dataset.s === s));
-}
-document.querySelectorAll('#nlabels button').forEach(b => b.onclick = () => { nTouched = true; nusa(b.dataset.s); });
-const fitIsland = () => { const max = isl.parentElement.clientWidth - 24; for (const k in shapes) shapes[k][0] = Math.min(shapes[k][0], max); };
-fitIsland(); nusa('mini');
-if (!reduce) setInterval(() => { if (!nTouched) nusa({ mini: 'player', player: 'lyrics', lyrics: 'timer', timer: 'files', files: 'mini' }[nState]); }, 3600);
-const LY = ['Corremos sin mirar atrás', 'con la ciudad en los cristales', 'y el sol cayendo en la ventana', 'todo empieza otra vez'];
-let li = 0;
-const lyr = () => { $('lyr').innerHTML = `<span>${LY[li % 4]}</span><span class="on">${LY[(li + 1) % 4]}</span><span class="nx">${LY[(li + 2) % 4]}</span>`; li++; };
-lyr(); if (!reduce) setInterval(lyr, 1500);
-let ts = 24 * 60 + 59; if (!reduce) setInterval(() => { ts = ts > 0 ? ts - 1 : 1499; $('tmr').textContent = `${String(ts / 60 | 0).padStart(2, '0')}:${String(ts % 60).padStart(2, '0')}`; }, 1000);
+/* ---------- Nusa: la isla crece desde el borde superior según el modo ---------- */
+(() => {
+  const mn = $('mn'), mnh = $('mnh'), stage = $('nstage');
+  const order = ['idle', 'music', 'lyrics', 'timer', 'files', 'peek'];
+  let i = 0, touched = false;
+  const scale = () => mnh.style.setProperty('--u', Math.min(1.35, stage.clientWidth / 760));
+  new ResizeObserver(scale).observe(stage); scale();
+  const set = s => {
+    mn.dataset.s = s;
+    document.querySelectorAll('#nlabels button').forEach(b => b.setAttribute('aria-pressed', b.dataset.s === s));
+    const page = { music: 0, timer: 1, files: 2 }[s];
+    document.querySelectorAll('#ndots i').forEach((d, k) => d.classList.toggle('on', k === page));
+  };
+  document.querySelectorAll('#nlabels button').forEach(b => b.onclick = () => { touched = true; i = order.indexOf(b.dataset.s); set(b.dataset.s); });
+  set('idle');
+  if (!reduce) setInterval(() => { if (touched) return; i = (i + 1) % order.length; set(order[i]); }, 3400);
+  // Letras: avanzan línea a línea
+  const li = [...document.querySelectorAll('#nlyr li')]; let l = 0;
+  const step = () => { li.forEach((e, k) => e.classList.toggle('on', k === l)); $('nlyr').style.transform = `translateY(${-l * 29 + 34}px)`; l = (l + 1) % li.length; };
+  step(); if (!reduce) setInterval(step, 1500);
+  // Hora y temporizador
+  const tick = () => { const d = new Date(); document.querySelectorAll('.mn .js-time').forEach(e => e.textContent = d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }));
+    document.querySelectorAll('.mn .js-date').forEach(e => e.textContent = d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })); };
+  tick(); setInterval(tick, 20000);
+  let t = 18 * 60 + 42; if (!reduce) setInterval(() => { t = t > 0 ? t - 1 : 1499; $('ntimer').textContent = `${String(t / 60 | 0).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`; }, 1000);
+})();
 
 /* ---------- Funciones: ping, limpieza y Game Boost ---------- */
 (() => {
