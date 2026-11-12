@@ -35,6 +35,9 @@ public sealed class MediaEngine
 
     private readonly HttpClient _http;
 
+    /// <summary>Versión de AUREVIX de la última descarga hecha con <see cref="DownloadAurevixAsync"/> (null si aún no se ha hecho).</summary>
+    public string? AurevixVersion { get; private set; }
+
     public MediaEngine()
     {
         Directory.CreateDirectory(WorkRoot);
@@ -73,6 +76,7 @@ public sealed class MediaEngine
                   "la descarga no está disponible públicamente en este momento. Inténtalo más tarde."
                 : $"No se pudo descargar AUREVIX{code}. Comprueba tu conexión a internet y vuelve a intentarlo.");
         }
+        AurevixVersion = r.Release.Version;
         AurevixLog.Info($"AUREVIX {r.Release.Version} descargado y verificado: {path}");
         return path;
     }
@@ -109,6 +113,23 @@ public sealed class MediaEngine
         progress.Report(new Step("Pidiendo a Microsoft la ISO oficial de Windows 11"));
         var url = await GetWindowsIsoUrlAsync(ct);
         var partial = IsoCachePath + ".partial";
+
+        // Descarga en trozos paralelos si el servidor admite rangos y el archivo es grande.
+        var total0 = await ProbeRangesAsync(url, ct);
+        if (total0 > ParallelMinBytes)
+        {
+            await DownloadPartsAsync(url, partial, total0, progress, ct);
+            // Solo se da por buena si todos los trozos están completos y el tamaño cuadra.
+            if (!File.Exists(partial) || new FileInfo(partial).Length != total0)
+                throw new IOException("La descarga de Windows no se completó correctamente.");
+            File.Move(partial, IsoCachePath, overwrite: true);
+            return IsoCachePath;
+        }
+        // Camino de una sola conexión: un resto de la descarga en trozos no sirve aquí.
+        if (File.Exists(partial + ".parts.json"))
+        {
+            try { File.Delete(partial + ".parts.json"); File.Delete(partial); } catch { }
+        }
 
         for (var attempt = 1; ; attempt++)
         {
@@ -152,6 +173,179 @@ public sealed class MediaEngine
         }
         File.Move(partial, IsoCachePath, overwrite: true);
         return IsoCachePath;
+    }
+
+    private const long ParallelMinBytes = 500_000_000;
+    private const int ParallelParts = 6;
+
+    /// <summary>Un trozo de la descarga: bytes [Start, End] y cuántos se han guardado ya.</summary>
+    private sealed class DownloadPart
+    {
+        public long Start { get; set; }
+        public long End { get; set; }
+        public long Done { get; set; }
+    }
+
+    /// <summary>Pregunta con un GET Range bytes=0-0 si el servidor admite rangos. Devuelve el tamaño total o 0 si no.</summary>
+    private async Task<long> ProbeRangesAsync(Uri url, CancellationToken ct)
+    {
+        try
+        {
+            using var req = new HttpRequestMessage(HttpMethod.Get, url);
+            req.Headers.Range = new System.Net.Http.Headers.RangeHeaderValue(0, 0);
+            using var resp = await _http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
+            if (resp.StatusCode != System.Net.HttpStatusCode.PartialContent) return 0;
+            return resp.Content.Headers.ContentRange?.Length ?? 0;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException && !ct.IsCancellationRequested)
+        {
+            AurevixLog.Warn($"No se pudo comprobar si el servidor admite rangos: {ex.Message}");
+            return 0;
+        }
+    }
+
+    private static readonly object PartsFileLock = new();
+
+    /// <summary>Guarda el avance de cada trozo. Serializado con un lock para que nunca se escriba el .parts.json a la vez desde dos sitios.</summary>
+    private static void SaveParts(string partsFile, List<DownloadPart> parts)
+    {
+        lock (PartsFileLock)
+        {
+            string json;
+            lock (parts) json = JsonSerializer.Serialize(parts.Select(p => new { start = p.Start, end = p.End, done = p.Done }).ToList());
+            try
+            {
+                var tmp = partsFile + ".tmp";
+                File.WriteAllText(tmp, json);
+                File.Move(tmp, partsFile, overwrite: true);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+        }
+    }
+
+    /// <summary>Descarga en 6 trozos a la vez a un archivo preasignado, con avance por trozo en <c>.parts.json</c> para reanudar.</summary>
+    private async Task DownloadPartsAsync(Uri url, string partial, long total, IProgress<Step> progress, CancellationToken ct)
+    {
+        var partsFile = partial + ".parts.json";
+        var parts = new List<DownloadPart>();
+        try
+        {
+            if (File.Exists(partsFile) && File.Exists(partial) && new FileInfo(partial).Length == total)
+            {
+                using var doc = JsonDocument.Parse(await File.ReadAllTextAsync(partsFile, ct));
+                foreach (var e in doc.RootElement.EnumerateArray())
+                    parts.Add(new DownloadPart { Start = e.GetProperty("start").GetInt64(), End = e.GetProperty("end").GetInt64(), Done = e.GetProperty("done").GetInt64() });
+                var ok = parts.Count > 0 && parts[0].Start == 0 && parts[^1].End == total - 1 &&
+                         parts.All(p => p.Done >= 0 && p.Done <= p.End - p.Start + 1);
+                for (var i = 1; ok && i < parts.Count; i++) ok = parts[i].Start == parts[i - 1].End + 1;
+                if (!ok) parts.Clear();
+            }
+        }
+        catch (Exception ex) when (ex is JsonException or KeyNotFoundException or InvalidOperationException or IOException)
+        {
+            parts.Clear();
+        }
+        if (parts.Count == 0)
+        {
+            var size = (total + ParallelParts - 1) / ParallelParts;
+            for (long s = 0; s < total; s += size)
+                parts.Add(new DownloadPart { Start = s, End = Math.Min(s + size, total) - 1 });
+            await using var pre = new FileStream(partial, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
+            pre.SetLength(total);
+            SaveParts(partsFile, parts);
+        }
+
+        long done = parts.Sum(p => p.Done);
+        using var handle = File.OpenHandle(partial, FileMode.Open, FileAccess.Write, FileShare.ReadWrite, FileOptions.Asynchronous);
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct);
+
+        async Task RunPart(DownloadPart part)
+        {
+            try
+            {
+                for (var attempt = 1; ; attempt++)
+                {
+                    long before = part.Done;
+                    try
+                    {
+                        if (part.Start + part.Done > part.End) return;
+                        using var req = new HttpRequestMessage(HttpMethod.Get, url);
+                        req.Headers.Range = new System.Net.Http.Headers.RangeHeaderValue(part.Start + part.Done, part.End);
+                        using var resp = await _http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, linked.Token);
+                        resp.EnsureSuccessStatusCode();
+                        if (resp.StatusCode != System.Net.HttpStatusCode.PartialContent) throw new IOException("El servidor no respeta los rangos.");
+                        await using var src = await resp.Content.ReadAsStreamAsync(linked.Token);
+                        var buf = new byte[1 << 20];
+                        int n;
+                        while ((n = await src.ReadAsync(buf, linked.Token)) > 0)
+                        {
+                            var left = part.End + 1 - part.Start - part.Done;
+                            if (n > left) n = (int)left;
+                            await RandomAccess.WriteAsync(handle, buf.AsMemory(0, n), part.Start + part.Done, linked.Token);
+                            lock (parts) part.Done += n;
+                            Interlocked.Add(ref done, n);
+                            if (part.Start + part.Done > part.End) return;
+                        }
+                        if (part.Start + part.Done <= part.End) throw new IOException("La descarga de un trozo terminó antes de tiempo.");
+                        return;
+                    }
+                    catch (Exception ex) when (ex is HttpRequestException or IOException && !linked.IsCancellationRequested)
+                    {
+                        if (part.Done > before) attempt = 0; // si avanzó, el contador de reintentos vuelve a empezar
+                        if (attempt >= 4) throw;
+                        AurevixLog.Warn($"Trozo {part.Start}-{part.End} interrumpido (intento {attempt}): {ex.Message}");
+                        await Task.Delay(TimeSpan.FromSeconds(3 * Math.Max(attempt, 1)), linked.Token);
+                    }
+                }
+            }
+            catch
+            {
+                linked.Cancel(); // un trozo definitivamente fallido detiene a los demás
+                throw;
+            }
+        }
+
+        var workers = Task.WhenAll(parts.Select(RunPart));
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        long lastBytes = Interlocked.Read(ref done); var lastMs = 0L; double speed = 0;
+        var lastSave = 0L;
+        try
+        {
+            while (!workers.IsCompleted)
+            {
+                await Task.WhenAny(workers, Task.Delay(250, ct));
+                ct.ThrowIfCancellationRequested();
+                var cur = Interlocked.Read(ref done);
+                var ms = sw.ElapsedMilliseconds;
+                if (ms - lastMs > 0)
+                {
+                    var inst = (cur - lastBytes) / ((ms - lastMs) / 1000.0);
+                    speed = speed == 0 ? inst : speed * 0.8 + inst * 0.2;
+                }
+                lastBytes = cur; lastMs = ms;
+                progress.Report(new Step("Descargando Windows 11 de Microsoft", Math.Clamp((double)cur / total, 0, 1),
+                    $"{Eta.Bytes(cur)} de {Eta.Bytes(total)} · {Eta.Speed(speed)}"));
+                if (ms - lastSave > 2000)
+                {
+                    lastSave = ms;
+                    try { RandomAccess.FlushToDisk(handle); } catch (IOException) { } // el avance guardado nunca supera lo que hay en disco
+                    SaveParts(partsFile, parts);
+                }
+            }
+            await workers;
+        }
+        catch
+        {
+            linked.Cancel();
+            try { await workers; } catch { }
+            try { RandomAccess.FlushToDisk(handle); } catch (IOException) { }
+            SaveParts(partsFile, parts); // para poder reanudar
+            throw;
+        }
+        if (parts.Sum(p => p.Done) != total || new FileInfo(partial).Length != total)
+            throw new IOException("La descarga de Windows no se completó correctamente.");
+        handle.Dispose();
+        try { File.Delete(partsFile); } catch { }
     }
 
     public async Task<string> MountAsync(string iso, CancellationToken ct)
@@ -333,7 +527,7 @@ public sealed class MediaEngine
     /// <summary>Borra la ISO de Windows descargada y los archivos temporales (no el registro).</summary>
     public static void ClearCache()
     {
-        foreach (var f in new[] { "Win11_Oficial_Espanol_x64.iso", "Win11_Oficial_Espanol_x64.iso.partial", "Fido.ps1" })
+        foreach (var f in new[] { "Win11_Oficial_Espanol_x64.iso", "Win11_Oficial_Espanol_x64.iso.partial", "Win11_Oficial_Espanol_x64.iso.partial.parts.json", "Fido.ps1" })
             try { File.Delete(Path.Combine(WorkRoot, f)); } catch { }
         foreach (var d in new[] { "aurevix", "iso-overlay", "iso-work" })
             try { Directory.Delete(Path.Combine(WorkRoot, d), true); } catch { }
@@ -361,14 +555,13 @@ public sealed class MediaEngine
                 var f = p.total > 0 ? Math.Clamp((double)p.done / p.total, 0, 1) : 0;
                 progress.Report(new Step("Generando la ISO de AUREVIX OS", 0.02 + 0.88 * f, $"{Eta.Bytes(p.done)} de {Eta.Bytes(p.total)}"));
             });
-            await ImapiIsoWriter.BuildAsync(isoRoot, overlay, outputIso, "AUREVIX_OS",
+            var hash = await ImapiIsoWriter.BuildAsync(isoRoot, overlay, outputIso, "AUREVIX_OS",
                 Path.Combine(isoRoot, @"boot\etfsboot.com"), Path.Combine(isoRoot, @"efi\microsoft\boot\efisys.bin"), imapi, ct);
 
             if (!File.Exists(outputIso) || new FileInfo(outputIso).Length < 1_000_000_000)
                 throw new InvalidOperationException("La ISO generada no es válida. Prueba con la opción de USB o vuelve a intentarlo.");
 
-            var hash = await HashFileAsync(outputIso, new Progress<double>(f =>
-                progress.Report(new Step("Verificando la ISO (SHA-256)", 0.9 + 0.1 * f))), ct);
+            // El SHA-256 ya se calculó mientras se escribía la ISO: no hace falta volver a leerla.
             await File.WriteAllTextAsync(outputIso + ".sha256", $"{hash}  {Path.GetFileName(outputIso)}", ct);
             progress.Report(new Step("ISO lista.", 1));
             return hash;
@@ -379,7 +572,8 @@ public sealed class MediaEngine
         }
     }
 
-    private static async Task<string> HashFileAsync(string path, IProgress<double> progress, CancellationToken ct)
+    /// <summary>SHA-256 (hex en minúsculas) de un archivo, con progreso 0-1.</summary>
+    public static async Task<string> HashFileAsync(string path, IProgress<double> progress, CancellationToken ct)
     {
         await using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 1 << 20, FileOptions.SequentialScan | FileOptions.Asynchronous);
         using var sha = SHA256.Create();
