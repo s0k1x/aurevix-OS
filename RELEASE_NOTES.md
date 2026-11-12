@@ -1,3 +1,13 @@
+## AUREVIX OS 0.9.0 — ISO más rápida y preparada, actualizaciones a prueba de cortes
+
+- **ISO mucho más rápida**: Windows se descarga por 6 conexiones a la vez y se reanuda si se corta; AUREVIX y Windows se descargan a la vez; la comprobación SHA-256 se hace mientras se escribe la ISO (ya no se vuelve a leer entera).
+- **ISO preparada de antemano**: el Installer te ofrece prepararla en segundo plano (te dice que descarga unos 7 GB y necesita 18 GB). Si aceptas, cuando pulses «Crear ISO» ya está hecha y solo se copia o se mueve a donde elijas. Se puede pausar, sigue donde iba si cierras el Installer y no se activa sola con datos móviles o conexiones medidas.
+- **Actualizaciones de AUREVIX más fiables**: reintentos automáticos, descargas que se reanudan, comprobación de espacio libre, limpieza de instaladores viejos y opción de volver a la versión anterior también tras actualizar en segundo plano.
+- **Avisos más amables**: la actualización se anuncia en la bandeja en lugar de abrir una ventana encima; «Seguir en segundo plano» ya no cancela la descarga; al terminar se ofrece reiniciar ahora o más tarde; los mensajes se entienden (sin errores técnicos).
+- **Windows Update en el Control Center**: muestra si hay un reinicio pendiente y cuándo se instaló la última actualización, con botón para buscar actualizaciones.
+- **Canales**: confirmación al pasar a beta o developer y comprobación inmediata; cambiar de canal ya no se confunde con una versión antigua.
+- **Web**: Nusa recreada como la original (la isla cuelga del borde superior y crece con su animación real: reposo, música, letras, Pomodoro, estantería y avisos).
+
 ## AUREVIX OS 0.8.0 — Un interruptor para cada ajuste y revisión de tu hardware
 
 - **102 ajustes de rendimiento** (14 nuevos): apagado y reinicio más rápidos, espera razonable al cerrar servicios, sin historial de actividad, sin consejos en las notificaciones, sin panel de bienvenida de Game Bar y Game DVR por directiva (Competitivo). Opcionales: menús instantáneos, cerrar apps al apagar, sin notificaciones, sin sincronizar la configuración, servicios de Xbox, y bloquear ubicación, cámara o micrófono para todas las apps.
