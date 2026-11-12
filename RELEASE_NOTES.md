@@ -1,6 +1,11 @@
-## AUREVIX OS 0.8.0 — Un interruptor para cada ajuste
+## AUREVIX OS 0.8.0 — Un interruptor para cada ajuste y revisión de tu hardware
 
-- **95 ajustes de rendimiento** (7 nuevos): apagado y reinicio más rápidos, espera razonable al cerrar servicios, sin historial de actividad, sin panel de bienvenida de Game Bar, Game DVR desactivado por directiva (Competitivo), y opcionales: menús instantáneos y cerrar apps automáticamente al apagar.
+- **102 ajustes de rendimiento** (14 nuevos): apagado y reinicio más rápidos, espera razonable al cerrar servicios, sin historial de actividad, sin consejos en las notificaciones, sin panel de bienvenida de Game Bar y Game DVR por directiva (Competitivo). Opcionales: menús instantáneos, cerrar apps al apagar, sin notificaciones, sin sincronizar la configuración, servicios de Xbox, y bloquear ubicación, cámara o micrófono para todas las apps.
+- **Revisión de tu hardware** (Diagnóstico): comprueba si la RAM va a su velocidad (XMP/EXPO), los canales de memoria, la salud de los discos, el espacio libre, la antigüedad de la BIOS y si la pantalla va a sus hercios máximos, y te dice qué hacer.
+- **Informes del sistema** (Herramientas): configuración de red, conexiones, ajustes TCP, planes de energía, servicios en ejecución y tareas programadas, con botón Copiar. **Reparación**: DISM CheckHealth y ScanHealth, estado y activación de TRIM, renovar la IP e informe de energía.
+- **Herramientas avanzadas** (Apps): Autoruns, Process Explorer, Process Monitor, HWiNFO, CrystalDiskInfo, LatencyMon y OCCT en un clic; MemTest86 y WinUtil con enlace.
+- **Exportar copia del registro** (Recuperación): un archivo .reg con los valores originales que AUREVIX guardó antes de cada cambio.
+- **Game Boost** pone la gráfica de alto rendimiento a cada juego que detecta (útil en portátiles con dos gráficas). Respeta lo que hayas elegido a mano y se quita con un botón; se puede desactivar en Game Boost.
 - **Control Center: un interruptor por ajuste**. Se activa o desactiva al momento; al desactivarlo vuelve exactamente el valor que tenías. Cada ajuste dice si es **Recomendado**, **Para jugar**, **Competitivo** u **Opcional**, con su efecto y sus inconvenientes. Filtro (Todos, Recomendados, Activados), buscador y «Activar recomendados» por categoría.
 - **Rendimiento por defecto al instalar**: el asistente aplica el nivel Rendimiento (incluye todos los recomendados). Todo reversible.
 - **Mantenimiento**: nuevo «Activar TRIM en NTFS si estuviera desactivado», junto a DISM, SFC, CHKDSK, TRIM y DNS.

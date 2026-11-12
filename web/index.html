@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>AUREVIX OS</title>
-<meta name="description" content="AUREVIX OS: Windows 11 oficial con otra cara. Barra de tareas flotante con efecto cristal, menú Inicio y Configuración rediseñados, 95 ajustes de rendimiento reversibles y Nusa incluida.">
+<meta name="description" content="AUREVIX OS: Windows 11 oficial con otra cara. Barra de tareas flotante con efecto cristal, menú Inicio y Configuración rediseñados, 102 ajustes de rendimiento reversibles y Nusa incluida.">
 <meta name="theme-color" content="#060708">
 <link rel="icon" type="image/png" href="favicon.png">
 <style>
@@ -426,7 +426,7 @@
   <!-- ================= Portada ================= -->
   <section class="hero" id="inicio">
     <div class="wrap">
-      <div class="badge reveal"><b id="ver">0.7</b>Shell propio, cristal y 95 ajustes reversibles</div>
+      <div class="badge reveal"><b id="ver">0.7</b>Shell propio, cristal y 102 ajustes reversibles</div>
       <h1 class="reveal d1">Windows 11.<br><span class="grad">Como debería ser.</span></h1>
       <p class="lead reveal d2">AUREVIX es Windows 11 oficial con una capa propia: barra de tareas flotante de cristal, menú Inicio limpio, Configuración rediseñada y el sistema optimizado desde el primer arranque. Tus programas y juegos, igual que siempre.</p>
       <div class="row reveal d3">
@@ -464,7 +464,7 @@
                 <div class="acts">
                   <div class="act"><svg viewBox="0 0 24 24" fill="none" stroke="#4e9a1e" stroke-width="2" stroke-linecap="round"><path d="M4 18V9M10 18V5M16 18v-7M22 18H2"/></svg><div><b>Diagnóstico</b>CPU, GPU, discos y drivers</div></div>
                   <div class="act"><svg viewBox="0 0 24 24" fill="none" stroke="#4e9a1e" stroke-width="2" stroke-linecap="round"><rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7 11v3M5.5 12.5h3M16 12h.01M18 14h.01"/></svg><div><b>Game Boost</b>Prioridad al juego</div></div>
-                  <div class="act"><svg viewBox="0 0 24 24" fill="none" stroke="#4e9a1e" stroke-width="2" stroke-linecap="round"><path d="M12 3a9 9 0 1 0 9 9"/><path d="M12 7v5l3 3"/></svg><div><b>95 ajustes</b>Uno a uno, reversibles</div></div>
+                  <div class="act"><svg viewBox="0 0 24 24" fill="none" stroke="#4e9a1e" stroke-width="2" stroke-linecap="round"><path d="M12 3a9 9 0 1 0 9 9"/><path d="M12 7v5l3 3"/></svg><div><b>102 ajustes</b>Uno a uno, reversibles</div></div>
                 </div>
               </div>
             </div>
@@ -535,7 +535,7 @@
     </div>
 
     <div class="stats">
-      <div class="stat reveal"><b>95</b><span>ajustes de rendimiento, uno a uno</span></div>
+      <div class="stat reveal"><b>102</b><span>ajustes de rendimiento, uno a uno</span></div>
       <div class="stat reveal d1"><b>0 archivos</b><span>de Windows modificados por el Shell</span></div>
       <div class="stat reveal d2"><b>8 fondos</b><span>en 4K, claros y oscuros</span></div>
       <div class="stat reveal d3"><b>1 clic</b><span>para volver a Windows 11</span></div>
@@ -823,7 +823,7 @@ tick(); setInterval(tick, 20000);
 })();
 
 /* Cinta */
-$('band').innerHTML = (b => b + b)(['<span><b>Windows 11</b>oficial de Microsoft</span>', '<span><b>AUREVIX Shell</b>barra, Inicio y Configuración</span>', '<span><b>95</b>ajustes reversibles</span>',
+$('band').innerHTML = (b => b + b)(['<span><b>Windows 11</b>oficial de Microsoft</span>', '<span><b>AUREVIX Shell</b>barra, Inicio y Configuración</span>', '<span><b>102</b>ajustes reversibles</span>',
   '<span><b>Game Boost</b>prioridad automática</span>', '<span><b>Nusa</b>isla dinámica</span>', '<span><b>Cristal</b>barra e Inicio</span>', '<span><b>8</b>fondos en 4K</span>',
   '<span><b>0</b>datos enviados</span>', '<span><b>Firmado</b>cada actualización</span>'].join(''));
 
@@ -846,7 +846,7 @@ sws.forEach(s => s.onclick = () => { s.setAttribute('aria-checked', s.getAttribu
 const perfObs = new IntersectionObserver(es => es.forEach(e => { if (!e.isIntersecting) return; perfObs.disconnect();
   sws.forEach((s, i) => setTimeout(() => { if (i < 7) { s.setAttribute('aria-checked', 'true'); upd(); } }, reduce ? 0 : 350 + i * 260)); }), { threshold: .4 });
 perfObs.observe($('tweaks'));
-$('cats').innerHTML = [['Juegos', 16], ['Inicio y fondo', 14], ['Energía', 13], ['Interfaz', 12], ['Privacidad', 9], ['Planes de energía', 7], ['Gráficos', 5], ['Ratón y USB', 5], ['Modos', 5], ['Red', 4], ['Almacenamiento', 2], ['Mantenimiento', 2]].map(([n, c]) => `<span>${n}<b>${c}</b></span>`).join('');
+$('cats').innerHTML = [['Juegos', 16], ['Inicio y fondo', 15], ['Interfaz', 14], ['Energía', 13], ['Privacidad', 13], ['Planes de energía', 7], ['Gráficos', 5], ['Ratón y USB', 5], ['Modos', 5], ['Red', 4], ['Almacenamiento', 2], ['Mantenimiento', 2]].map(([n, c]) => `<span>${n}<b>${c}</b></span>`).join('');
 
 /* ---------- Nusa: la isla cambia de forma según lo que hace ---------- */
 const shapes = { mini: [240, 38, 22], player: [440, 190, 34], lyrics: [500, 150, 34], timer: [420, 150, 34], files: [380, 140, 30] };
