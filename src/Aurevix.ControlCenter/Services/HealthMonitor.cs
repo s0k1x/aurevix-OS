@@ -110,13 +110,16 @@ public static class HealthMonitor
         catch { return null; }
     }
 
+    // Adaptadores virtuales o de escritorio remoto: no tienen driver real que actualizar.
+    private static readonly string[] IgnoredAdapters = ["Virtual", "Remote", "Parsec", "Basic Display", "Meta Virtual"];
+
     private static void CheckGpuDriver()
     {
         using var s = new ManagementObjectSearcher("SELECT Name, DriverDate FROM Win32_VideoController");
         foreach (var o in s.Get().Cast<ManagementBaseObject>())
         {
             var name = $"{o["Name"]}".Trim();
-            if (name.Length == 0 || name.Contains("Microsoft Basic Display", StringComparison.OrdinalIgnoreCase)) continue;
+            if (name.Length == 0 || IgnoredAdapters.Any(w => name.Contains(w, StringComparison.OrdinalIgnoreCase))) continue;
             if (o["DriverDate"] is not string raw) continue;
             var date = ManagementDateTimeConverter.ToDateTime(raw);
             if (date >= DateTime.Now.AddMonths(-12)) continue;

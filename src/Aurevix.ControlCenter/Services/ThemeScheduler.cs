@@ -43,7 +43,7 @@ public static class ThemeScheduler
         if (s.ThemeSchedule == "sun")
         {
             var (rise, set) = SunTimes(now.Date);
-            return m >= rise && m < set;
+            return rise < set ? (m >= rise && m < set) : (m >= rise || m < set);
         }
         int l = s.LightFromMinutes, d = s.DarkFromMinutes;
         if (l == d) return true;
@@ -107,7 +107,7 @@ public static class ThemeScheduler
         static int Wrap(int m) => ((m % 1440) + 1440) % 1440;
     }
 
-    /// <summary>Latitud y longitud aproximadas según la zona horaria de Windows (Madrid por defecto).</summary>
+    /// <summary>Latitud y longitud aproximadas según la zona horaria de Windows (si no está en la tabla, se deduce del desfase UTC).</summary>
     private static (double Lat, double Lon) Location() => TimeZoneInfo.Local.Id switch
     {
         "Romance Standard Time" => (40.4, -3.7),            // Madrid, París, Bruselas
@@ -134,6 +134,6 @@ public static class ThemeScheduler
         "Central Standard Time" => (41.9, -87.6),
         "Mountain Standard Time" => (39.7, -105.0),
         "Pacific Standard Time" => (34.1, -118.2),
-        _ => (40.4, -3.7)
+        _ => (40.0, TimeZoneInfo.Local.BaseUtcOffset.TotalHours * 15) // longitud este = positiva, como en SunTimes
     };
 }

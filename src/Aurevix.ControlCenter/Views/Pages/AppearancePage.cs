@@ -54,8 +54,8 @@ public sealed class AppearancePage : UserControl
         body.Children.Add(Ui.Card(Ui.H2("Tema de color"),
             Ui.Muted("Cambia el modo de color de Windows y de las aplicaciones."),
             Ui.Row(
-                Ui.Button("Claro (predeterminado)", () => ApplyReg("Modo claro", [Dw(Personalize, "AppsUseLightTheme", 1), Dw(Personalize, "SystemUsesLightTheme", 1)]), primary: true),
-                Ui.Button("Oscuro", () => ApplyReg("Modo oscuro", [Dw(Personalize, "AppsUseLightTheme", 0), Dw(Personalize, "SystemUsesLightTheme", 0)])))));
+                Ui.Button("Claro (predeterminado)", () => { ManualOff(); ApplyReg("Modo claro", [Dw(Personalize, "AppsUseLightTheme", 1), Dw(Personalize, "SystemUsesLightTheme", 1)]); }, primary: true),
+                Ui.Button("Oscuro", () => { ManualOff(); ApplyReg("Modo oscuro", [Dw(Personalize, "AppsUseLightTheme", 0), Dw(Personalize, "SystemUsesLightTheme", 0)]); }))));
 
         body.Children.Add(AccentCard());
         body.Children.Add(AutoThemeCard());
@@ -93,6 +93,16 @@ public sealed class AppearancePage : UserControl
             Ui.Row(Ui.Button("Restablecer aspecto de Windows 11", RestoreAll))));
 
         Content = root;
+    }
+
+    /// <summary>Al elegir claro/oscuro a mano se desactiva el tema automático y se refresca la tarjeta.</summary>
+    private void ManualOff()
+    {
+        var s = AppServices.Settings;
+        if (s.ThemeSchedule == "off") return;
+        s.ThemeSchedule = "off";
+        AppServices.SaveSettings();
+        Build();
     }
 
     private static readonly (string Name, string Hex)[] Accents =
@@ -157,7 +167,7 @@ public sealed class AppearancePage : UserControl
         var card = new List<UIElement>
         {
             Ui.H2("Tema automático"),
-            Ui.Muted("Cambia solo entre tema claro y oscuro (y entre el fondo de día y el de noche) sin que tengas que hacer nada."),
+            Ui.Muted("Cambia solo entre tema claro y oscuro sin que tengas que hacer nada. Si quieres, también cambia el fondo de día y de noche."),
             options
         };
 
@@ -189,7 +199,17 @@ public sealed class AppearancePage : UserControl
         {
             card.Add(Ui.Muted("Se calcula con la hora del sol en tu zona horaria; no se envía ningún dato."));
         }
-        if (s.ThemeSchedule != "off") card.Add(next);
+        if (s.ThemeSchedule != "off")
+        {
+            var wall = new CheckBox { Content = "Cambiar también el fondo", Style = Ui.Res<Style>("Switch"), IsChecked = s.ThemeChangesWallpaper, Margin = new Thickness(0, 10, 0, 0) };
+            wall.Click += (_, _) =>
+            {
+                s.ThemeChangesWallpaper = wall.IsChecked == true;
+                AppServices.SaveSettings();
+            };
+            card.Add(wall);
+            card.Add(next);
+        }
         return Ui.Card([.. card]);
     }
 
@@ -275,6 +295,9 @@ public sealed class AppearancePage : UserControl
     {
         if (MessageBox.Show("¿Volver al aspecto original de Windows 11?\n\nSe desactiva AUREVIX Shell, se deshace el Estilo AUREVIX y se reinicia la barra de tareas unos segundos.",
                 "Apariencia", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
+        AppServices.Settings.ThemeSchedule = "off";
+        AppServices.Settings.AccentColor = "#8DE03C";
+        AppServices.SaveSettings();
         try { await AurevixStyle.RestoreAsync(); } catch (Exception ex) { Core.Logging.AurevixLog.Error("Restaurar estilo", ex); }
         AurevixShell.SetEnabled(false, restartShell: true);
         // ListBackups está ordenado del más reciente al más antiguo: se revierte en ese orden.

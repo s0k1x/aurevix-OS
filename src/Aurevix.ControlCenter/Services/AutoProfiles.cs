@@ -39,7 +39,10 @@ public static class AutoProfiles
     private static DateTime _candidateSince;
     private static string? _manualProfile;    // perfil elegido a mano por el usuario
     private static string? _lastAutoApplied;  // último perfil puesto por este módulo
-    private static readonly Dictionary<int, bool> PathCache = new();
+    private static readonly Dictionary<int, (bool IsGame, DateTime At)> PathCache = new();
+    private static readonly TimeSpan CacheNegativeTtl = TimeSpan.FromSeconds(60);
+    private static readonly TimeSpan RetryAfterFailure = TimeSpan.FromMinutes(2);
+    private static readonly Dictionary<string, DateTime> LastFailure = new(); // regla -> hora (UTC) del último fallo
 
     public static void Start()
     {
@@ -55,7 +58,12 @@ public static class AutoProfiles
             if (!s.AutoProfiles)
             {
                 // Apagado: si habíamos cambiado algo, se vuelve al perfil manual.
-                if (_currentRule is not null && _currentRule != "none") Evaluate("none", "modo automático desactivado", immediate: true);
+                if (_currentRule is not null && _currentRule != "none")
+                {
+                    Evaluate("none", "modo automático desactivado", immediate: true);
+                    // Si no se pudo volver al perfil manual, se mantiene la regla y se reintenta en el siguiente ciclo.
+                    if (_currentRule != "none") { Status = "desactivado"; return; }
+                }
                 _currentRule = null; _candidate = null; _lastAutoApplied = null;
                 Status = "desactivado";
                 return;
@@ -123,19 +131,19 @@ public static class AutoProfiles
             alive.Add(p.Id);
             try
             {
-                if (!PathCache.TryGetValue(p.Id, out var isGame))
+                var isGame = false;
+                if (PathCache.TryGetValue(p.Id, out var cached) && (cached.IsGame || DateTime.UtcNow - cached.At < CacheNegativeTtl))
+                    isGame = cached.IsGame;
+                else
                 {
-                    isGame = false;
-                    if (p.MainWindowHandle != IntPtr.Zero)
-                    {
-                        var path = p.MainModule?.FileName ?? "";
-                        isGame = GameFolders.Any(f => path.Contains(f, StringComparison.OrdinalIgnoreCase));
-                    }
-                    PathCache[p.Id] = isGame;
+                    // Sin ventana o sin ruta legible: no se guarda como «no es juego» más de 60 s.
+                    var path = p.MainWindowHandle != IntPtr.Zero ? p.MainModule?.FileName : null;
+                    isGame = !string.IsNullOrEmpty(path) && GameFolders.Any(f => path.Contains(f, StringComparison.OrdinalIgnoreCase));
+                    PathCache[p.Id] = (isGame, DateTime.UtcNow);
                 }
                 if (isGame && found is null) found = p.ProcessName + ".exe";
             }
-            catch { PathCache[p.Id] = false; }
+            catch { PathCache[p.Id] = (false, DateTime.UtcNow); }
         }
         foreach (var id in PathCache.Keys.Where(k => !alive.Contains(k)).ToList()) PathCache.Remove(id);
         return found;
@@ -162,7 +170,9 @@ public static class AutoProfiles
 
         if (target is not null && target != AppServices.State.ActiveProfile)
         {
-            if (!ApplyProfile(target)) return; // sin servicio o fallo: no hace nada y reintenta luego
+            if (LastFailure.TryGetValue(rule, out var failedAt) && DateTime.UtcNow - failedAt < RetryAfterFailure) return;
+            if (!ApplyProfile(target)) { LastFailure[rule] = DateTime.UtcNow; return; } // fallo: reintenta pasados 2 min
+            LastFailure.Remove(rule);
             _lastAutoApplied = target;
         }
         _currentRule = rule;
@@ -170,7 +180,7 @@ public static class AutoProfiles
         var name = AppServices.Profiles.FirstOrDefault(p => p.Id == target)?.Name ?? target ?? "anterior";
         var msg = rule == "none" ? $"Vuelves a tu perfil «{name}»" : $"Perfil «{name}» activado ({reason})";
         AurevixLog.Info("Perfiles automáticos: " + msg);
-        Notify?.Invoke(msg);
+        if (AppServices.Settings.Notifications) Notify?.Invoke(msg);
         Changed?.Invoke(msg);
     }
 

@@ -34,6 +34,7 @@ public static class Ui
     }
 
     private const string DefaultAccent = "#8DE03C";
+    private static readonly Color DarkHover = Color.FromRgb(0xA6, 0xEE, 0x5E); // AccentHoverColor del tema oscuro
 
     /// <summary>
     /// Sustituye el acento del tema por el elegido en Ajustes (hover 12 % más claro). En tema claro, un acento muy claro
@@ -45,11 +46,13 @@ public static class Ui
         {
             var hex = Aurevix.ControlCenter.Services.AppServices.Settings.AccentColor;
             if (string.IsNullOrWhiteSpace(hex) || ColorConverter.ConvertFromString(hex) is not Color c) return;
-            if (IsLight && string.Equals(hex, DefaultAccent, StringComparison.OrdinalIgnoreCase)) return;
+            var isDefault = string.Equals(hex, DefaultAccent, StringComparison.OrdinalIgnoreCase);
+            // Verde AUREVIX: se restablece al tono propio de cada tema (por si antes había otro acento).
+            if (isDefault) c = IsLight ? Color.FromRgb(0x4E, 0x9A, 0x1E) : Color.FromRgb(0x8D, 0xE0, 0x3C);
 
-            if (IsLight && (0.299 * c.R + 0.587 * c.G + 0.114 * c.B) / 255.0 > 0.6)
+            if (!isDefault && IsLight && (0.299 * c.R + 0.587 * c.G + 0.114 * c.B) / 255.0 > 0.6)
                 c = Color.FromRgb((byte)(c.R * 0.65), (byte)(c.G * 0.65), (byte)(c.B * 0.65));
-            var hover = Color.FromRgb(Lighten(c.R), Lighten(c.G), Lighten(c.B));
+            var hover = isDefault ? (IsLight ? Color.FromRgb(0x5D, 0xB0, 0x2A) : DarkHover) : Color.FromRgb(Lighten(c.R), Lighten(c.G), Lighten(c.B));
 
             var dicts = new List<ResourceDictionary> { Application.Current.Resources };
             dicts.AddRange(Application.Current.Resources.MergedDictionaries);

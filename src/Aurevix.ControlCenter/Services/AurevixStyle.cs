@@ -470,7 +470,8 @@ public static class AurevixStyle
                 k.SetValue("AppsUseLightTheme", light ? 1 : 0, Microsoft.Win32.RegistryValueKind.DWord);
                 k.SetValue("SystemUsesLightTheme", light ? 1 : 0, Microsoft.Win32.RegistryValueKind.DWord);
             }
-            var wall = light ? AppServices.Settings.DayWallpaper : AppServices.Settings.NightWallpaper;
+            var wall = !AppServices.Settings.ThemeChangesWallpaper ? null
+                : light ? AppServices.Settings.DayWallpaper : AppServices.Settings.NightWallpaper;
             if (!string.IsNullOrWhiteSpace(wall))
             {
                 var path = WallpaperPath(wall);

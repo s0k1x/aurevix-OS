@@ -65,8 +65,10 @@ public sealed class AurevixSettings
     /// <summary>Fondos de día y de noche del tema automático (nombres de Assets/Wallpapers sin extensión).</summary>
     public string DayWallpaper { get; set; } = "Aurevix-Daylight";
     public string NightWallpaper { get; set; } = "Aurevix-Aurora";
+    /// <summary>Si el tema automático también cambia el fondo de escritorio (día/noche). Desactivado por defecto.</summary>
+    public bool ThemeChangesWallpaper { get; set; }
     /// <summary>Perfiles automáticos: Juego al abrir un juego, Batería al desenchufar, Trabajo con apps de oficina.</summary>
-    public bool AutoProfiles { get; set; } = true;
+    public bool AutoProfiles { get; set; }
     public bool AutoProfileGaming { get; set; } = true;
     public bool AutoProfileBattery { get; set; } = true;
     public bool AutoProfileWork { get; set; }
