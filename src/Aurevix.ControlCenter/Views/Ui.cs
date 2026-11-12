@@ -24,10 +24,54 @@ public static class Ui
     public static void ApplyTheme()
     {
         IsLight = Microsoft.Win32.Registry.GetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize", "AppsUseLightTheme", 1) is not int v || v != 0;
-        if (!IsLight) return;
-        var dicts = Application.Current.Resources.MergedDictionaries;
-        dicts.Clear();
-        dicts.Add(new ResourceDictionary { Source = new Uri("pack://application:,,,/Themes/AurevixLight.xaml") });
+        if (IsLight)
+        {
+            var dicts = Application.Current.Resources.MergedDictionaries;
+            dicts.Clear();
+            dicts.Add(new ResourceDictionary { Source = new Uri("pack://application:,,,/Themes/AurevixLight.xaml") });
+        }
+        ApplyAccentResources();
+    }
+
+    private const string DefaultAccent = "#8DE03C";
+
+    /// <summary>
+    /// Sustituye el acento del tema por el elegido en Ajustes (hover 12 % más claro). En tema claro, un acento muy claro
+    /// se oscurece para que el texto y los botones se lean bien. El verde AUREVIX conserva el tono propio del tema.
+    /// </summary>
+    public static void ApplyAccentResources()
+    {
+        try
+        {
+            var hex = Aurevix.ControlCenter.Services.AppServices.Settings.AccentColor;
+            if (string.IsNullOrWhiteSpace(hex) || ColorConverter.ConvertFromString(hex) is not Color c) return;
+            if (IsLight && string.Equals(hex, DefaultAccent, StringComparison.OrdinalIgnoreCase)) return;
+
+            if (IsLight && (0.299 * c.R + 0.587 * c.G + 0.114 * c.B) / 255.0 > 0.6)
+                c = Color.FromRgb((byte)(c.R * 0.65), (byte)(c.G * 0.65), (byte)(c.B * 0.65));
+            var hover = Color.FromRgb(Lighten(c.R), Lighten(c.G), Lighten(c.B));
+
+            var dicts = new List<ResourceDictionary> { Application.Current.Resources };
+            dicts.AddRange(Application.Current.Resources.MergedDictionaries);
+            foreach (var d in dicts)
+            {
+                if (d.Contains("AccentColor")) d["AccentColor"] = c;
+                if (d.Contains("AccentHoverColor")) d["AccentHoverColor"] = hover;
+                SetBrush(d, "Accent", c);
+                SetBrush(d, "AccentHover", hover);
+            }
+        }
+        catch (Exception ex) { Aurevix.Core.Logging.AurevixLog.Warn($"Acento del Control Center: {ex.Message}"); }
+
+        static byte Lighten(byte v) => (byte)Math.Min(255, v + (255 - v) * 0.12);
+    }
+
+    /// <summary>Cambia el color del pincel en su sitio (así los estilos que ya lo usan se actualizan); si está congelado, lo reemplaza.</summary>
+    private static void SetBrush(ResourceDictionary d, string key, Color c)
+    {
+        if (!d.Contains(key)) return;
+        if (d[key] is SolidColorBrush b && !b.IsFrozen) b.Color = c;
+        else d[key] = new SolidColorBrush(c);
     }
 
     public static void EnableDarkTitleBars()

@@ -41,16 +41,6 @@ public static class AurevixStyle
     private static RegistryAction Color(string name, uint abgr) =>
         new() { Hive = RegistryHive.CurrentUser, Key = Dwm, Name = name, Kind = RegistryValueKind.DWord, Value = abgr.ToString() };
 
-    /// <summary>
-    /// Se aplica DESPUÉS del tema (que restablece los colores de ventana): barra de título y borde de todas las
-    /// ventanas en negro grafito, el rasgo más reconocible de AUREVIX OS. El acento verde lima no cambia.
-    /// </summary>
-    private static readonly TweakDefinition WindowFrames = new()
-    {
-        Id = "style.windows", Title = "Ventanas AUREVIX (barra de título verde claro)", Category = TweakCategory.Interface,
-        Registry = [Dw(Dwm, "ColorPrevalence", 1), Color("AccentColor", 0xFFDEF2E8), Color("AccentColorInactive", 0xFFECF6F1)]
-    };
-
     /// <summary>Grupos de ajustes. Cada grupo es un TweakDefinition independiente: si Windows bloquea uno, los demás siguen.</summary>
     public static IReadOnlyList<TweakDefinition> Groups { get; } =
     [
@@ -311,17 +301,11 @@ public static class AurevixStyle
             else skipped.Add("Pantalla de bloqueo (Windows no lo permitió en este equipo)");
         }
 
-        // 5. Color de las ventanas: Windows tarda unos segundos en terminar de aplicar el tema y, al hacerlo,
-        //    restablece estos valores; por eso van al final.
+        // 5. Color de acento elegido por el usuario: el tema puede restablecerlo, así que se vuelve a poner al final
+        //    (lo leen Windows, AUREVIX Shell y el Control Center).
         await Task.Delay(4000);
-        var frames = AppServices.Tweaks.Apply([WindowFrames], $"{BackupPrefix} · {WindowFrames.Title}");
-        if (!frames.Success)
-        {
-            // Windows puede seguir aplicando el tema y pisar el color: se reintenta una vez.
-            await Task.Delay(5000);
-            frames = AppServices.Tweaks.Apply([WindowFrames], $"{BackupPrefix} · {WindowFrames.Title}");
-        }
-        (frames.Success ? applied : skipped).Add(frames.Success ? WindowFrames.Title : $"{WindowFrames.Title}: {string.Join(" / ", frames.Messages)}");
+        try { ApplyAccent(AppServices.Settings.AccentColor); applied.Add("Color de acento"); }
+        catch (Exception ex) { AurevixLog.Warn($"Color de acento: {ex.Message}"); skipped.Add("Color de acento"); }
 
         BroadcastSettingChange();
         AurevixLog.Info($"Estilo AUREVIX aplicado: {applied.Count} cambios, {skipped.Count} omitidos.");
@@ -421,7 +405,7 @@ public static class AurevixStyle
             ColorStyle=NormalColor
             Size=NormalSize
             AutoColorization=0
-            ColorizationColor=0XC44E9A1E
+            ColorizationColor=0XC4{AccentRgb()}
             SystemMode=Light
             AppMode=Light
             Transparency=1
@@ -430,6 +414,72 @@ public static class AurevixStyle
             MTSM=RJSPBS
             """);
         return path;
+    }
+
+    // ------------------------------------------------------------------ Color de acento y modo claro/oscuro
+
+    private const string AccentExplorer = @"Software\Microsoft\Windows\CurrentVersion\Explorer\Accent";
+    public const string AccentBackupPrefix = "Apariencia: Color de acento";
+
+    /// <summary>Acento elegido como "RRGGBB" (verde AUREVIX si el ajuste no es válido).</summary>
+    private static (byte R, byte G, byte B) AccentComponents()
+    {
+        var hex = (AppServices.Settings.AccentColor ?? "").Trim().TrimStart('#');
+        if (hex.Length == 6 && int.TryParse(hex, System.Globalization.NumberStyles.HexNumber, null, out var v))
+            return ((byte)(v >> 16), (byte)(v >> 8), (byte)v);
+        return (0x8D, 0xE0, 0x3C);
+    }
+
+    private static string AccentRgb() { var (r, g, b) = AccentComponents(); return $"{r:X2}{g:X2}{b:X2}"; }
+
+    private static uint Abgr(byte r, byte g, byte b) => 0xFF000000u | (uint)(b << 16) | (uint)(g << 8) | r;
+
+    /// <summary>
+    /// Escribe el acento oficial de Windows (DWM y Explorer\Accent) y avisa al sistema. Los valores anteriores quedan
+    /// en la copia de seguridad de TweakEngine y se deshacen con «Restablecer aspecto de Windows 11».
+    /// ColorPrevalence y AccentPalette no se tocan.
+    /// </summary>
+    public static void ApplyAccent(string hex)
+    {
+        AppServices.Settings.AccentColor = hex;
+        var (r, g, b) = AccentComponents();
+        // Acento inactivo: el mismo tono mezclado con blanco al 50 %.
+        byte Mix(byte v) => (byte)((v + 255) / 2);
+        var tweak = new TweakDefinition
+        {
+            Id = "appearance.accent", Title = "Color de acento", Category = TweakCategory.Interface,
+            Registry =
+            [
+                Color("AccentColor", Abgr(r, g, b)), Color("AccentColorInactive", Abgr(Mix(r), Mix(g), Mix(b))),
+                new RegistryAction { Hive = RegistryHive.CurrentUser, Key = AccentExplorer, Name = "AccentColorMenu",
+                                     Kind = RegistryValueKind.DWord, Value = Abgr(r, g, b).ToString() }
+            ]
+        };
+        var res = AppServices.Tweaks.Apply([tweak], AccentBackupPrefix);
+        if (!res.Success) AurevixLog.Warn("Color de acento: " + string.Join(" / ", res.Messages));
+        BroadcastSettingChange();
+    }
+
+    /// <summary>Cambia Windows y las aplicaciones a claro u oscuro, con el fondo de día o de noche si está elegido.</summary>
+    public static void SetMode(bool light)
+    {
+        try
+        {
+            using (var k = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(Personalize))
+            {
+                k.SetValue("AppsUseLightTheme", light ? 1 : 0, Microsoft.Win32.RegistryValueKind.DWord);
+                k.SetValue("SystemUsesLightTheme", light ? 1 : 0, Microsoft.Win32.RegistryValueKind.DWord);
+            }
+            var wall = light ? AppServices.Settings.DayWallpaper : AppServices.Settings.NightWallpaper;
+            if (!string.IsNullOrWhiteSpace(wall))
+            {
+                var path = WallpaperPath(wall);
+                if (File.Exists(path)) SystemTools.SetWallpaper(path);
+            }
+            BroadcastSettingChange();
+            AurevixLog.Info($"Tema automático: modo {(light ? "claro" : "oscuro")}.");
+        }
+        catch (Exception ex) { AurevixLog.Warn($"Cambiar modo claro/oscuro: {ex.Message}"); }
     }
 
     private static string? TryGetLockScreen()

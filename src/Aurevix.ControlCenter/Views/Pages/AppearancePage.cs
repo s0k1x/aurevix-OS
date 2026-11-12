@@ -57,6 +57,9 @@ public sealed class AppearancePage : UserControl
                 Ui.Button("Claro (predeterminado)", () => ApplyReg("Modo claro", [Dw(Personalize, "AppsUseLightTheme", 1), Dw(Personalize, "SystemUsesLightTheme", 1)]), primary: true),
                 Ui.Button("Oscuro", () => ApplyReg("Modo oscuro", [Dw(Personalize, "AppsUseLightTheme", 0), Dw(Personalize, "SystemUsesLightTheme", 0)])))));
 
+        body.Children.Add(AccentCard());
+        body.Children.Add(AutoThemeCard());
+
         body.Children.Add(Ui.Card(Ui.H2("Modo visual"),
             Ui.Muted("Ligero: sin transparencias ni animaciones de ventana (equipos modestos). Elegante: transparencias y animaciones de Windows 11."),
             Ui.Row(
@@ -90,6 +93,104 @@ public sealed class AppearancePage : UserControl
             Ui.Row(Ui.Button("Restablecer aspecto de Windows 11", RestoreAll))));
 
         Content = root;
+    }
+
+    private static readonly (string Name, string Hex)[] Accents =
+    [
+        ("Verde AUREVIX", "#8DE03C"), ("Azul", "#3B82F6"), ("Violeta", "#8B5CF6"), ("Rosa", "#EC4899"),
+        ("Naranja", "#F97316"), ("Rojo", "#EF4444"), ("Turquesa", "#14B8A6")
+    ];
+
+    /// <summary>Siete círculos de color; el elegido lleva un anillo.</summary>
+    private UIElement AccentCard()
+    {
+        var current = AppServices.Settings.AccentColor;
+        var row = Ui.Wrap();
+        foreach (var (name, hex) in Accents)
+        {
+            var color = (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(hex);
+            var brush = new System.Windows.Media.SolidColorBrush(color);
+            var selected = string.Equals(current, hex, StringComparison.OrdinalIgnoreCase);
+            var circle = new Border { Width = 36, Height = 36, CornerRadius = new CornerRadius(18), Background = brush };
+            var ring = new Border
+            {
+                Width = 46, Height = 46, CornerRadius = new CornerRadius(23), Margin = new Thickness(0, 0, 8, 0),
+                BorderThickness = new Thickness(2), Padding = new Thickness(3), Child = circle,
+                BorderBrush = selected ? brush : System.Windows.Media.Brushes.Transparent,
+                Cursor = System.Windows.Input.Cursors.Hand, ToolTip = name
+            };
+            ring.MouseLeftButtonUp += (_, _) =>
+            {
+                AppServices.Settings.AccentColor = hex;
+                AppServices.SaveSettings();
+                AurevixStyle.ApplyAccent(hex);
+                Ui.ApplyAccentResources();
+                Build();
+            };
+            row.Children.Add(ring);
+        }
+        return Ui.Card(Ui.H2("Color de acento"),
+            Ui.Muted("Elige el color que Windows y AUREVIX usan para botones, ventanas y destacados."),
+            row);
+    }
+
+    /// <summary>Cambio automático entre claro y oscuro: manual, por horario o con el sol.</summary>
+    private UIElement AutoThemeCard()
+    {
+        var s = AppServices.Settings;
+        var next = Ui.Muted(ThemeScheduler.NextChangeText());
+        next.Margin = new Thickness(0, 10, 0, 0);
+
+        void Choose(string mode)
+        {
+            s.ThemeSchedule = mode;
+            AppServices.SaveSettings();
+            ThemeScheduler.Evaluate();
+            Build();
+        }
+
+        var options = Ui.Row(
+            Ui.Button("Manual", () => Choose("off"), primary: s.ThemeSchedule == "off"),
+            Ui.Button("Por horario", () => Choose("hours"), primary: s.ThemeSchedule == "hours"),
+            Ui.Button("Al amanecer y al anochecer", () => Choose("sun"), primary: s.ThemeSchedule == "sun"));
+
+        var card = new List<UIElement>
+        {
+            Ui.H2("Tema automático"),
+            Ui.Muted("Cambia solo entre tema claro y oscuro (y entre el fondo de día y el de noche) sin que tengas que hacer nada."),
+            options
+        };
+
+        if (s.ThemeSchedule == "hours")
+        {
+            ComboBox Times(int minutes, Action<int> set)
+            {
+                var box = new ComboBox { Width = 90, Margin = new Thickness(8, 0, 20, 0), VerticalAlignment = VerticalAlignment.Center };
+                for (var m = 0; m < 1440; m += 15) box.Items.Add($"{m / 60:00}:{m % 60:00}");
+                box.SelectedIndex = Math.Clamp(minutes / 15, 0, 95);
+                box.SelectionChanged += (_, _) =>
+                {
+                    if (box.SelectedIndex < 0) return;
+                    set(box.SelectedIndex * 15);
+                    AppServices.SaveSettings();
+                    ThemeScheduler.Evaluate();
+                    next.Text = ThemeScheduler.NextChangeText();
+                };
+                return box;
+            }
+            var hours = Ui.Row(
+                new TextBlock { Text = "Claro desde las", VerticalAlignment = VerticalAlignment.Center },
+                Times(s.LightFromMinutes, m => s.LightFromMinutes = m),
+                new TextBlock { Text = "Oscuro desde las", VerticalAlignment = VerticalAlignment.Center },
+                Times(s.DarkFromMinutes, m => s.DarkFromMinutes = m));
+            card.Add(hours);
+        }
+        else if (s.ThemeSchedule == "sun")
+        {
+            card.Add(Ui.Muted("Se calcula con la hora del sol en tu zona horaria; no se envía ningún dato."));
+        }
+        if (s.ThemeSchedule != "off") card.Add(next);
+        return Ui.Card([.. card]);
     }
 
     private async Task ApplyStyleAsync()
