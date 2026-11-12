@@ -51,7 +51,7 @@ public sealed class MainWindow : Window
         root.Children.Add(new Ellipse
         {
             Width = 900, Height = 900, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, -520, -380, 0), IsHitTestVisible = false,
-            Fill = new RadialGradientBrush(Color.FromArgb(0x22, 0x8D, 0xE0, 0x3C), Color.FromArgb(0x00, 0x8D, 0xE0, 0x3C))
+            Fill = new RadialGradientBrush(Palette.Glow, Color.FromArgb(0x00, Palette.Glow.R, Palette.Glow.G, Palette.Glow.B))
         });
         Grid.SetRow(footer, 1);
         root.Children.Add(_host);

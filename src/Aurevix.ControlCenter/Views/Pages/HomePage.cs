@@ -14,6 +14,7 @@ namespace Aurevix.ControlCenter.Views.Pages;
 public sealed class HomePage : UserControl, IDisposable
 {
     private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromSeconds(2) };
+    private readonly StackPanel _reportHost;
 
     public HomePage(MainWindow main)
     {
@@ -66,6 +67,12 @@ public sealed class HomePage : UserControl, IDisposable
             Action("Herramientas", "Reparar Windows y drivers", "", () => main.Navigate("tools")));
         body.Children.Add(actions);
 
+        // Antes y después de la última optimización (si hay informe)
+        _reportHost = new StackPanel();
+        OptimizationPage.FillReport(_reportHost);   // (tarjeta «Antes y después»)
+        body.Children.Add(_reportHost);
+        OptimizationManager.ReportReady += OnReportReady;
+
         // Estado y avisos
         body.Children.Add(Section("Estado"));
         var report = AppServices.LastReport;
@@ -107,5 +114,12 @@ public sealed class HomePage : UserControl, IDisposable
         return card;
     }
 
-    public void Dispose() => _timer.Stop();
+    // El informe se actualiza desde un hilo en segundo plano: se vuelve al hilo de la interfaz.
+    private void OnReportReady() => Dispatcher.BeginInvoke(() => OptimizationPage.FillReport(_reportHost));
+
+    public void Dispose()
+    {
+        _timer.Stop();
+        OptimizationManager.ReportReady -= OnReportReady;
+    }
 }

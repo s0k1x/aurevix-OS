@@ -17,6 +17,8 @@ public sealed class ToolsPage : UserControl
     {
         var (root, body) = Ui.Page("Herramientas", "Reparación, mantenimiento y drivers con las herramientas oficiales de Windows.");
 
+        body.Children.Add(AutoMaintenanceCard());
+
         body.Children.Add(Section("Explorador de Windows",
             Tool("Reiniciar el Explorador", "Útil si la barra de tareas, el escritorio o el Explorador no responden.", () =>
             {
@@ -70,6 +72,58 @@ public sealed class ToolsPage : UserControl
             Svc("Restaurar los planes de energía de Windows", "Vuelve a los planes de fábrica (Equilibrado, etc.). Útil si un plan da problemas.", "power-defaults")));
 
         Content = root;
+    }
+
+    private Border AutoMaintenanceCard()
+    {
+        var s = AppServices.Settings;
+        string Last() => AppServices.State.LastAutoMaintenanceUtc is { } d
+            ? $"Última vez: {d.ToLocalTime():dd/MM/yyyy HH:mm}" + (string.IsNullOrEmpty(AppServices.State.LastAutoMaintenanceSummary) ? "" : " · " + AppServices.State.LastAutoMaintenanceSummary)
+            : "Todavía no se ha hecho.";
+        var last = Ui.Muted(Last());
+
+        var sw = new CheckBox { Content = "Mantenimiento automático", Style = Ui.Res<Style>("Switch"), IsChecked = s.AutoMaintenance };
+        sw.Checked += (_, _) => { s.AutoMaintenance = true; AppServices.SaveSettings(); };
+        sw.Unchecked += (_, _) => { s.AutoMaintenance = false; AppServices.SaveSettings(); };
+
+        Button? now = null;
+        now = Ui.Button("Hacer ahora", async () =>
+        {
+            now!.IsEnabled = false;
+            last.Text = "Haciendo el mantenimiento…";
+            string? res = null;
+            try { res = await AutoMaintenance.RunNowAsync(); }
+            finally
+            {
+                now.IsEnabled = true;
+                last.Text = res is null
+                    ? "Ya hay un mantenimiento en marcha o no se ha podido hacer. Mira el registro en Ajustes."
+                    : Last();
+            }
+        });
+
+        Action onChanged = () => Dispatcher.BeginInvoke(() => last.Text = Last());
+        AutoMaintenance.Changed += onChanged;
+        Unloaded += (_, _) => AutoMaintenance.Changed -= onChanged;
+
+        return Ui.Card(Header("Mantenimiento automático", sw),
+            Ui.Muted("Una vez por semana, cuando no estás usando el PC: limpia temporales, optimiza los discos y comprueba Windows. No toca tus archivos."),
+            last, Ui.Row(now));
+    }
+
+    /// <summary>Título de tarjeta con su interruptor a la derecha.</summary>
+    private static Grid Header(string title, CheckBox sw)
+    {
+        var g = new Grid();
+        g.ColumnDefinitions.Add(new ColumnDefinition());
+        g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        var h = Ui.H2(title);
+        sw.HorizontalAlignment = HorizontalAlignment.Right;
+        sw.VerticalAlignment = VerticalAlignment.Center;
+        Grid.SetColumn(sw, 1);
+        g.Children.Add(h);
+        g.Children.Add(sw);
+        return g;
     }
 
     private static UIElement Pair(string title, string text, string opA, string opB, string labelA, string labelB, bool restart = false)

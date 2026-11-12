@@ -21,13 +21,13 @@ public static class Screenshotter
 
         var main = new MainWindow { Left = 0, Top = 0, ShowActivated = false };
         main.Show();
-        string[] pages = ["home", "diagnostics", "optimization", "gameboost", "benchmark", "network", "performance", "profiles",
+        string[] pages = ["home", "diagnostics", "optimization", "games", "gameboost", "benchmark", "network", "performance", "profiles",
                           "appearance", "cleanup", "tools", "apps", "updates", "recovery", "settings"];
         var i = 1;
         foreach (var p in pages)
         {
             main.Navigate(p);
-            await Task.Delay(p is "optimization" or "network" or "cleanup" or "diagnostics" or "tools" ? 6000 : 2500);
+            await Task.Delay(p is "optimization" or "network" or "cleanup" or "diagnostics" or "tools" or "games" ? 6000 : 2500);
             Save(main, Path.Combine(outDir, $"cc-{i++:00}-{p}.png"));
             if (p == "optimization")
             {
@@ -35,6 +35,18 @@ public static class Screenshotter
                 ScrollToText(main, "Todos los ajustes", 1400);
                 await Task.Delay(800);
                 Save(main, Path.Combine(outDir, "cc-03b-optimization-ajustes.png"));
+            }
+            if (p == "diagnostics")
+            {
+                ScrollToText(main, "Drivers", 1600);
+                await Task.Delay(3000);
+                Save(main, Path.Combine(outDir, "cc-02b-diagnostics-drivers.png"));
+            }
+            if (p == "appearance")
+            {
+                ScrollToText(main, "Pantalla de bloqueo e inicio de sesión", 1800);
+                await Task.Delay(800);
+                Save(main, Path.Combine(outDir, "cc-10b-appearance-bloqueo.png"));
             }
         }
         main.Close();

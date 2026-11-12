@@ -20,6 +20,7 @@ public partial class MainWindow : Window
             ["home"] = () => new HomePage(this),
             ["diagnostics"] = () => new DiagnosticsPage(),
             ["performance"] = () => new PerformancePage(),
+            ["games"] = () => new GamesPage(),
             ["gameboost"] = () => new GameBoostPage(),
             ["benchmark"] = () => new BenchmarkPage(),
             ["network"] = () => new NetworkPage(),
@@ -36,7 +37,7 @@ public partial class MainWindow : Window
         _nav = new()
         {
             ["home"] = NavHome, ["diagnostics"] = NavDiagnostics, ["performance"] = NavPerformance,
-            ["benchmark"] = NavBenchmark, ["cleanup"] = NavCleanup, ["gameboost"] = NavGameBoost, ["network"] = NavNetwork, ["tools"] = NavTools, ["apps"] = NavApps,
+            ["benchmark"] = NavBenchmark, ["cleanup"] = NavCleanup, ["games"] = NavGames, ["gameboost"] = NavGameBoost, ["network"] = NavNetwork, ["tools"] = NavTools, ["apps"] = NavApps,
             ["profiles"] = NavProfiles, ["optimization"] = NavOptimization, ["appearance"] = NavAppearance,
             ["updates"] = NavUpdates, ["recovery"] = NavRecovery, ["settings"] = NavSettings,
         };

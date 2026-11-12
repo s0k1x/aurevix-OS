@@ -13,6 +13,7 @@ public sealed class DiagnosticsPage : UserControl
 {
     private readonly StackPanel _results = new();
     private readonly StackPanel _hardware = new();
+    private readonly StackPanel _drivers = new();
     private readonly Button _run;
     private readonly ProgressBar _progress = new() { IsIndeterminate = true, Visibility = Visibility.Collapsed, Margin = new Thickness(0, 12, 0, 0) };
 
@@ -26,7 +27,9 @@ public sealed class DiagnosticsPage : UserControl
             _progress));
         body.Children.Add(_results);
         body.Children.Add(_hardware);
+        body.Children.Add(_drivers);
         _ = LoadHardwareAsync();
+        _ = LoadDriversAsync();
 
         var history = ReportWriter.ListReports(AurevixPaths.Reports).Take(8).ToList();
         if (history.Count > 0)
@@ -79,6 +82,51 @@ public sealed class DiagnosticsPage : UserControl
             _hardware.Children.Add(card);
         }
         catch { /* la revisión es opcional */ }
+    }
+
+    /// <summary>Asistente de drivers: carga en segundo plano y enlaza a las páginas oficiales.</summary>
+    private async Task LoadDriversAsync()
+    {
+        _drivers.Children.Add(Ui.Card(Ui.H2("Drivers"), Ui.Muted("Comprobando drivers…")));
+        try
+        {
+            var list = await DriverAdvisor.ScanAsync();
+            var card = Ui.Card(Ui.H2("Drivers"));
+            var sp = (StackPanel)card.Child;
+            foreach (var d in list)
+            {
+                var key = d.Status == DriverAdvisor.StatusOk ? "Ok" : "Review";
+                var text = new StackPanel();
+                text.Children.Add(Ui.Text($"{d.Kind}: {d.Name}", 14, FontWeights.SemiBold));
+                text.Children.Add(Ui.Muted($"Versión {d.Version} · {(d.Date is { } dt ? dt.ToString("d") : "fecha desconocida")}"));
+                var buttons = new List<UIElement>();
+                if (d.Url is { } official) buttons.Add(Ui.Button("Descargar oficial", () => OpenUrl(official)));
+                else buttons.Add(Ui.Muted("Búscalo en la web del fabricante o usa Windows Update"));
+                if (d.OemUrl is { } oem) buttons.Add(Ui.Button("Web del fabricante del PC", () => OpenUrl(oem)));
+                var btnRow = Ui.Row(buttons.ToArray());
+                btnRow.Margin = new Thickness(0, 6, 0, 0);
+                text.Children.Add(btnRow);
+                var row = new DockPanel { Margin = new Thickness(0, 6, 0, 6) };
+                var old = d.Status == DriverAdvisor.StatusOld;
+                var pill = Ui.Pill(old ? "Antiguo · actualízalo" : d.Status, Ui.Brush(key));
+                if (old && pill.Child is TextBlock pt) pt.FontWeight = FontWeights.SemiBold;
+                DockPanel.SetDock(pill, Dock.Left);
+                row.Children.Add(pill);
+                row.Children.Add(text);
+                sp.Children.Add(row);
+            }
+            if (list.Count == 0) sp.Children.Add(Ui.Muted("No hay drivers de gráfica, red, audio o chipset de un fabricante que revisar (pasa, por ejemplo, en máquinas virtuales)."));
+            sp.Children.Add(Ui.Muted("AUREVIX no instala drivers por su cuenta: te lleva a la página oficial correcta. Windows Update también instala drivers de forma segura."));
+            _drivers.Children.Clear();
+            _drivers.Children.Add(card);
+        }
+        catch { _drivers.Children.Clear(); }
+    }
+
+    private static void OpenUrl(string url)
+    {
+        try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true }); }
+        catch { /* sin navegador no hay nada que hacer */ }
     }
 
     private async Task RunAsync()

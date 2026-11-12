@@ -24,7 +24,7 @@ public partial class App : Application
                 return;
             }
         }
-        Aurevix.ControlCenter.Views.Ui.EnableDarkTitleBars();
+        Aurevix.Installer.Controls.Palette.Apply(); // tema claro u oscuro según Windows + barra de título a juego
         AurevixLog.Initialize(LogDir);
         AurevixLog.Info("AUREVIX Installer iniciado.");
         DispatcherUnhandledException += (_, ex) =>

@@ -18,6 +18,7 @@ public sealed class SettingsPage : UserControl
             Check("Iniciar AUREVIX con Windows (en la bandeja del sistema)", s.StartWithWindows, v => s.StartWithWindows = v),
             Check("Buscar actualizaciones automáticamente", s.CheckUpdatesAutomatically, v => { s.CheckUpdatesAutomatically = v; AppServices.Updates.RestartChecks(); }),
             Check("Mostrar notificaciones", s.Notifications, v => s.Notifications = v),
+            Check("Avisarme de problemas de salud del equipo (disco lleno o con fallos, temperatura alta, driver de gráfica antiguo)", s.HealthAlerts, v => s.HealthAlerts = v),
             Check("Reducir movimiento (sin animaciones)", s.ReduceMotion, v => { s.ReduceMotion = v; Ui.ReduceMotion = v; })));
 
         body.Children.Add(Ui.Card(Ui.H2("Idioma"),

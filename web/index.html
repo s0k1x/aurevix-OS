@@ -14,7 +14,7 @@
     --ease:cubic-bezier(.2,.8,.2,1);--spring:cubic-bezier(.34,1.56,.64,1);
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  html{scroll-behavior:smooth;background:var(--bg)}
+  html{scroll-behavior:smooth;background:var(--bg);-webkit-text-size-adjust:100%;text-size-adjust:100%}
   body{background:var(--bg);color:var(--text);font:15px/1.6 "Segoe UI Variable Text","Segoe UI",Inter,system-ui,-apple-system,"Helvetica Neue",sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
   a{color:inherit}
   img{max-width:100%;display:block}
@@ -233,13 +233,19 @@
   .seg button[aria-pressed="true"]{background:var(--text);color:#08090a;font-weight:600}
   .seg button:hover:not([aria-pressed="true"]){color:var(--text)}
   .caption{color:var(--muted);font-size:13.5px;text-align:center;margin-top:14px;min-height:22px;transition:opacity .3s}
-  @media (max-width:640px){.controls{justify-content:center}.seg button{padding:7px 10px;font-size:12.5px}}
+  .seg button{white-space:nowrap}
+  @media (max-width:640px){.controls{flex-direction:column;align-items:center}
+    #views{max-width:100%;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+    #views::-webkit-scrollbar{display:none}
+    #views button{flex:none;scroll-snap-align:center}
+    .seg button{padding:7px 10px;font-size:12.5px;min-height:40px}}
 
   .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:56px auto 0;width:min(1180px,calc(100% - 40px))}
   .stat{padding:20px;border-radius:18px;border:1px solid var(--line);background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.01))}
-  .stat b{display:block;font-family:"Segoe UI Variable Display","Segoe UI",sans-serif;font-size:30px;letter-spacing:-.02em;font-weight:700}
+  .stat b{display:block;white-space:nowrap;hyphens:none;-webkit-hyphens:none;font-family:"Segoe UI Variable Display","Segoe UI",sans-serif;font-size:30px;letter-spacing:-.02em;font-weight:700}
   .stat span{color:var(--muted);font-size:13.5px}
   @media (max-width:820px){.stats{grid-template-columns:repeat(2,1fr)}.stat b{font-size:24px}}
+  @media (max-width:640px){.stat{padding:16px 14px}.stat b{font-size:clamp(18px,6.4vw,24px)}}
 
   .band{overflow:hidden;border-block:1px solid var(--line);padding:16px 0;margin-top:90px;mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);-webkit-mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)}
   .track{display:flex;gap:44px;width:max-content;animation:band 50s linear infinite;color:var(--muted);font-size:14px;white-space:nowrap}
@@ -397,12 +403,14 @@
   .vrow .t .tg{display:inline-block;margin-left:8px;font-size:11px;font-weight:650;background:var(--accent);color:#0a0b0c;padding:1px 8px;border-radius:999px}
   .vrow .a{display:flex;gap:8px}.vrow .a .ghost{padding:7px 12px;font-size:13px;border-radius:10px}
   @media (max-width:820px){.vrow{grid-template-columns:1fr}}
+  .vrow .t:only-child{grid-column:1/-1;width:100%}
+  .vrow:only-child{grid-template-columns:1fr}
   .download{text-align:center;padding-bottom:90px}
   .download .meta{color:var(--muted);font-size:13.5px;margin-top:14px}
   .download .hash{color:var(--dim);font:11px ui-monospace,Consolas,monospace;margin-top:6px;word-break:break-all}
   .options{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:46px;text-align:left}
-  .options div{padding:22px;border-radius:18px;border:1px solid var(--line);background:rgba(255,255,255,.02)}
-  .options .n{color:var(--accent);font-size:12px;font-weight:650;letter-spacing:.1em}
+  .options>div{padding:22px;border-radius:18px;border:1px solid var(--line);background:rgba(255,255,255,.02)}
+  .options .n{display:inline-block;color:var(--accent);font-size:12px;font-weight:650;letter-spacing:.1em;padding:3px 10px;border-radius:999px;background:rgba(141,224,60,.12)}
   .options h3{margin:8px 0 4px}.options p{color:var(--muted);font-size:14px}
   @media (max-width:820px){.options{grid-template-columns:1fr}}
   .more{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:24px}
@@ -411,7 +419,37 @@
   footer{border-top:1px solid var(--line);padding:26px 0;color:var(--dim);font-size:12.5px}
   footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 
-  @media (max-width:640px){section{padding:84px 0}.hero{padding-top:120px}}
+  /* ---------- Novedades ---------- */
+  .tl{position:relative;margin-top:44px;padding-left:34px;display:grid;gap:18px}
+  .tl::before{content:"";position:absolute;left:9px;top:8px;bottom:8px;width:2px;background:linear-gradient(var(--accent),var(--line2) 40%,var(--line))}
+  .tli{position:relative;padding:22px 24px;border-radius:20px;border:1px solid var(--line);background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.01));-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+  .tli::before{content:"";position:absolute;left:-31px;top:28px;width:12px;height:12px;border-radius:50%;background:var(--bg);border:2px solid var(--dim)}
+  .tli.new{border-color:rgba(141,224,60,.35)}
+  .tli.new::before{background:var(--accent);border-color:var(--accent);box-shadow:0 0 0 5px rgba(141,224,60,.18)}
+  .tli .ver{display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:13px;font-weight:650;letter-spacing:.06em}
+  .tli .tg{font-size:11px;font-weight:650;background:var(--accent);color:#0a0b0c;padding:1px 9px;border-radius:999px;letter-spacing:.02em}
+  .tli h3{margin:6px 0 10px;font-size:19px;line-height:1.3;letter-spacing:-.01em}
+  .tli ul{list-style:none;display:grid;gap:7px}
+  .tli li{position:relative;padding-left:18px;color:var(--muted);font-size:14.5px}
+  .tli li::before{content:"";position:absolute;left:2px;top:.7em;width:6px;height:6px;border-radius:50%;background:var(--accent)}
+  .tli li b{color:var(--text);font-weight:600}
+  /* ---------- Preguntas frecuentes ---------- */
+  .faq{margin-top:40px;display:grid;gap:10px;max-width:860px}
+  .faq details{border-radius:16px;border:1px solid var(--line);background:rgba(255,255,255,.025);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);transition:border-color .3s,background .3s}
+  .faq details[open]{border-color:rgba(141,224,60,.3);background:rgba(255,255,255,.04)}
+  .faq summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 20px;font-weight:600;font-size:16px;border-radius:16px}
+  .faq summary::-webkit-details-marker{display:none}
+  .faq summary::after{content:"+";flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:20px;line-height:1;color:var(--accent);border:1px solid var(--line2);transition:transform .35s var(--spring),background .2s}
+  .faq details[open] summary::after{content:"\2013";transform:rotate(180deg);background:rgba(141,224,60,.12)}
+  .faq summary:hover::after{background:rgba(141,224,60,.12)}
+  .faq .ans{display:grid;grid-template-rows:0fr;transition:grid-template-rows .35s var(--ease)}
+  .faq details[open] .ans{grid-template-rows:1fr}
+  .faq .ans>div{overflow:hidden}
+  .faq .ans p{padding:0 20px 18px;color:var(--muted);font-size:14.5px;max-width:70ch}
+  @media (max-width:640px){#novedades .wrap,#faq .wrap{width:calc(100% - 32px)}.tl{padding-left:28px}.tli{padding:18px}.tli::before{left:-27px}.faq summary{padding:16px;font-size:15px}.faq .ans p{padding:0 16px 16px}}
+
+  @media (max-width:640px){section{padding:68px 0}.hero{padding-top:120px}.download{padding-bottom:68px}
+    .faq summary{min-height:44px}.links a{min-height:40px;display:inline-flex;align-items:center}}
   @media (prefers-reduced-motion:reduce){
     *,*::before,*::after{animation:none!important;transition:none!important}
     .reveal{opacity:1;transform:none}.win.on{opacity:1}
@@ -428,6 +466,8 @@
     <a href="#rendimiento">Rendimiento</a>
     <a href="#nusa">Nusa</a>
     <a href="#instalar">Instalar</a>
+    <a href="#novedades">Novedades</a>
+    <a href="#faq">Preguntas</a>
     <a href="#versiones">Versiones</a>
     <a class="pill" href="#descargar">Descargar</a>
   </div>
@@ -437,7 +477,7 @@
   <!-- ================= Portada ================= -->
   <section class="hero" id="inicio">
     <div class="wrap">
-      <div class="badge reveal"><b id="ver">0.7</b>Shell propio, cristal y 102 ajustes reversibles</div>
+      <div class="badge reveal"><b id="ver">0.10</b>Tu color, tus juegos y un PC que se cuida solo</div>
       <h1 class="reveal d1">Windows 11.<br><span class="grad">Como debería ser.</span></h1>
       <p class="lead reveal d2">AUREVIX es Windows 11 oficial con una capa propia: barra de tareas flotante de cristal, menú Inicio limpio, Configuración rediseñada y el sistema optimizado desde el primer arranque. Tus programas y juegos, igual que siempre.</p>
       <div class="row reveal d3">
@@ -460,11 +500,11 @@
               <div class="tt"><img src="logo.png" alt="">AUREVIX Control Center<span class="sp"></span><span class="c">—</span><span class="c">▢</span><span class="c">✕</span></div>
               <div class="side">
                 <div class="brandc"><img src="logo.png" alt=""><div>AUREVIX<small>Control Center</small></div></div>
-                <div class="nav2"><div class="s">Inicio</div><div>Diagnóstico</div><small>RENDIMIENTO</small><div>Optimización</div><div>Game Boost</div><div>Benchmark</div><div>Red</div><small>SISTEMA</small><div>Apariencia</div><div>Limpieza</div><div>Actualizaciones</div><div>Recuperación</div></div>
+                <div class="nav2"><div class="s">Inicio</div><div>Diagnóstico</div><small>RENDIMIENTO</small><div>Optimización</div><div>Juegos</div><div>Game Boost</div><div>Benchmark</div><div>Red</div><small>SISTEMA</small><div>Apariencia</div><div>Limpieza</div><div>Herramientas</div><div>Actualizaciones</div><div>Recuperación</div></div>
               </div>
               <div class="main">
                 <h5 id="greet">Buenas tardes</h5>
-                <div class="mut">AUREVIX 0.7 · Windows 11 · Todo en orden</div>
+                <div class="mut">AUREVIX 0.10 · Windows 11 · Todo en orden</div>
                 <div class="mets">
                   <div class="met">Procesador<b id="cpu">6 %</b><i>16 hilos</i></div>
                   <div class="met">Memoria<b id="ram">28 %</b><i>9,0 de 32 GB</i></div>
@@ -750,6 +790,81 @@
         <div class="stat reveal d1"><b>SHA-256</b><span>cada paquete verificado</span></div>
         <div class="stat reveal d2"><b>0</b><span>datos personales enviados</span></div>
         <div class="stat reveal d3"><b>Copia</b><span>de todo antes de cada cambio</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= Novedades ================= -->
+  <section id="novedades">
+    <div class="wrap">
+      <div class="eyebrow reveal">Novedades</div>
+      <h2 class="reveal d1">Lo último en AUREVIX OS.</h2>
+      <div class="tl">
+      <article class="tli reveal new">
+        <div class="ver">0.10.0 <span class="tg">Nueva</span></div>
+        <h3>Tu color, tus juegos y un PC que se cuida solo</h3>
+        <ul>
+          <li><b>Color de acento a elegir</b> entre 7 colores, aplicado al momento.</li>
+          <li><b>Tema claro/oscuro automático</b> a una hora fija o con el sol de tu zona.</li>
+          <li><b>Perfiles automáticos</b> (opcionales): Gaming, Eficiencia y Productividad.</li>
+          <li><b>Antes y después</b> de optimizar: arranque, procesos, memoria y espacio.</li>
+          <li><b>Avisos de salud</b> en la bandeja: disco, temperatura, driver o reinicio pendiente.</li>
+          <li><b>Biblioteca de juegos</b>: Steam, Epic y GOG con Jugar y Game Boost.</li>
+          <li><b>Pantalla de bloqueo a tu gusto</b>.</li>
+          <li><b>Mantenimiento semanal y asistente de drivers</b>.</li>
+        </ul>
+      </article>
+      <article class="tli reveal">
+        <div class="ver">0.9.0</div>
+        <h3>ISO más rápida y actualizaciones a prueba de cortes</h3>
+        <ul>
+          <li><b>ISO mucho más rápida</b>: descargas en paralelo que se reanudan.</li>
+          <li><b>ISO preparada de antemano</b> en segundo plano (unos 7 GB de descarga, 18 GB libres).</li>
+          <li><b>Actualizaciones más fiables</b>: reintentos, reanudación y volver a la versión anterior.</li>
+          <li><b>Windows Update</b> en el Control Center con aviso de reinicio pendiente.</li>
+        </ul>
+      </article>
+      <article class="tli reveal">
+        <div class="ver">0.8.0</div>
+        <h3>Un interruptor para cada ajuste y revisión de tu hardware</h3>
+        <ul>
+          <li><b>102 ajustes de rendimiento</b>, cada uno con su interruptor y su efecto explicado.</li>
+          <li><b>Revisión de tu hardware</b>: RAM, discos, BIOS y pantalla, con consejos.</li>
+          <li><b>Exportar copia del registro</b> con los valores originales.</li>
+          <li><b>Game Boost</b> pone la gráfica de alto rendimiento a tus juegos.</li>
+          <li><b>Installer</b>: eliges dónde guardar la ISO y ves el espacio libre.</li>
+        </ul>
+      </article>
+      <article class="tli reveal">
+        <div class="ver">0.7.0</div>
+        <h3>Diseño AUREVIX en Windows real</h3>
+        <ul>
+          <li><b>AUREVIX Shell se aplica solo</b> al iniciar sesión.</li>
+          <li><b>Barra de tareas flotante</b> con efecto cristal y el logo en Inicio.</li>
+          <li><b>Animaciones</b>: los iconos crecen al pasar el ratón.</li>
+          <li><b>Menú Inicio AUREVIX</b> con tinte de cristal y sin «Recomendado».</li>
+        </ul>
+      </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= Preguntas frecuentes ================= -->
+  <section id="faq">
+    <div class="wrap">
+      <div class="eyebrow reveal">Preguntas frecuentes</div>
+      <h2 class="reveal d1">Antes de empezar.</h2>
+      <div class="faq reveal d2">
+        <details><summary>¿Es Windows de verdad?</summary><div class="ans"><div><p>Sí. Es Windows 11 oficial de Microsoft con una capa de AUREVIX por encima. AUREVIX no incluye ni distribuye Windows: lo descarga directamente de Microsoft y necesitas tu propia licencia.</p></div></div></details>
+        <details><summary>¿Necesito licencia?</summary><div class="ans"><div><p>Sí, la de Windows 11. AUREVIX no la incluye ni la vende. Si ya tienes Windows 11 activado en tu PC, puedes seguir usándolo.</p></div></div></details>
+        <details><summary>¿Es seguro?</summary><div class="ans"><div><p>Sí. AUREVIX no desactiva Defender, el Firewall ni el control de cuentas (UAC). Todos los cambios se pueden deshacer, porque se guarda una copia del valor original antes de cada uno.</p></div></div></details>
+        <details><summary>¿Se puede deshacer?</summary><div class="ans"><div><p>Sí. Desde Recuperación puedes volver al valor original de cada ajuste, y con «Restablecer aspecto de Windows 11» quitas el diseño de AUREVIX.</p></div></div></details>
+        <details><summary>¿Funciona en mi PC?</summary><div class="ans"><div><p>Funciona en los PC que cumplen los requisitos oficiales de Windows 11 de Microsoft. Si tu equipo puede ejecutar Windows 11, puede ejecutar AUREVIX.</p></div></div></details>
+        <details><summary>¿Cuánto tarda crear la ISO?</summary><div class="ans"><div><p>Depende de tu conexión. El Installer puede prepararla en segundo plano para que ya esté lista cuando la pidas. Descarga unos 7 GB y necesitas 18 GB libres.</p></div></div></details>
+        <details><summary>¿Puedo usarlo sin USB?</summary><div class="ans"><div><p>Sí. Puedes crear la ISO y montarla sin USB, o instalar AUREVIX directamente sobre el Windows 11 que ya tienes, sin borrar nada. También puedes reinstalar limpio sin USB.</p></div></div></details>
+        <details><summary>¿Cómo se actualiza?</summary><div class="ans"><div><p>Se actualiza solo, desde el Control Center. Puedes elegir el canal: estable o beta. Si una actualización no te convence, puedes volver a la versión anterior.</p></div></div></details>
+        <details><summary>¿Perderé mis juegos o archivos?</summary><div class="ans"><div><p>Si instalas AUREVIX en tu Windows actual, no se borra nada. Solo si eliges «Reinstalar limpio» se empieza de cero, y el Installer te lo deja claro antes.</p></div></div></details>
+        <details><summary>¿Por qué Windows me avisa al abrir el instalador?</summary><div class="ans"><div><p>Es el aviso SmartScreen: aparece porque el instalador aún no está firmado digitalmente. Pulsa «Más información» y después «Ejecutar de todas formas».</p></div></div></details>
       </div>
     </div>
   </section>

@@ -42,7 +42,63 @@ public sealed class OptimizationPage : UserControl
         (Content, _body) = Ui.Page("Rendimiento y optimización",
             "Catálogo propio y revisado. Ningún ajuste desactiva Defender, Firewall, Windows Update, SmartScreen ni UAC. Todo se puede deshacer.");
         _body.Children.Add(Ui.Muted("Comprobando el estado de los ajustes…"));
-        Loaded += async (_, _) => await ReloadAsync();
+        Loaded += async (_, _) => { OptimizationManager.ReportReady += OnReportReady; await ReloadAsync(); };
+        Unloaded += (_, _) => OptimizationManager.ReportReady -= OnReportReady;
+    }
+
+    // El informe se actualiza desde un hilo en segundo plano: se vuelve al hilo de la interfaz.
+    private void OnReportReady() => Dispatcher.BeginInvoke(() => { if (_reportHost is not null) FillReport(_reportHost); });
+
+    private StackPanel? _reportHost;
+    private static readonly System.Globalization.CultureInfo Es = new("es-ES");
+
+    /// <summary>Rellena el contenedor con la tarjeta «Antes y después» (o lo deja vacío si no hay informe).</summary>
+    internal static void FillReport(Panel host)
+    {
+        host.Children.Clear();
+        var rep = OptimizationManager.LastReport;
+        if (rep?.Before is null) return;
+        var before = rep.Before;
+        var after = rep.After;
+
+        var rows = new StackPanel { Margin = new Thickness(0, 8, 0, 0) };
+        void Row(string name, double? b, double? a, string fmt)
+        {
+            if (b is null || a is null) return;
+            var d = Math.Round(a.Value - b.Value, 2);
+            var arrow = new TextBlock { Text = "→", Margin = new Thickness(10, 0, 10, 0), FontWeight = FontWeights.SemiBold,
+                Foreground = d < 0 ? Ui.Brush("Ok") : d > 0 ? Ui.Brush("Review") : Ui.Brush("TextMuted") };
+            var delta = d == 0 ? "sin cambios" : (d < 0 ? "−" : "+") + Math.Abs(d).ToString(fmt, Es);
+            var values = new StackPanel { Orientation = Orientation.Horizontal };
+            values.Children.Add(Ui.Text(b.Value.ToString(fmt, Es)));
+            values.Children.Add(arrow);
+            values.Children.Add(Ui.Text(a.Value.ToString(fmt, Es), 14, FontWeights.SemiBold));
+            values.Children.Add(new TextBlock { Text = $"  ({delta})", Foreground = Ui.Brush("TextMuted"), VerticalAlignment = VerticalAlignment.Center });
+            var row = Ui.Columns(Ui.Text(name), values);
+            row.Margin = new Thickness(0, 3, 0, 3);
+            rows.Children.Add(row);
+        }
+
+        if (after is not null)
+        {
+            Row("Procesos en marcha", before.Processes, after.Processes, "0");
+            Row("Servicios en ejecución", before.ServicesRunning, after.ServicesRunning, "0");
+            Row("RAM en uso (GB)", before.RamUsedGb, after.RamUsedGb, "0.0");
+            Row("Apps que se inician con Windows", before.StartupApps, after.StartupApps, "0");
+            Row("Tareas programadas activas", before.ScheduledTasksActive, after.ScheduledTasksActive, "0");
+            Row("Arranque (s)", before.BootSeconds, after.BootSeconds, "0.0");
+        }
+
+        var info = rep.AtUtc.ToLocalTime().ToString("g", Es);
+        var children = new List<UIElement> { Ui.Eyebrow("ANTES Y DESPUÉS"), Ui.H2(rep.Label), Ui.Muted(info) };
+        if (after is null) children.Add(Ui.Muted("Midiendo el resultado… tarda unos 20 segundos."));
+        else if (rows.Children.Count == 0) children.Add(Ui.Muted("No se han podido comparar las medidas."));
+        else children.Add(rows);
+        children.Add(Ui.Muted("Algunos cambios se notan del todo después de reiniciar."));
+        var btn = Ui.Button("Medir de nuevo", () => { });
+        btn.Click += (_, _) => { btn.IsEnabled = false; btn.Content = "Midiendo…"; _ = OptimizationManager.RemeasureAsync(); };
+        children.Add(Ui.Row(btn));
+        host.Children.Add(Ui.Card([.. children]));
     }
 
     private async Task ReloadAsync()
@@ -61,6 +117,10 @@ public sealed class OptimizationPage : UserControl
         if (!_serviceOk)
             _body.Children.Add(Ui.Card(Ui.Eyebrow("AVISO"), Ui.H2("AUREVIX Core Service no está en ejecución"),
                 Ui.Muted("Sin el servicio solo se pueden aplicar los ajustes de tu usuario. Reinicia el equipo o reinstala AUREVIX para activar los ajustes de sistema.")));
+
+        _reportHost = new StackPanel();
+        FillReport(_reportHost);
+        _body.Children.Add(_reportHost);
 
         _body.Children.Add(FpsCard());
 
