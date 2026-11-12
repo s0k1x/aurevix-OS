@@ -1,0 +1,390 @@
+{
+  "version": 3,
+  "targets": {
+    "net8.0-windows10.0.22000": {
+      "System.CodeDom/8.0.0": {
+        "type": "package",
+        "compile": {
+          "lib/net8.0/System.CodeDom.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/System.CodeDom.dll": {
+            "related": ".xml"
+          }
+        },
+        "build": {
+          "buildTransitive/net6.0/_._": {}
+        }
+      },
+      "System.Management/8.0.0": {
+        "type": "package",
+        "dependencies": {
+          "System.CodeDom": "8.0.0"
+        },
+        "compile": {
+          "lib/net8.0/System.Management.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/System.Management.dll": {
+            "related": ".xml"
+          }
+        },
+        "build": {
+          "buildTransitive/net6.0/_._": {}
+        },
+        "runtimeTargets": {
+          "runtimes/win/lib/net8.0/System.Management.dll": {
+            "assetType": "runtime",
+            "rid": "win"
+          }
+        }
+      },
+      "Aurevix.Core/0.1.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v8.0",
+        "compile": {
+          "bin/placeholder/Aurevix.Core.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Aurevix.Core.dll": {}
+        }
+      },
+      "Aurevix.Diagnostics/0.1.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v8.0",
+        "dependencies": {
+          "Aurevix.Core": "0.1.0",
+          "Aurevix.Performance": "0.1.0",
+          "System.Management": "8.0.0"
+        },
+        "compile": {
+          "bin/placeholder/Aurevix.Diagnostics.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Aurevix.Diagnostics.dll": {}
+        }
+      },
+      "Aurevix.Performance/0.1.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v8.0",
+        "dependencies": {
+          "Aurevix.Core": "0.1.0"
+        },
+        "compile": {
+          "bin/placeholder/Aurevix.Performance.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Aurevix.Performance.dll": {}
+        }
+      },
+      "Aurevix.Update/0.1.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v8.0",
+        "dependencies": {
+          "Aurevix.Core": "0.1.0"
+        },
+        "compile": {
+          "bin/placeholder/Aurevix.Update.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Aurevix.Update.dll": {}
+        }
+      }
+    },
+    "net8.0-windows10.0.22000/win-x64": {
+      "System.CodeDom/8.0.0": {
+        "type": "package",
+        "compile": {
+          "lib/net8.0/System.CodeDom.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/System.CodeDom.dll": {
+            "related": ".xml"
+          }
+        },
+        "build": {
+          "buildTransitive/net6.0/_._": {}
+        }
+      },
+      "System.Management/8.0.0": {
+        "type": "package",
+        "dependencies": {
+          "System.CodeDom": "8.0.0"
+        },
+        "compile": {
+          "lib/net8.0/System.Management.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "runtimes/win/lib/net8.0/System.Management.dll": {
+            "related": ".xml"
+          }
+        },
+        "build": {
+          "buildTransitive/net6.0/_._": {}
+        }
+      },
+      "Aurevix.Core/0.1.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v8.0",
+        "compile": {
+          "bin/placeholder/Aurevix.Core.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Aurevix.Core.dll": {}
+        }
+      },
+      "Aurevix.Diagnostics/0.1.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v8.0",
+        "dependencies": {
+          "Aurevix.Core": "0.1.0",
+          "Aurevix.Performance": "0.1.0",
+          "System.Management": "8.0.0"
+        },
+        "compile": {
+          "bin/placeholder/Aurevix.Diagnostics.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Aurevix.Diagnostics.dll": {}
+        }
+      },
+      "Aurevix.Performance/0.1.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v8.0",
+        "dependencies": {
+          "Aurevix.Core": "0.1.0"
+        },
+        "compile": {
+          "bin/placeholder/Aurevix.Performance.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Aurevix.Performance.dll": {}
+        }
+      },
+      "Aurevix.Update/0.1.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v8.0",
+        "dependencies": {
+          "Aurevix.Core": "0.1.0"
+        },
+        "compile": {
+          "bin/placeholder/Aurevix.Update.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Aurevix.Update.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "System.CodeDom/8.0.0": {
+      "sha512": "WTlRjL6KWIMr/pAaq3rYqh0TJlzpouaQ/W1eelssHgtlwHAH25jXTkUphTYx9HaIIf7XA6qs/0+YhtLEQRkJ+Q==",
+      "type": "package",
+      "path": "system.codedom/8.0.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "Icon.png",
+        "LICENSE.TXT",
+        "THIRD-PARTY-NOTICES.TXT",
+        "buildTransitive/net461/System.CodeDom.targets",
+        "buildTransitive/net462/_._",
+        "buildTransitive/net6.0/_._",
+        "buildTransitive/netcoreapp2.0/System.CodeDom.targets",
+        "lib/net462/System.CodeDom.dll",
+        "lib/net462/System.CodeDom.xml",
+        "lib/net6.0/System.CodeDom.dll",
+        "lib/net6.0/System.CodeDom.xml",
+        "lib/net7.0/System.CodeDom.dll",
+        "lib/net7.0/System.CodeDom.xml",
+        "lib/net8.0/System.CodeDom.dll",
+        "lib/net8.0/System.CodeDom.xml",
+        "lib/netstandard2.0/System.CodeDom.dll",
+        "lib/netstandard2.0/System.CodeDom.xml",
+        "system.codedom.8.0.0.nupkg.sha512",
+        "system.codedom.nuspec",
+        "useSharedDesignerContext.txt"
+      ]
+    },
+    "System.Management/8.0.0": {
+      "sha512": "jrK22i5LRzxZCfGb+tGmke2VH7oE0DvcDlJ1HAKYU8cPmD8XnpUT0bYn2Gy98GEhGjtfbR/sxKTVb+dE770pfA==",
+      "type": "package",
+      "path": "system.management/8.0.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "Icon.png",
+        "LICENSE.TXT",
+        "PACKAGE.md",
+        "THIRD-PARTY-NOTICES.TXT",
+        "buildTransitive/net6.0/_._",
+        "buildTransitive/netcoreapp2.0/System.Management.targets",
+        "lib/net462/_._",
+        "lib/net6.0/System.Management.dll",
+        "lib/net6.0/System.Management.xml",
+        "lib/net7.0/System.Management.dll",
+        "lib/net7.0/System.Management.xml",
+        "lib/net8.0/System.Management.dll",
+        "lib/net8.0/System.Management.xml",
+        "lib/netstandard2.0/System.Management.dll",
+        "lib/netstandard2.0/System.Management.xml",
+        "runtimes/win/lib/net6.0/System.Management.dll",
+        "runtimes/win/lib/net6.0/System.Management.xml",
+        "runtimes/win/lib/net7.0/System.Management.dll",
+        "runtimes/win/lib/net7.0/System.Management.xml",
+        "runtimes/win/lib/net8.0/System.Management.dll",
+        "runtimes/win/lib/net8.0/System.Management.xml",
+        "system.management.8.0.0.nupkg.sha512",
+        "system.management.nuspec",
+        "useSharedDesignerContext.txt"
+      ]
+    },
+    "Aurevix.Core/0.1.0": {
+      "type": "project",
+      "path": "../Aurevix.Core/Aurevix.Core.csproj",
+      "msbuildProject": "../Aurevix.Core/Aurevix.Core.csproj"
+    },
+    "Aurevix.Diagnostics/0.1.0": {
+      "type": "project",
+      "path": "../Aurevix.Diagnostics/Aurevix.Diagnostics.csproj",
+      "msbuildProject": "../Aurevix.Diagnostics/Aurevix.Diagnostics.csproj"
+    },
+    "Aurevix.Performance/0.1.0": {
+      "type": "project",
+      "path": "../Aurevix.Performance/Aurevix.Performance.csproj",
+      "msbuildProject": "../Aurevix.Performance/Aurevix.Performance.csproj"
+    },
+    "Aurevix.Update/0.1.0": {
+      "type": "project",
+      "path": "../Aurevix.Update/Aurevix.Update.csproj",
+      "msbuildProject": "../Aurevix.Update/Aurevix.Update.csproj"
+    }
+  },
+  "projectFileDependencyGroups": {
+    "net8.0-windows10.0.22000": [
+      "Aurevix.Core >= 0.1.0",
+      "Aurevix.Diagnostics >= 0.1.0",
+      "Aurevix.Performance >= 0.1.0",
+      "Aurevix.Update >= 0.1.0"
+    ]
+  },
+  "packageFolders": {
+    "C:\\Users\\runneradmin\\.nuget\\packages\\": {},
+    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
+  },
+  "project": {
+    "version": "0.1.0",
+    "restore": {
+      "projectUniqueName": "D:\\a\\aurevix-OS\\aurevix-OS\\src\\Aurevix.ControlCenter\\Aurevix.ControlCenter.csproj",
+      "projectName": "AurevixControlCenter",
+      "projectPath": "D:\\a\\aurevix-OS\\aurevix-OS\\src\\Aurevix.ControlCenter\\Aurevix.ControlCenter.csproj",
+      "packagesPath": "C:\\Users\\runneradmin\\.nuget\\packages\\",
+      "outputPath": "D:\\a\\aurevix-OS\\aurevix-OS\\src\\Aurevix.ControlCenter\\obj\\",
+      "projectStyle": "PackageReference",
+      "fallbackFolders": [
+        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+      ],
+      "configFilePaths": [
+        "C:\\Users\\runneradmin\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+      ],
+      "originalTargetFrameworks": [
+        "net8.0-windows10.0.22000.0"
+      ],
+      "sources": {
+        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+        "C:\\Program Files\\dotnet\\library-packs": {},
+        "https://api.nuget.org/v3/index.json": {}
+      },
+      "frameworks": {
+        "net8.0-windows10.0.22000": {
+          "targetAlias": "net8.0-windows10.0.22000.0",
+          "projectReferences": {
+            "D:\\a\\aurevix-OS\\aurevix-OS\\src\\Aurevix.Core\\Aurevix.Core.csproj": {
+              "projectPath": "D:\\a\\aurevix-OS\\aurevix-OS\\src\\Aurevix.Core\\Aurevix.Core.csproj"
+            },
+            "D:\\a\\aurevix-OS\\aurevix-OS\\src\\Aurevix.Diagnostics\\Aurevix.Diagnostics.csproj": {
+              "projectPath": "D:\\a\\aurevix-OS\\aurevix-OS\\src\\Aurevix.Diagnostics\\Aurevix.Diagnostics.csproj"
+            },
+            "D:\\a\\aurevix-OS\\aurevix-OS\\src\\Aurevix.Performance\\Aurevix.Performance.csproj": {
+              "projectPath": "D:\\a\\aurevix-OS\\aurevix-OS\\src\\Aurevix.Performance\\Aurevix.Performance.csproj"
+            },
+            "D:\\a\\aurevix-OS\\aurevix-OS\\src\\Aurevix.Update\\Aurevix.Update.csproj": {
+              "projectPath": "D:\\a\\aurevix-OS\\aurevix-OS\\src\\Aurevix.Update\\Aurevix.Update.csproj"
+            }
+          }
+        }
+      },
+      "warningProperties": {
+        "warnAsError": [
+          "NU1605"
+        ]
+      },
+      "restoreAuditProperties": {
+        "enableAudit": "true",
+        "auditLevel": "low",
+        "auditMode": "direct"
+      }
+    },
+    "frameworks": {
+      "net8.0-windows10.0.22000": {
+        "targetAlias": "net8.0-windows10.0.22000.0",
+        "imports": [
+          "net461",
+          "net462",
+          "net47",
+          "net471",
+          "net472",
+          "net48",
+          "net481"
+        ],
+        "assetTargetFallback": true,
+        "warn": true,
+        "downloadDependencies": [
+          {
+            "name": "Microsoft.AspNetCore.App.Runtime.win-x64",
+            "version": "[8.0.34, 8.0.34]"
+          },
+          {
+            "name": "Microsoft.NETCore.App.Runtime.win-x64",
+            "version": "[8.0.34, 8.0.34]"
+          },
+          {
+            "name": "Microsoft.Windows.SDK.NET.Ref",
+            "version": "[10.0.22000.56, 10.0.22000.56]"
+          },
+          {
+            "name": "Microsoft.WindowsDesktop.App.Runtime.win-x64",
+            "version": "[8.0.34, 8.0.34]"
+          }
+        ],
+        "frameworkReferences": {
+          "Microsoft.NETCore.App": {
+            "privateAssets": "all"
+          },
+          "Microsoft.Windows.SDK.NET.Ref": {
+            "privateAssets": "all"
+          },
+          "Microsoft.WindowsDesktop.App": {
+            "privateAssets": "none"
+          }
+        },
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.428/PortableRuntimeIdentifierGraph.json"
+      }
+    },
+    "runtimes": {
+      "win-x64": {
+        "#import": []
+      }
+    }
+  }
+}

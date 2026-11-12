@@ -1,0 +1,14 @@
+D:\a\aurevix-OS\aurevix-OS\out\cc\Aurevix.Performance.deps.json
+D:\a\aurevix-OS\aurevix-OS\out\cc\Aurevix.Performance.dll
+D:\a\aurevix-OS\aurevix-OS\out\cc\Aurevix.Performance.pdb
+D:\a\aurevix-OS\aurevix-OS\src\Aurevix.Performance\obj\Release\net8.0\Aurevix.Performance.csproj.AssemblyReference.cache
+D:\a\aurevix-OS\aurevix-OS\src\Aurevix.Performance\obj\Release\net8.0\Aurevix.Performance.GeneratedMSBuildEditorConfig.editorconfig
+D:\a\aurevix-OS\aurevix-OS\src\Aurevix.Performance\obj\Release\net8.0\Aurevix.Performance.AssemblyInfoInputs.cache
+D:\a\aurevix-OS\aurevix-OS\src\Aurevix.Performance\obj\Release\net8.0\Aurevix.Performance.AssemblyInfo.cs
+D:\a\aurevix-OS\aurevix-OS\src\Aurevix.Performance\obj\Release\net8.0\Aurevix.Performance.csproj.CoreCompileInputs.cache
+D:\a\aurevix-OS\aurevix-OS\src\Aurevix.Performance\obj\Release\net8.0\Aurevix.Performance.sourcelink.json
+D:\a\aurevix-OS\aurevix-OS\src\Aurevix.Performance\obj\Release\net8.0\Aurevix..B4F97066.Up2Date
+D:\a\aurevix-OS\aurevix-OS\src\Aurevix.Performance\obj\Release\net8.0\Aurevix.Performance.dll
+D:\a\aurevix-OS\aurevix-OS\src\Aurevix.Performance\obj\Release\net8.0\refint\Aurevix.Performance.dll
+D:\a\aurevix-OS\aurevix-OS\src\Aurevix.Performance\obj\Release\net8.0\Aurevix.Performance.pdb
+D:\a\aurevix-OS\aurevix-OS\src\Aurevix.Performance\obj\Release\net8.0\ref\Aurevix.Performance.dll

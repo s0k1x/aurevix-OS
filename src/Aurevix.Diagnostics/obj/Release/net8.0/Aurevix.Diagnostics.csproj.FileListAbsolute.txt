@@ -1,0 +1,14 @@
+D:\a\aurevix-OS\aurevix-OS\out\cc\Aurevix.Diagnostics.deps.json
+D:\a\aurevix-OS\aurevix-OS\out\cc\Aurevix.Diagnostics.dll
+D:\a\aurevix-OS\aurevix-OS\out\cc\Aurevix.Diagnostics.pdb
+D:\a\aurevix-OS\aurevix-OS\src\Aurevix.Diagnostics\obj\Release\net8.0\Aurevix.Diagnostics.csproj.AssemblyReference.cache
+D:\a\aurevix-OS\aurevix-OS\src\Aurevix.Diagnostics\obj\Release\net8.0\Aurevix.Diagnostics.GeneratedMSBuildEditorConfig.editorconfig
+D:\a\aurevix-OS\aurevix-OS\src\Aurevix.Diagnostics\obj\Release\net8.0\Aurevix.Diagnostics.AssemblyInfoInputs.cache
+D:\a\aurevix-OS\aurevix-OS\src\Aurevix.Diagnostics\obj\Release\net8.0\Aurevix.Diagnostics.AssemblyInfo.cs
+D:\a\aurevix-OS\aurevix-OS\src\Aurevix.Diagnostics\obj\Release\net8.0\Aurevix.Diagnostics.csproj.CoreCompileInputs.cache
+D:\a\aurevix-OS\aurevix-OS\src\Aurevix.Diagnostics\obj\Release\net8.0\Aurevix.Diagnostics.sourcelink.json
+D:\a\aurevix-OS\aurevix-OS\src\Aurevix.Diagnostics\obj\Release\net8.0\Aurevix..B0990206.Up2Date
+D:\a\aurevix-OS\aurevix-OS\src\Aurevix.Diagnostics\obj\Release\net8.0\Aurevix.Diagnostics.dll
+D:\a\aurevix-OS\aurevix-OS\src\Aurevix.Diagnostics\obj\Release\net8.0\refint\Aurevix.Diagnostics.dll
+D:\a\aurevix-OS\aurevix-OS\src\Aurevix.Diagnostics\obj\Release\net8.0\Aurevix.Diagnostics.pdb
+D:\a\aurevix-OS\aurevix-OS\src\Aurevix.Diagnostics\obj\Release\net8.0\ref\Aurevix.Diagnostics.dll

@@ -1,0 +1,15 @@
+D:\a\aurevix-OS\aurevix-OS\out\cc\Aurevix.Core.deps.json
+D:\a\aurevix-OS\aurevix-OS\out\cc\Aurevix.Core.dll
+D:\a\aurevix-OS\aurevix-OS\out\cc\Aurevix.Core.pdb
+D:\a\aurevix-OS\aurevix-OS\src\Aurevix.Core\obj\Release\net8.0\Aurevix.Core.GeneratedMSBuildEditorConfig.editorconfig
+D:\a\aurevix-OS\aurevix-OS\src\Aurevix.Core\obj\Release\net8.0\Aurevix.Core.AssemblyInfoInputs.cache
+D:\a\aurevix-OS\aurevix-OS\src\Aurevix.Core\obj\Release\net8.0\Aurevix.Core.AssemblyInfo.cs
+D:\a\aurevix-OS\aurevix-OS\src\Aurevix.Core\obj\Release\net8.0\Aurevix.Core.csproj.CoreCompileInputs.cache
+D:\a\aurevix-OS\aurevix-OS\src\Aurevix.Core\obj\Release\net8.0\Aurevix.Core.sourcelink.json
+D:\a\aurevix-OS\aurevix-OS\src\Aurevix.Core\obj\Release\net8.0\Aurevix.Core.dll
+D:\a\aurevix-OS\aurevix-OS\src\Aurevix.Core\obj\Release\net8.0\refint\Aurevix.Core.dll
+D:\a\aurevix-OS\aurevix-OS\src\Aurevix.Core\obj\Release\net8.0\Aurevix.Core.pdb
+D:\a\aurevix-OS\aurevix-OS\src\Aurevix.Core\obj\Release\net8.0\ref\Aurevix.Core.dll
+D:\a\aurevix-OS\aurevix-OS\out\inst\Aurevix.Core.deps.json
+D:\a\aurevix-OS\aurevix-OS\out\inst\Aurevix.Core.dll
+D:\a\aurevix-OS\aurevix-OS\out\inst\Aurevix.Core.pdb

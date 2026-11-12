@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "4z4F1P9OXvg=",
+  "success": true,
+  "projectFilePath": "D:\\a\\aurevix-OS\\aurevix-OS\\src\\Aurevix.Diagnostics\\Aurevix.Diagnostics.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\runneradmin\\.nuget\\packages\\system.codedom\\8.0.0\\system.codedom.8.0.0.nupkg.sha512",
+    "C:\\Users\\runneradmin\\.nuget\\packages\\system.management\\8.0.0\\system.management.8.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}
