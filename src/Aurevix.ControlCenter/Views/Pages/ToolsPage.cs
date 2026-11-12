@@ -42,8 +42,8 @@ public sealed class ToolsPage : UserControl
                 Report("Conexiones activas (netstat -ano)", "netstat.exe", "-ano", false),
                 Report("Ajustes TCP (netsh)", "netsh.exe", "int tcp show global", false),
                 Report("Planes de energía (powercfg /list)", "powercfg.exe", "/list", false),
-                Report("Servicios en ejecución", "powershell.exe", "-NoProfile -Command \"Get-Service | Where-Object Status -eq Running | Sort-Object DisplayName | Format-Table -AutoSize Name,DisplayName | Out-String -Width 200\"", true),
-                Report("Tareas programadas activas", "powershell.exe", "-NoProfile -Command \"Get-ScheduledTask | Where-Object State -ne Disabled | Sort-Object TaskPath | Format-Table -AutoSize TaskPath,TaskName,State | Out-String -Width 220\"", true))));
+                Report("Servicios en ejecución", "powershell.exe", "-NoProfile -Command \"[Console]::OutputEncoding=[Text.Encoding]::UTF8; Get-Service | Where-Object Status -eq Running | Sort-Object DisplayName | Format-Table -AutoSize Name,DisplayName | Out-String -Width 200\"", true),
+                Report("Tareas programadas activas", "powershell.exe", "-NoProfile -Command \"[Console]::OutputEncoding=[Text.Encoding]::UTF8; Get-ScheduledTask | Where-Object State -ne Disabled | Sort-Object TaskPath | Format-Table -AutoSize TaskPath,TaskName,State | Out-String -Width 220\"", true))));
 
         body.Children.Add(Section("Discos y memoria",
             Svc("Optimizar unidades", "TRIM en SSD y desfragmentación en discos duros, como hace Windows.", "optimize-drives"),
@@ -113,7 +113,7 @@ public sealed class ToolsPage : UserControl
         if (!Confirm($"{title}\n\nPuede tardar varios minutos. Puedes seguir usando el equipo. ¿Continuar?")) return;
         var r = await CoreServiceClient.SendAsync(new CoreRequest { Op = "maintenance", Action = action }, TimeSpan.FromMinutes(90));
         MessageBox.Show(r.Ok ? string.Join("\n", r.Messages) : r.Error ?? "Error", title);
-        if (action == "energy-report")
+        if (r.Ok && action == "energy-report")
         {
             var html = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "AUREVIX", "informe-energia.html");
             if (File.Exists(html)) { try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(html) { UseShellExecute = true }); } catch { } }

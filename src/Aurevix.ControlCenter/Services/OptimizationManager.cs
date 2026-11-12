@@ -143,7 +143,11 @@ public static class OptimizationManager
         var undo = await RevertAsync(rec);
         if (!undo.Success) return undo;
         if (rest.Count == 0) return undo;
-        var again = await ApplyAsync(catalog.Where(t => rest.Contains(t.Id)).ToList(), rec.Label);
+        var restDefs = catalog.Where(t => rest.Contains(t.Id)).ToList();
+        var again = await ApplyAsync(restDefs, rec.Label);
+        if (!again.Success)
+            return new(false, undo.RequiresRestart || again.RequiresRestart,
+                [$"Se desactivó «{tweak.Title}», pero no se pudieron volver a aplicar: " + string.Join(", ", restDefs.Select(t => t.Title)), .. again.Messages], again.Record);
         return new(again.Success, undo.RequiresRestart || again.RequiresRestart, [$"Desactivado: {tweak.Title}", .. again.Messages], again.Record);
     }
 

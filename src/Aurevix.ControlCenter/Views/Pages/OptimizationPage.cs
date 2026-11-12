@@ -74,7 +74,7 @@ public sealed class OptimizationPage : UserControl
 
         // Cada ajuste, con su interruptor
         _body.Children.Add(Section("Todos los ajustes", "Activa o desactiva cada ajuste al momento. Cada uno indica si AUREVIX lo recomienda, para qué sirve y qué inconvenientes tiene. Al desactivarlo vuelve exactamente el valor que tenías."));
-        var search = new TextBox { Width = 280, Margin = new Thickness(0, 0, 12, 0), ToolTip = "Buscar un ajuste" };
+        var search = new TextBox { Width = 280, Margin = new Thickness(0, 0, 12, 0), ToolTip = "Buscar un ajuste", Text = _query };
         search.TextChanged += (_, _) => { _query = search.Text.Trim(); BuildCatalog(); };
         var bar = Ui.Wrap(Ui.Muted("Buscar:"), search);
         foreach (var (id, name) in new[] { ("all", "Todos"), ("recommended", "Recomendados"), ("applied", "Activados") })
@@ -184,8 +184,15 @@ public sealed class OptimizationPage : UserControl
             if (!r.Success) MessageBox.Show(string.Join("\n", r.Messages), t.Title, MessageBoxButton.OK, MessageBoxImage.Warning);
             else if (r.RequiresRestart) RestartPrompt.Ask("Reinicia para completar el cambio", $"«{t.Title}» se termina de aplicar al reiniciar.");
         }
-        finally { _busy = false; }
-        await ReloadAsync();
+        catch (Exception ex)
+        {
+            MessageBox.Show($"No se pudo cambiar «{t.Title}»:\n{ex.Message}", t.Title, MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+        finally
+        {
+            _busy = false;
+            await ReloadAsync();
+        }
     }
 
     private static StackPanel Section(string title, string subtitle)
