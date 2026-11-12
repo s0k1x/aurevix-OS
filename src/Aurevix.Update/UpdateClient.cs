@@ -15,6 +15,8 @@ public sealed class UpdateClientOptions
     public TimeSpan Timeout { get; init; } = TimeSpan.FromSeconds(30);
     public long MaxManifestBytes { get; init; } = 256 * 1024;
     public long MaxPackageBytes { get; init; } = 1024L * 1024 * 1024;
+    /// <summary>Esperas entre reintentos ante fallos de red (un reintento por elemento).</summary>
+    public IReadOnlyList<TimeSpan> RetryDelays { get; init; } = [TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(6), TimeSpan.FromSeconds(15)];
 }
 
 public enum UpdateStatus { UpToDate, Available, NotEligibleYet, RequiresManualUpdate, Error }
@@ -38,15 +40,18 @@ public sealed class UpdateClient(UpdateClientOptions options, HttpClient http)
         long lastSeenSequence = 0, DateTimeOffset? now = null, CancellationToken ct = default)
     {
         if (!UpdateChannels.IsValid(channel))
-            return new(UpdateStatus.Error, null, null, $"Canal desconocido: {channel}");
+        {
+            AurevixLog.Warn($"Canal desconocido: {channel}");
+            return new(UpdateStatus.Error, null, null, "El canal de actualizaciones elegido no existe. Vuelve a «Estable» en Ajustes.");
+        }
         try
         {
             var baseUrl = options.ManifestBaseUrl.ToString().TrimEnd('/');
-            var manifestBytes = await GetBytesLimitedAsync(new Uri($"{baseUrl}/{channel}/manifest.json"), options.MaxManifestBytes, ct);
-            var sigBytes = await GetBytesLimitedAsync(new Uri($"{baseUrl}/{channel}/manifest.json.sig"), 16 * 1024, ct);
+            var manifestBytes = await WithRetryAsync(t => GetBytesLimitedAsync(new Uri($"{baseUrl}/{channel}/manifest.json"), options.MaxManifestBytes, t), ct);
+            var sigBytes = await WithRetryAsync(t => GetBytesLimitedAsync(new Uri($"{baseUrl}/{channel}/manifest.json.sig"), 16 * 1024, t), ct);
             return Evaluate(manifestBytes, System.Text.Encoding.UTF8.GetString(sigBytes), current, channel, installId, lastSeenSequence, now ?? DateTimeOffset.UtcNow);
         }
-        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or IOException)
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or IOException or InvalidDataException)
         {
             AurevixLog.Warn($"Comprobación de actualizaciones fallida: {ex.Message}");
             return new(UpdateStatus.Error, null, null, "No se pudo contactar con el servidor de actualizaciones.");
@@ -60,7 +65,10 @@ public sealed class UpdateClient(UpdateClientOptions options, HttpClient http)
         ManifestSignature? sig;
         try { sig = ManifestSigner.ParseSignature(signatureJson); } catch (JsonException) { sig = null; }
         if (sig is null || !ManifestSigner.Verify(manifestBytes, sig, options.TrustedKeys))
-            return new(UpdateStatus.Error, null, null, "La firma del manifiesto no es válida. Se ignora la actualización.");
+        {
+            AurevixLog.Warn("Firma del manifiesto inválida o clave no confiable. Se ignora la actualización.");
+            return new(UpdateStatus.Error, null, null, "La actualización no tiene una firma válida de AUREVIX y no se instalará.");
+        }
 
         UpdateManifest? m;
         try { m = JsonSerializer.Deserialize<UpdateManifest>(manifestBytes, JsonDefaults.Options); }
@@ -72,7 +80,10 @@ public sealed class UpdateClient(UpdateClientOptions options, HttpClient http)
         if (m.ExpiresAt < now)
             return new(UpdateStatus.Error, null, m, "El manifiesto ha caducado.");
         if (m.Sequence < lastSeenSequence)
-            return new(UpdateStatus.Error, null, m, "El manifiesto es más antiguo que uno ya visto (posible downgrade). Se ignora.");
+        {
+            AurevixLog.Warn($"Manifiesto con secuencia {m.Sequence} < {lastSeenSequence} (posible downgrade). Se ignora.");
+            return new(UpdateStatus.Error, null, m, "Esta versión es más antigua que la que tienes; no se instala.");
+        }
 
         var r = m.Latest;
         if (r is null || !SemVersion.TryParse(r.Version, out var latest))
@@ -119,7 +130,10 @@ public sealed class UpdateClient(UpdateClientOptions options, HttpClient http)
         return bucket < percent;
     }
 
-    /// <summary>Descarga un paquete a destino verificando tamaño y SHA-256. Si falla, borra el fichero parcial.</summary>
+    /// <summary>
+    /// Descarga un paquete a destino verificando tamaño y SHA-256. Ante cortes de red conserva el .partial y
+    /// reanuda con Range; solo lo borra si el tamaño o el hash no cuadran.
+    /// </summary>
     public async Task<string> DownloadAsync(PackageInfo p, string directory, IProgress<double>? progress = null, CancellationToken ct = default)
     {
         var problem = ValidatePackage(p);
@@ -134,38 +148,104 @@ public sealed class UpdateClient(UpdateClientOptions options, HttpClient http)
 
         try
         {
-            using var resp = await http.GetAsync(p.Url, HttpCompletionOption.ResponseHeadersRead, ct);
-            resp.EnsureSuccessStatusCode();
-            await using (var src = await resp.Content.ReadAsStreamAsync(ct))
-            await using (var dst = File.Create(partial))
-            {
-                var buffer = new byte[81920];
-                long total = 0;
-                int read;
-                while ((read = await src.ReadAsync(buffer, ct)) > 0)
-                {
-                    total += read;
-                    if (total > p.Size) throw new InvalidDataException("El paquete es mayor de lo declarado en el manifiesto.");
-                    await dst.WriteAsync(buffer.AsMemory(0, read), ct);
-                    progress?.Report((double)total / p.Size);
-                }
-                if (total != p.Size) throw new InvalidDataException("El tamaño descargado no coincide con el manifiesto.");
-            }
+            await WithRetryAsync(t => DownloadChunkAsync(p, partial, progress, t), ct);
 
             var hash = await ComputeSha256Async(partial, ct);
             if (!string.Equals(hash, p.Sha256, StringComparison.OrdinalIgnoreCase))
-                throw new InvalidDataException("El hash SHA-256 del paquete no coincide. Se descarta.");
+            {
+                AurevixLog.Warn($"Hash SHA-256 de {p.Id} no coincide (esperado {p.Sha256}, obtenido {hash}). Se descarta.");
+                throw new InvalidDataException(DamagedDownloadMessage);
+            }
 
             File.Move(partial, final, overwrite: true);
             AurevixLog.Info($"Paquete {p.Id} descargado y verificado.");
             return final;
         }
-        catch
+        catch (InvalidDataException)
         {
+            // Tamaño o hash incorrectos: el parcial no es fiable.
             try { File.Delete(partial); } catch { }
             throw;
         }
+        // Resto de errores (red, cancelación): se conserva el .partial para reanudar.
     }
+
+    private const string DamagedDownloadMessage = "La descarga llegó dañada. Se volverá a intentar más tarde.";
+
+    private async Task DownloadChunkAsync(PackageInfo p, string partial, IProgress<double>? progress, CancellationToken ct)
+    {
+        long existing = File.Exists(partial) ? new FileInfo(partial).Length : 0;
+        if (existing > p.Size) { File.Delete(partial); existing = 0; }
+
+        if (existing < p.Size)
+        {
+            using var req = new HttpRequestMessage(HttpMethod.Get, p.Url);
+            if (existing > 0) req.Headers.Range = new System.Net.Http.Headers.RangeHeaderValue(existing, null);
+            using var resp = await http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
+
+            if (resp.StatusCode == System.Net.HttpStatusCode.RequestedRangeNotSatisfiable)
+            {
+                try { File.Delete(partial); } catch { }
+                throw new IOException("El servidor rechazó el rango; se empieza de cero.");
+            }
+            resp.EnsureSuccessStatusCode();
+
+            // 206 con el inicio esperado: se añade; 200 (sin soporte de rangos): de cero.
+            var resume = existing > 0 && resp.StatusCode == System.Net.HttpStatusCode.PartialContent
+                && resp.Content.Headers.ContentRange?.From == existing;
+            if (!resume) existing = 0;
+
+            await using var src = await resp.Content.ReadAsStreamAsync(ct);
+            await using var dst = new FileStream(partial, resume ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.Read);
+            var buffer = new byte[81920];
+            long total = existing;
+            int read;
+            while ((read = await src.ReadAsync(buffer, ct)) > 0)
+            {
+                total += read;
+                if (total > p.Size)
+                {
+                    AurevixLog.Warn($"El paquete {p.Id} es mayor de lo declarado en el manifiesto.");
+                    throw new InvalidDataException(DamagedDownloadMessage);
+                }
+                await dst.WriteAsync(buffer.AsMemory(0, read), ct);
+                progress?.Report((double)total / p.Size);
+            }
+            await dst.FlushAsync(ct);
+            if (total < p.Size)
+            {
+                // Corte sin error explícito: se conserva lo descargado y se reintenta.
+                throw new IOException("Conexión cortada antes de terminar la descarga.");
+            }
+        }
+    }
+
+    /// <summary>Reintenta ante errores de red, HTTP 5xx o timeout. Nunca reintenta firma/hash/tamaño ni cancelaciones del usuario.</summary>
+    private async Task<T> WithRetryAsync<T>(Func<CancellationToken, Task<T>> op, CancellationToken ct)
+    {
+        for (var attempt = 0; ; attempt++)
+        {
+            try { return await op(ct); }
+            catch (Exception ex) when (attempt < options.RetryDelays.Count && IsTransient(ex, ct))
+            {
+                AurevixLog.Warn($"Fallo de red (intento {attempt + 1}): {ex.Message}. Reintentando.");
+                await Task.Delay(options.RetryDelays[attempt], ct);
+            }
+        }
+    }
+
+    private Task WithRetryAsync(Func<CancellationToken, Task> op, CancellationToken ct) =>
+        WithRetryAsync<bool>(async t => { await op(t); return true; }, ct);
+
+    private static bool IsTransient(Exception ex, CancellationToken ct) => ex switch
+    {
+        _ when ct.IsCancellationRequested => false,
+        InvalidDataException => false,
+        HttpRequestException h => h.StatusCode is null || (int)h.StatusCode >= 500,
+        TaskCanceledException => true, // timeout (no cancelación del llamador)
+        IOException => true,
+        _ => false,
+    };
 
     public static async Task<string> ComputeSha256Async(string path, CancellationToken ct = default)
     {
@@ -187,7 +267,7 @@ public sealed class UpdateClient(UpdateClientOptions options, HttpClient http)
         int read;
         while ((read = await s.ReadAsync(buffer, cts.Token)) > 0)
         {
-            if (ms.Length + read > max) throw new IOException("Respuesta demasiado grande.");
+            if (ms.Length + read > max) throw new InvalidDataException("Respuesta demasiado grande.");
             ms.Write(buffer, 0, read);
         }
         return ms.ToArray();
