@@ -1,3 +1,12 @@
+## AUREVIX OS 0.8.0 — Un interruptor para cada ajuste
+
+- **95 ajustes de rendimiento** (7 nuevos): apagado y reinicio más rápidos, espera razonable al cerrar servicios, sin historial de actividad, sin panel de bienvenida de Game Bar, Game DVR desactivado por directiva (Competitivo), y opcionales: menús instantáneos y cerrar apps automáticamente al apagar.
+- **Control Center: un interruptor por ajuste**. Se activa o desactiva al momento; al desactivarlo vuelve exactamente el valor que tenías. Cada ajuste dice si es **Recomendado**, **Para jugar**, **Competitivo** u **Opcional**, con su efecto y sus inconvenientes. Filtro (Todos, Recomendados, Activados), buscador y «Activar recomendados» por categoría.
+- **Rendimiento por defecto al instalar**: el asistente aplica el nivel Rendimiento (incluye todos los recomendados). Todo reversible.
+- **Mantenimiento**: nuevo «Activar TRIM en NTFS si estuviera desactivado», junto a DISM, SFC, CHKDSK, TRIM y DNS.
+- **Installer: eliges dónde guardar la ISO** (Descargas por defecto) y te dice el espacio libre de esa unidad antes de empezar.
+- **Web nueva**: el escritorio real de AUREVIX con sus vistas (Control Center, Inicio, Configuración, Explorador) en claro y oscuro, Nusa animada, los interruptores de rendimiento y el instalador.
+
 ## AUREVIX OS 0.7.0 — Diseño AUREVIX en Windows real
 
 - **AUREVIX Shell se aplica solo**, sin hacer nada, al iniciar sesión: barra de tareas, menú Inicio y Configuración. Probado en Windows real.
