@@ -51,3 +51,7 @@
 6. **[2026-11-12] Iconos: el usuario quiere los de Windows; cursores también los de Windows**
    Do instead: no aplicar iconos ni cursores AUREVIX; el estilo es barra flotante con cristal, logo en Inicio, Inicio sin «Recomendado», Configuración y Explorador con cristal.
 
+
+- El Installer enlaza `src/Aurevix.ControlCenter/Views/Ui.cs`: ese archivo no puede usar nada del Control Center (AppServices, Services…). Para datos del CC usar `Ui.AccentSource` u otro hook que el CC asigna en App.xaml.cs.
+- El repo se llama ahora `s0k1x/aurevix-OS`, pero las herramientas de GitHub de la sesión siguen usando `sistema-OS-aurevix-OS`.
+- Web: para ver todas las secciones en capturas hay que bajar la página poco a poco (aparecen al hacer scroll). Script: scratchpad/dev2.js.
