@@ -15,6 +15,8 @@ public sealed class ProfilesPage : UserControl
         var (root, body) = Ui.Page("Perfiles", "Cada perfil es un conjunto de ajustes documentados. Al cambiar de perfil se deshace el anterior.");
         var active = AppServices.State.ActiveProfile;
 
+        body.Children.Add(AutoCard());
+
         foreach (var p in AppServices.Profiles)
         {
             var plan = AppServices.ProfileManager.ResolvePowerPlan(p);
@@ -39,6 +41,43 @@ public sealed class ProfilesPage : UserControl
                 Ui.Row(Ui.Button("Deshacer perfil activo", Undo))));
 
         Content = root;
+    }
+
+    /// <summary>Tarjeta «Perfiles automáticos»: interruptor general, tres reglas y estado actual.</summary>
+    private UIElement AutoCard()
+    {
+        var s = AppServices.Settings;
+        var status = Ui.Muted("Ahora: " + AutoProfiles.Status);
+        var rules = new StackPanel { Margin = new Thickness(0, 6, 0, 0), IsEnabled = s.AutoProfiles };
+
+        var master = new CheckBox { Content = "Cambiar de perfil automáticamente", Style = Ui.Res<Style>("Switch"), IsChecked = s.AutoProfiles };
+        master.Checked += (_, _) => { s.AutoProfiles = true; AppServices.SaveSettings(); rules.IsEnabled = true; };
+        master.Unchecked += (_, _) => { s.AutoProfiles = false; AppServices.SaveSettings(); rules.IsEnabled = false; };
+
+        rules.Children.Add(Rule("Juego", "Al abrir un juego, se activa el perfil Gaming.", s.AutoProfileGaming, v => s.AutoProfileGaming = v));
+        rules.Children.Add(Rule("Batería", "Si el portátil va sin enchufar, se activa el perfil Eficiencia para que dure más.", s.AutoProfileBattery, v => s.AutoProfileBattery = v));
+        rules.Children.Add(Rule("Trabajo", "Al abrir Word, Excel, Outlook, Teams o Visual Studio, se activa el perfil Productividad.", s.AutoProfileWork, v => s.AutoProfileWork = v));
+
+        // El estado se refresca cuando el modo automático cambia de perfil.
+        Action<string> onChanged = _ => Dispatcher.BeginInvoke(() => status.Text = "Ahora: " + AutoProfiles.Status);
+        AutoProfiles.Changed += onChanged;
+        Unloaded += (_, _) => AutoProfiles.Changed -= onChanged;
+
+        return Ui.Card(Ui.H2("Perfiles automáticos"),
+            Ui.Muted("AUREVIX elige el perfil por ti según lo que estés haciendo. Espera unos segundos antes de cambiar y, cuando termina, vuelve al perfil que tenías elegido."),
+            master, rules, status);
+    }
+
+    private static UIElement Rule(string title, string help, bool value, Action<bool> set)
+    {
+        var cb = new CheckBox { Content = title, IsChecked = value, Margin = new Thickness(0, 4, 0, 0) };
+        cb.Checked += (_, _) => { set(true); AppServices.SaveSettings(); };
+        cb.Unchecked += (_, _) => { set(false); AppServices.SaveSettings(); };
+        var p = new StackPanel();
+        p.Children.Add(cb);
+        var m = Ui.Muted(help); m.Margin = new Thickness(22, 0, 0, 2);
+        p.Children.Add(m);
+        return p;
     }
 
     private void Apply(ProfileDefinition p)
