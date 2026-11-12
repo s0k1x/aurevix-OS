@@ -74,7 +74,7 @@ public sealed class OptimizationPage : UserControl
 
         // Cada ajuste, con su interruptor
         _body.Children.Add(Section("Todos los ajustes", "Activa o desactiva cada ajuste al momento. Cada uno indica si AUREVIX lo recomienda, para qué sirve y qué inconvenientes tiene. Al desactivarlo vuelve exactamente el valor que tenías."));
-        var search = new TextBox { Width = 280, Margin = new Thickness(0, 0, 12, 0), ToolTip = "Buscar un ajuste", Text = _query };
+        var search = new TextBox { Width = 220, Padding = new Thickness(6, 4, 6, 4), Margin = new Thickness(0, 0, 18, 0), VerticalAlignment = VerticalAlignment.Center, ToolTip = "Buscar un ajuste", Text = _query };
         search.TextChanged += (_, _) => { _query = search.Text.Trim(); BuildCatalog(); };
         var bar = Ui.Wrap(Ui.Muted("Buscar:"), search);
         foreach (var (id, name) in new[] { ("all", "Todos"), ("recommended", "Recomendados"), ("applied", "Activados") })
