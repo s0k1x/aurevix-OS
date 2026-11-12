@@ -271,7 +271,7 @@ public sealed class AppearancePage : UserControl
         var name = Path.GetFileNameWithoutExtension(path).Replace("Aurevix-", "");
         var frame = new Border
         {
-            Width = 220, Height = 124, CornerRadius = new CornerRadius(12), BorderThickness = new Thickness(1), BorderBrush = Ui.Brush("BorderBrushAx"),
+            Width = onPick is null ? 220 : 150, Height = onPick is null ? 124 : 84, CornerRadius = new CornerRadius(12), BorderThickness = new Thickness(1), BorderBrush = Ui.Brush("BorderBrushAx"),
             Background = new System.Windows.Media.ImageBrush(bmp) { Stretch = System.Windows.Media.Stretch.UniformToFill }, Cursor = System.Windows.Input.Cursors.Hand
         };
         var label = Ui.Muted(name);

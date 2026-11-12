@@ -115,7 +115,7 @@ public sealed class DiagnosticsPage : UserControl
                 row.Children.Add(text);
                 sp.Children.Add(row);
             }
-            if (list.Count == 0) sp.Children.Add(Ui.Muted("No se han detectado drivers que revisar."));
+            if (list.Count == 0) sp.Children.Add(Ui.Muted("No hay drivers de gráfica, red, audio o chipset de un fabricante que revisar (pasa, por ejemplo, en máquinas virtuales)."));
             sp.Children.Add(Ui.Muted("AUREVIX no instala drivers por su cuenta: te lleva a la página oficial correcta. Windows Update también instala drivers de forma segura."));
             _drivers.Children.Clear();
             _drivers.Children.Add(card);
