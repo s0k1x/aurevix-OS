@@ -31,6 +31,11 @@ public static class CoreServiceProtocol
         ["optimize-drives"] = "Optimizar unidades (TRIM en SSD, desfragmentar en HDD)",
         ["purge-standby"] = "Vaciar la memoria en espera (como ISLC)",
         ["power-defaults"] = "Restaurar los planes de energía de fábrica de Windows",
+        ["dism-checkhealth"] = "Comprobar la imagen de Windows (DISM /CheckHealth)",
+        ["dism-scanhealth"] = "Analizar la imagen de Windows a fondo (DISM /ScanHealth)",
+        ["trim-query"] = "Ver si TRIM está activado",
+        ["ip-renew"] = "Renovar la dirección IP",
+        ["energy-report"] = "Informe de energía (30 s)",
     };
 
     /// <summary>Proveedores DNS permitidos. El cliente solo envía el identificador.</summary>

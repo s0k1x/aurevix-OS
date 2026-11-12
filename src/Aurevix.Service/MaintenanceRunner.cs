@@ -20,7 +20,15 @@ public sealed class MaintenanceRunner : IMaintenanceRunner
         ["chkdsk-scan"] = ("chkdsk.exe", "C: /scan"),
         ["power-defaults"] = ("powercfg.exe", "-restoredefaultschemes"),
         ["optimize-drives"] = ("powershell.exe", "-NoProfile -NonInteractive -Command \"Get-Volume | Where-Object { $_.DriveLetter -and $_.DriveType -eq 'Fixed' } | ForEach-Object { Optimize-Volume -DriveLetter $_.DriveLetter }\""),
+        ["dism-checkhealth"] = ("dism.exe", "/Online /Cleanup-Image /CheckHealth"),
+        ["dism-scanhealth"] = ("dism.exe", "/Online /Cleanup-Image /ScanHealth"),
+        ["trim-query"] = ("fsutil.exe", "behavior query DisableDeleteNotify"),
+        ["ip-renew"] = ("cmd.exe", "/c ipconfig /release && ipconfig /renew"),
+        ["energy-report"] = ("powercfg.exe", "/energy /output \"%ProgramData%\\AUREVIX\\informe-energia.html\" /duration 30"),
     };
+
+    /// <summary>Acciones cuya salida se devuelve al usuario (últimas líneas).</summary>
+    private static readonly HashSet<string> WithOutput = ["dism-checkhealth", "dism-scanhealth", "trim-query", "ip-renew"];
 
     public (bool ok, string message) Run(string action)
     {
@@ -28,13 +36,25 @@ public sealed class MaintenanceRunner : IMaintenanceRunner
         if (!Commands.TryGetValue(action, out var c)) return (false, "No permitido.");
         try
         {
-            using var p = Process.Start(new ProcessStartInfo(c.file, c.args) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true })!;
-            p.StandardOutput.ReadToEnd();
+            var args = c.args;
+            if (action == "energy-report")
+            {
+                Directory.CreateDirectory(Environment.ExpandEnvironmentVariables(@"%ProgramData%\AUREVIX"));
+                args = Environment.ExpandEnvironmentVariables(args);
+            }
+            using var p = Process.Start(new ProcessStartInfo(c.file, args) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true })!;
+            var stdout = p.StandardOutput.ReadToEnd();
             p.WaitForExit(30 * 60 * 1000);
             AurevixLog.Info($"Mantenimiento {action}: código {p.ExitCode}");
-            return p.ExitCode == 0
-                ? (true, $"{CoreServiceProtocol.MaintenanceActions[action]}: completado.")
-                : (false, $"{CoreServiceProtocol.MaintenanceActions[action]}: terminó con código {p.ExitCode}.");
+            var text = p.ExitCode == 0
+                ? $"{CoreServiceProtocol.MaintenanceActions[action]}: completado."
+                : $"{CoreServiceProtocol.MaintenanceActions[action]}: terminó con código {p.ExitCode}.";
+            if (WithOutput.Contains(action))
+            {
+                var tail = string.Join("\n", stdout.Split('\n').Select(l => l.TrimEnd('\r')).Where(l => l.Length > 0).TakeLast(60));
+                if (tail.Length > 0) text += "\n\n" + tail;
+            }
+            return (p.ExitCode == 0, text);
         }
         catch (Exception ex) { return (false, ex.Message); }
     }
