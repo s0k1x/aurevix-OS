@@ -1,3 +1,12 @@
+## AUREVIX OS 0.10.0 — Tu color, tema automático y un PC que se cuida solo
+
+- **Color de acento a elegir**: 7 colores en Apariencia (verde AUREVIX, azul, violeta, rosa, naranja, rojo y turquesa). Se aplica al Control Center, a la barra de tareas y al menú Inicio al momento.
+- **Tema claro/oscuro automático**: a una hora fija o según la salida y la puesta del sol de tu zona. Opcional: cambiar también el fondo de pantalla. Si eliges Claro u Oscuro a mano, el modo automático se desactiva.
+- **Perfiles automáticos** (desactivados por defecto, se activan en Perfiles): Gaming al abrir un juego, Eficiencia con batería y Productividad en horario de trabajo; al terminar vuelve tu perfil.
+- **Antes y después**: tras optimizar, el Control Center muestra cuánto ha cambiado el arranque, los procesos, la memoria en uso y el espacio libre.
+- **Avisos de salud en la bandeja**: disco casi lleno, disco con problemas SMART, temperatura alta, driver de gráfica muy antiguo o reinicio pendiente. Un clic te lleva a la solución.
+- **Estilo AUREVIX**: ya no colorea las barras de título de las ventanas. Si lo tenías de una versión anterior, «Restablecer aspecto de Windows 11» lo quita.
+
 ## AUREVIX OS 0.9.0 — ISO más rápida y preparada, actualizaciones a prueba de cortes
 
 - **ISO mucho más rápida**: Windows se descarga por 6 conexiones a la vez y se reanuda si se corta; AUREVIX y Windows se descargan a la vez; la comprobación SHA-256 se hace mientras se escribe la ISO (ya no se vuelve a leer entera).

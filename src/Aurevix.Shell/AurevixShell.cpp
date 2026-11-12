@@ -98,7 +98,10 @@ static void LoadPalette()
     {
         double r = accent & 0xFF, g = (accent >> 8) & 0xFF, b = (accent >> 16) & 0xFF;
         // En tema claro, un acento muy claro se oscurece un 35 % para que contraste.
-        if (light && (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255.0 > 0.6) { r *= 0.65; g *= 0.65; b *= 0.65; }
+        double lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255.0;
+        if (light && lum > 0.6) { r *= 0.65; g *= 0.65; b *= 0.65; }
+        // En tema oscuro, un acento muy oscuro se mezcla un 40 % con blanco para que se lea.
+        else if (!light && lum < 0.25) { r += (255.0 - r) * 0.4; g += (255.0 - g) * 0.4; b += (255.0 - b) * 0.4; }
         Lime = { 0xFF, static_cast<uint8_t>(r), static_cast<uint8_t>(g), static_cast<uint8_t>(b) };
     }
 }
@@ -219,7 +222,20 @@ static void Register(Role role, wux::DependencyObject const& obj)
         static unsigned long long nextId = 0;
         auto w = winrt::make_weak(obj);
         auto d = obj.Dispatcher();   // Register se llama en el hilo de UI del elemento
+        if (!d) return;              // islas XAML sin dispatcher: no se puede recargar en vivo, no se registra
         std::lock_guard<std::mutex> l(g_styledMutex);
+        // Se quitan las entradas cuyo elemento ya no existe y se evitan duplicados (mismo objeto y mismo rol).
+        bool duplicate = false;
+        // Solo se resuelven los elementos de este mismo hilo de UI (los de otros hilos no se tocan aquí).
+        for (auto it = g_styledList.begin(); it != g_styledList.end();)
+        {
+            if (it->dispatcher != d) { ++it; continue; }
+            auto other = it->ref.get();
+            if (!other) { it = g_styledList.erase(it); continue; }
+            if (it->role == role && other == obj) duplicate = true;
+            ++it;
+        }
+        if (duplicate) return;
         g_styledList.push_back({ ++nextId, role, w, d });
     }
     catch (...) {}
@@ -288,6 +304,7 @@ static void ReapplyAll()
         try
         {
             // El weak_ref no se resuelve aquí: solo en el hilo de UI del elemento.
+            if (!item.dispatcher) continue;
             auto weak = item.ref;
             auto role = item.role;
             auto id = item.id;
