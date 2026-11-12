@@ -12,7 +12,21 @@ public sealed record GameEntry(string Name, string Source, string? LaunchUri, st
 /// <summary>Detecta los juegos instalados leyendo los archivos y el registro de cada tienda. Solo lectura.</summary>
 public static class GameLibrary
 {
-    private static readonly string[] SteamToolNames = ["Proton", "Redistributable", "SDK", "Dedicated Server"];
+    private static readonly string[] SteamToolPrefixes = ["Proton ", "Steam Linux Runtime", "Steamworks Common Redistributables", "SteamVR", "Redistributable"];
+
+    // Nombres de exe (en minúsculas) que nunca son el juego.
+    private static readonly string[] ExeExcluded =
+    [
+        "unins", "crash", "redist", "setup", "vc_redist", "vcredist", "dxsetup", "unitycrashhandler",
+        "ue4prereq", "ueprereq", "crashreport", "easyanticheat", "beservice", "launcher_helper", "dotnet", "directx"
+    ];
+
+    private static bool IsSteamTool(string appId, string name) =>
+        appId == "228980"
+        || SteamToolPrefixes.Any(t => name.StartsWith(t, StringComparison.OrdinalIgnoreCase))
+        || name.EndsWith(" Dedicated Server", StringComparison.OrdinalIgnoreCase);
+
+    private static string Norm(string? s) => new string((s ?? "").Where(char.IsLetterOrDigit).ToArray()).ToLowerInvariant();
 
     public static Task<List<GameEntry>> ScanAsync() => Task.Run(() =>
     {
@@ -62,10 +76,9 @@ public static class GameLibrary
                     var appId = AcfValue(text, "appid");
                     var name = AcfValue(text, "name");
                     var dir = AcfValue(text, "installdir");
-                    if (appId is null || name is null || appId == "228980") continue;
-                    if (SteamToolNames.Any(t => name.Contains(t, StringComparison.OrdinalIgnoreCase))) continue;
+                    if (appId is null || name is null || IsSteamTool(appId, name)) continue;
                     var installDir = dir is null ? null : Path.Combine(apps, "common", dir);
-                    list.Add(new GameEntry(name, "Steam", $"steam://rungameid/{appId}", LargestExe(installDir), installDir));
+                    list.Add(new GameEntry(name, "Steam", $"steam://rungameid/{appId}", LargestExe(installDir, name, dir), installDir));
                 }
                 catch (Exception ex) { AurevixLog.Warn($"Juegos: {acf}: {ex.Message}"); }
             }
@@ -79,28 +92,37 @@ public static class GameLibrary
         return m.Success ? m.Groups[1].Value : null;
     }
 
-    /// <summary>El .exe más grande de la carpeta del juego (hasta 2 niveles): suele ser el del juego.</summary>
-    private static string? LargestExe(string? dir)
+    /// <summary>
+    /// El .exe del juego (hasta 4 niveles, incluye Binaries/Win64): primero el que se parece al nombre del juego
+    /// o de su carpeta, si no el más grande. Descarta instaladores, anticheats y similares. Null si no hay ninguno.
+    /// </summary>
+    private static string? LargestExe(string? dir, params string?[] hints)
     {
         if (dir is null || !Directory.Exists(dir)) return null;
-        string? best = null;
-        long bestSize = -1;
+        var keys = hints.Select(Norm).Where(h => h.Length >= 3).Distinct().ToList();
+        string? best = null, bestMatch = null;
+        long bestSize = -1, bestMatchSize = -1;
         void Scan(string d, int level)
         {
             try
             {
                 foreach (var f in Directory.EnumerateFiles(d, "*.exe"))
                 {
+                    var file = Path.GetFileNameWithoutExtension(f).ToLowerInvariant();
+                    if (ExeExcluded.Any(x => file.Contains(x))) continue;
                     var size = new FileInfo(f).Length;
                     if (size > bestSize) { bestSize = size; best = f; }
+                    var n = Norm(file);
+                    if (n.Length >= 3 && keys.Any(k => n.Contains(k) || (n.Length >= 4 && k.Contains(n))) && size > bestMatchSize)
+                    { bestMatchSize = size; bestMatch = f; }
                 }
-                if (level >= 2) return;
+                if (level >= 4) return;
                 foreach (var sub in Directory.EnumerateDirectories(d)) Scan(sub, level + 1);
             }
             catch { }
         }
         Scan(dir, 1);
-        return best;
+        return bestMatch ?? best;
     }
 
     private static IEnumerable<GameEntry> Epic()
@@ -120,7 +142,11 @@ public static class GameLibrary
                 if (string.IsNullOrWhiteSpace(name)) continue;
                 var loc = Get("InstallLocation");
                 var exeRel = Get("LaunchExecutable");
-                var exe = !string.IsNullOrEmpty(loc) && !string.IsNullOrEmpty(exeRel) ? Path.Combine(loc, exeRel) : null;
+                if (string.IsNullOrWhiteSpace(loc) || !Directory.Exists(loc) || string.IsNullOrWhiteSpace(exeRel)) continue;
+                if (r.TryGetProperty("bIsIncompleteInstall", out var inc) && inc.ValueKind == JsonValueKind.True) continue;
+                if ((Get("AppName") ?? "").StartsWith("UE_", StringComparison.OrdinalIgnoreCase)
+                    || name.StartsWith("Unreal Engine", StringComparison.OrdinalIgnoreCase)) continue;
+                var exe = Path.Combine(loc, exeRel);
                 if (exe is not null && !File.Exists(exe)) exe = null;
                 string? uri = null;
                 if (Get("CatalogNamespace") is { } ns && Get("CatalogItemId") is { } id && Get("AppName") is { } app)

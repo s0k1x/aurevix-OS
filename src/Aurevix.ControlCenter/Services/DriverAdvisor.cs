@@ -3,7 +3,7 @@ using System.Management;
 namespace Aurevix.ControlCenter.Services;
 
 /// <summary>Un driver detectado: tipo (Gráfica/Red/Audio/Chipset), antigüedad, estado y enlaces oficiales.</summary>
-public sealed record DriverInfo(string Kind, string Name, string Version, DateTime? Date, int AgeMonths, string Status, string Url, string? OemUrl);
+public sealed record DriverInfo(string Kind, string Name, string Version, DateTime? Date, int AgeMonths, string Status, string? Url, string? OemUrl);
 
 /// <summary>Asistente de drivers: solo lee Windows y propone la página oficial. Nunca instala nada.</summary>
 public static class DriverAdvisor
@@ -75,16 +75,21 @@ public static class DriverAdvisor
 
     private static bool IsGenericMicrosoft(string maker) => Has(maker, "Microsoft");
 
-    private static string OfficialUrl(string kind, string maker, string name)
+    /// <summary>Página oficial del fabricante; null si no se reconoce (no se inventa ningún enlace).</summary>
+    private static string? OfficialUrl(string kind, string maker, string name)
     {
         var s = maker + " " + name;
         if (Has(s, "NVIDIA")) return "https://www.nvidia.com/es-es/geforce/drivers/";
-        if (Has(s, "Realtek")) return kind == "Red" ? "https://www.realtek.com/Download/List?cate_id=593" : "https://www.realtek.com/Download/List?cate_id=593";
-        if (Has(s, "Killer") || Has(s, "Qualcomm")) return "https://www.intel.com/content/www/us/en/download/19779/";
+        if (Has(s, "Realtek")) return "https://www.realtek.com/Download/List?cate_id=593";
+        // Killer de Intel/Rivet → Intel; el resto de Killer y Qualcomm → Qualcomm.
+        if (Has(s, "Killer") && (Has(maker, "Intel") || Has(maker, "Rivet"))) return "https://www.intel.com/content/www/us/en/download/19779/";
+        if (Has(s, "Killer") || Has(s, "Qualcomm")) return "https://www.qualcomm.com/support";
+        if (Has(s, "Broadcom")) return "https://www.broadcom.com/support/download-search";
+        if (Has(s, "Creative")) return "https://support.creative.com";
         if (Has(s, "MediaTek")) return "https://www.mediatek.com/";
         if (Has(s, "AMD") || Has(s, "Advanced Micro") || Has(s, "Radeon")) return "https://www.amd.com/es/support/download/drivers.html";
         if (Has(s, "Intel")) return "https://www.intel.es/content/www/es/es/support/detect.html";
-        return "https://www.intel.es/content/www/es/es/support/detect.html";
+        return null;
     }
 
     /// <summary>Soporte del fabricante del equipo, solo en portátiles.</summary>

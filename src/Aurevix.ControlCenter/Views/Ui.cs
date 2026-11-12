@@ -19,7 +19,7 @@ public static class Ui
     /// En Windows 10 solo se oscurece; el color exacto y el borde necesitan Windows 11.
     /// </summary>
     /// <summary>El Control Center sigue el tema de Windows (claro por defecto en AUREVIX).</summary>
-    public static bool IsLight { get; private set; }
+    public static bool IsLight { get; set; }
 
     public static void ApplyTheme()
     {

@@ -23,8 +23,9 @@ public static class Palette
         catch { return true; }
     }
 
-    public static Color Accent { get; } = IsLight ? Color.FromRgb(0x4E, 0x9A, 0x1E) : Color.FromRgb(0x8D, 0xE0, 0x3C);
-    public static Color AccentHover { get; } = IsLight ? Color.FromRgb(0x5D, 0xB0, 0x2A) : Color.FromRgb(0xA6, 0xEE, 0x5E);
+    public static Color Accent { get; } = IsLight ? Color.FromRgb(0x3F, 0x7F, 0x17) : Color.FromRgb(0x8D, 0xE0, 0x3C);
+    // En claro el hover es más oscuro: el texto blanco sobre el fondo se lee mejor.
+    public static Color AccentHover { get; } = IsLight ? Color.FromRgb(0x35, 0x6B, 0x13) : Color.FromRgb(0xA6, 0xEE, 0x5E);
     /// <summary>Texto sobre el acento verde: blanco en claro, casi negro en oscuro.</summary>
     public static Color OnAccent { get; } = IsLight ? Colors.White : Color.FromRgb(0x10, 0x12, 0x16);
     /// <summary>Fondo de las tarjetas (algo translúcido).</summary>
@@ -47,11 +48,20 @@ public static class Palette
     /// <summary>Aplica el tema claro (si toca) y deja la barra de título de cada ventana a juego con él.</summary>
     public static void Apply()
     {
+        Ui.IsLight = IsLight;
         if (IsLight)
         {
             var dicts = Application.Current.Resources.MergedDictionaries;
             dicts.Clear();
             dicts.Add(new ResourceDictionary { Source = new Uri("pack://application:,,,/Themes/AurevixLight.xaml") });
+            // Acento más oscuro solo en el Installer (texto blanco legible); el tema compartido no se toca.
+            foreach (var d in new[] { Application.Current.Resources }.Concat(dicts))
+            {
+                if (d.Contains("AccentColor")) d["AccentColor"] = Accent;
+                if (d.Contains("AccentHoverColor")) d["AccentHoverColor"] = AccentHover;
+                SetBrush(d, "Accent", Accent);
+                SetBrush(d, "AccentHover", AccentHover);
+            }
         }
         EventManager.RegisterClassHandler(typeof(Window), FrameworkElement.LoadedEvent, new RoutedEventHandler((s, _) =>
         {
@@ -64,6 +74,13 @@ public static class Palette
             DwmSetWindowAttribute(hwnd, 35, ref caption, sizeof(int));  // DWMWA_CAPTION_COLOR
             DwmSetWindowAttribute(hwnd, 34, ref border, sizeof(int));   // DWMWA_BORDER_COLOR
         }));
+    }
+
+    private static void SetBrush(ResourceDictionary d, string key, Color c)
+    {
+        if (!d.Contains(key)) return;
+        if (d[key] is SolidColorBrush b && !b.IsFrozen) b.Color = c;
+        else d[key] = new SolidColorBrush(c);
     }
 
     /// <summary>Etiqueta redondeada con texto legible sobre el color dado.</summary>

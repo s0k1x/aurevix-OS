@@ -6,6 +6,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Aurevix.ControlCenter.Services;
+using Aurevix.Core.Logging;
 using Aurevix.Performance;
 
 namespace Aurevix.ControlCenter.Views.Pages;
@@ -26,10 +27,10 @@ public sealed class GamesPage : UserControl
         _body = body;
         _filter.ItemsSource = new[] { "Todos", "Steam", "Epic", "GOG", "Añadidos" };
         _filter.SelectedIndex = 0;
-        _search.TextChanged += (_, _) => Render();
-        _filter.SelectionChanged += (_, _) => Render();
+        _search.TextChanged += (_, _) => ApplyFilter();
+        _filter.SelectionChanged += (_, _) => ApplyFilter();
 
-        body.Children.Add(Ui.Card(Ui.H2("Tus juegos"), _count, Ui.Row(_search, _filter)));
+        body.Children.Add(Ui.Card(Ui.H2("Tus juegos"), _count, Ui.Row(_search, _filter), _status));
         body.Children.Add(_grid);
         Content = root;
         _ = LoadAsync();
@@ -39,42 +40,62 @@ public sealed class GamesPage : UserControl
     {
         try { _games = await GameLibrary.ScanAsync(); }
         catch { _games = []; }
-        _loaded = true;
-        Render();
-    }
-
-    private void Render()
-    {
-        _grid.Children.Clear();
-        if (!_loaded) return;
         _count.Text = _games.Count == 0
             ? "No hemos encontrado juegos de Steam, Epic o GOG. Puedes añadirlos en Game Boost."
             : _games.Count == 1 ? "1 juego" : $"{_games.Count} juegos";
 
-        var q = _search.Text.Trim();
-        var source = _filter.SelectedItem as string ?? "Todos";
+        // Los tiles se crean una sola vez; buscar y filtrar solo cambia su visibilidad.
+        var badges = new List<(GameEntry Game, ContentControl Host)>();
         foreach (var g in _games)
         {
-            if (source == "Añadidos" ? g.Source != "Añadido" : source != "Todos" && g.Source != source) continue;
-            if (q.Length > 0 && !g.Name.Contains(q, StringComparison.CurrentCultureIgnoreCase)) continue;
-            _grid.Children.Add(Tile(g));
+            var (tile, host) = Tile(g);
+            _tiles[g] = tile;
+            _grid.Children.Add(tile);
+            badges.Add((g, host));
+        }
+        _loaded = true;
+        ApplyFilter();
+
+        // Los iconos se sacan en segundo plano y se aplican al terminar.
+        foreach (var (g, host) in badges)
+        {
+            if (g.ExePath is null) continue;
+            var exe = g.ExePath;
+            BitmapSource? icon = null;
+            try { icon = await Task.Run(() => Icon(exe)); } catch { }
+            if (icon is not null)
+                host.Content = new Image { Source = icon, Width = 48, Height = 48, HorizontalAlignment = HorizontalAlignment.Left };
+        }
+    }
+
+    private void ApplyFilter()
+    {
+        if (!_loaded) return;
+        var q = _search.Text.Trim();
+        var source = _filter.SelectedItem as string ?? "Todos";
+        foreach (var (g, tile) in _tiles)
+        {
+            var hidden = (source == "Añadidos" ? g.Source != "Añadido" : source != "Todos" && g.Source != source)
+                || (q.Length > 0 && !g.Name.Contains(q, StringComparison.CurrentCultureIgnoreCase));
+            tile.Visibility = hidden ? Visibility.Collapsed : Visibility.Visible;
         }
     }
 
     private bool _loaded;
+    private readonly Dictionary<GameEntry, FrameworkElement> _tiles = [];
+    private readonly TextBlock _status = Ui.Muted("");
 
-    private UIElement Tile(GameEntry g)
+    private (FrameworkElement Card, ContentControl Badge) Tile(GameEntry g)
     {
-        UIElement badge;
-        var icon = Icon(g.ExePath);
-        if (icon is not null)
-            badge = new Image { Source = icon, Width = 48, Height = 48, HorizontalAlignment = HorizontalAlignment.Left };
-        else
-            badge = new TextBlock
+        var badge = new ContentControl
+        {
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Content = new TextBlock
             {
                 Text = g.Name.Length > 0 ? g.Name[..1].ToUpperInvariant() : "?", FontSize = 40, FontWeight = FontWeights.SemiBold,
                 Foreground = Ui.Brush("Accent"), Height = 48, HorizontalAlignment = HorizontalAlignment.Left
-            };
+            }
+        };
 
         var name = Ui.Text(g.Name, 14, FontWeights.SemiBold);
         name.TextTrimming = TextTrimming.CharacterEllipsis;
@@ -92,7 +113,7 @@ public sealed class GamesPage : UserControl
         var card = Ui.Card(items.ToArray());
         card.Width = 270;
         card.Margin = new Thickness(0, 0, 12, 12);
-        return card;
+        return (card, badge);
     }
 
     private static void SetGpu(string exe, bool on)
@@ -101,19 +122,26 @@ public sealed class GamesPage : UserControl
         catch (Exception ex) { MessageBox.Show("No se ha podido cambiar: " + ex.Message, "Juegos"); }
     }
 
-    private static void Play(GameEntry g)
+    private void Play(GameEntry g)
     {
-        try
+        // Game Boost reconoce el juego por su .exe: si no está en la lista, se añade.
+        if (g.ExePath is { } exe)
         {
-            // Game Boost reconoce el juego por su .exe: si no está en la lista, se añade.
-            if (g.ExePath is { } exe)
+            try
             {
                 var s = GameBoost.Settings;
                 var file = Path.GetFileName(exe);
-                if (!s.Games.Contains(file, StringComparer.OrdinalIgnoreCase)) s.Games.Add(file);
+                var added = !s.Games.Contains(file, StringComparer.OrdinalIgnoreCase);
+                if (added) s.Games.Add(file);
                 s.GamePaths[file] = exe;
                 GameBoost.Save();
+                if (added) _status.Text = $"«{g.Name}» se ha añadido a Game Boost";
             }
+            catch (Exception ex) { AurevixLog.Warn($"Juegos: Game Boost: {ex.Message}"); }
+        }
+
+        try
+        {
             var target = g.LaunchUri ?? g.ExePath;
             if (target is null || (g.LaunchUri is null && !File.Exists(target)))
             {
