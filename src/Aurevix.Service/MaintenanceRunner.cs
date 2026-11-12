@@ -11,6 +11,7 @@ public sealed class MaintenanceRunner : IMaintenanceRunner
     {
         ["dism-cleanup"] = ("dism.exe", "/Online /Cleanup-Image /StartComponentCleanup /NoRestart"),
         ["retrim"] = ("powershell.exe", "-NoProfile -NonInteractive -Command \"Optimize-Volume -DriveLetter $env:SystemDrive[0] -ReTrim\""),
+        ["trim-on"] = ("fsutil.exe", "behavior set DisableDeleteNotify NTFS 0"),
         ["flush-dns"] = ("ipconfig.exe", "/flushdns"),
         ["tcp-defaults"] = ("netsh.exe", "int tcp set global autotuninglevel=normal rss=enabled"),
         ["network-repair"] = ("cmd.exe", "/c netsh winsock reset && netsh int ip reset"),

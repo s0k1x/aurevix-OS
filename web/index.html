@@ -2,744 +2,906 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>AUREVIX OS</title>
-<meta name="description" content="AUREVIX OS: Windows 11 oficial con otra cara. Barra de tareas, Inicio y Configuración rediseñados, optimizado para rendimiento y siempre actualizado.">
-<meta name="theme-color" content="#050506">
+<meta name="description" content="AUREVIX OS: Windows 11 oficial con otra cara. Barra de tareas flotante con efecto cristal, menú Inicio y Configuración rediseñados, 95 ajustes de rendimiento reversibles y Nusa incluida.">
+<meta name="theme-color" content="#060708">
 <link rel="icon" type="image/png" href="favicon.png">
 <style>
-  :root{--bg:#050506;--text:#f5f5f7;--muted:#8b8b94;--dim:#5c5c66;--line:#1f1f25;--surface:#0e0e11;--surface2:#151519;--accent:#8de03c;--accent2:#c6f59a}
-  *{box-sizing:border-box;margin:0}
-  html{scroll-behavior:smooth;background:var(--bg)}
-  body{background:var(--bg);color:var(--text);font:15px/1.6 "Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,"Helvetica Neue",sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
-  a{color:inherit}
-  img{max-width:100%}
-
-  nav{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:14px 28px;
-      background:rgba(5,5,6,.78);-webkit-backdrop-filter:saturate(1.4) blur(14px);backdrop-filter:saturate(1.4) blur(14px);border-bottom:1px solid rgba(255,255,255,.05);font-size:13px}
-  .brand{display:flex;align-items:center;gap:10px;font-weight:600;letter-spacing:.02em;text-decoration:none}
-  .brand img{width:20px;height:20px}
-  .links{display:flex;gap:26px;align-items:center}
-  .links a{color:var(--muted);text-decoration:none;transition:color .2s}
-  .links a:hover{color:var(--text)}
-  .pill{display:inline-flex;align-items:center;gap:8px;background:var(--text);color:#050506!important;text-decoration:none;font-weight:600;
-        padding:8px 16px;border-radius:999px;border:0;cursor:pointer;font:inherit;font-weight:600;transition:transform .2s,background .2s}
-  .pill:hover{background:#fff;transform:translateY(-1px)}
-  .pill:active{transform:scale(.97)}
-  .pill:focus-visible,.ghost:focus-visible,.links a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
-  .pill.big{font-size:16px;padding:14px 26px}
-  .ghost{color:var(--muted);text-decoration:none;font-size:14px;border-bottom:1px solid var(--line);padding-bottom:2px;transition:color .2s,border-color .2s}
-  .ghost:hover{color:var(--text);border-color:var(--muted)}
-
-  main{position:relative;z-index:1}
-  section{position:relative;padding:120px 7vw}
-  .wrap{max-width:1240px;margin:0 auto}
-  .eyebrow{font-size:12px;color:var(--accent);margin-bottom:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:600}
-  h1{font-size:clamp(36px,4.1vw,62px);line-height:1;font-weight:650;letter-spacing:-.04em}
-  h2{font-size:clamp(28px,3.4vw,46px);line-height:1.08;font-weight:620;letter-spacing:-.03em;margin-bottom:16px}
-  h3{font-size:17px;font-weight:600;letter-spacing:-.01em;margin-bottom:6px}
-  .lead{color:var(--muted);font-size:17px;max-width:520px;margin-top:22px}
-  p.body{color:var(--muted);font-size:15px;max-width:560px}
-  .grad{background:linear-gradient(92deg,#fff 30%,var(--accent2) 70%,var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent}
-
-  /* ---------- Hero ---------- */
-  .hero{min-height:100vh;padding-top:120px;padding-bottom:60px;display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:4vw;align-items:center;max-width:1640px;margin:0 auto}
-  .hero .row{display:flex;gap:22px;align-items:center;margin-top:34px;flex-wrap:wrap}
-  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:30px}
-  .chip{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:5px 12px;background:rgba(14,14,17,.6)}
-  .chip b{color:var(--text);font-weight:600}
-
-  /* Escritorio AUREVIX animado: escena de 1200x750 escalada al ancho disponible */
-  .device{position:relative;width:100%;aspect-ratio:16/10;border-radius:18px;overflow:hidden;border:1px solid #26262d;
-          box-shadow:0 60px 120px -40px rgba(0,0,0,.95),0 0 0 1px rgba(255,255,255,.03) inset,0 0 120px -40px rgba(141,224,60,.25)}
-  .stage{position:absolute;left:0;top:0;width:1200px;height:750px;transform-origin:0 0;font-family:"Segoe UI Variable Text","Segoe UI",system-ui,sans-serif}
-  .stage canvas{position:absolute;inset:0;width:100%;height:100%}
-  .notch{position:absolute;top:10px;left:50%;transform:translateX(-50%);height:34px;min-width:150px;border-radius:20px;background:#000;border:1px solid #1d1d22;
-         display:flex;align-items:center;gap:10px;padding:0 14px;color:#e8e8ec;font-size:12px;animation:notch 9s ease-in-out infinite;white-space:nowrap;overflow:hidden}
-  .notch .art{width:20px;height:20px;border-radius:6px;background:linear-gradient(135deg,#8de03c,#2fbf71);flex:none}
-  .notch .eq{display:flex;gap:2px;align-items:flex-end;height:14px;margin-left:auto}
-  .notch .eq i{width:3px;background:var(--accent);border-radius:2px;animation:eq 1s ease-in-out infinite}
-  .notch .eq i:nth-child(2){animation-delay:.2s}.notch .eq i:nth-child(3){animation-delay:.45s}.notch .eq i:nth-child(4){animation-delay:.1s}
-  .notch .song{opacity:0;animation:fade 9s ease-in-out infinite}
-  @keyframes notch{0%,12%{min-width:150px}22%,62%{min-width:330px}72%,100%{min-width:150px}}
-  @keyframes fade{0%,16%{opacity:0}26%,58%{opacity:1}66%,100%{opacity:0}}
-  @keyframes eq{0%,100%{height:4px}50%{height:14px}}
-
-  .win{position:absolute;left:70px;top:78px;width:640px;height:450px;border-radius:12px;background:rgba(8,8,10,.94);border:1px solid #26262d;
-       box-shadow:0 30px 80px -20px rgba(0,0,0,.9);overflow:hidden;display:grid;grid-template-columns:150px 1fr;animation:float 10s ease-in-out infinite}
-  .win .tb{grid-column:1/3;height:30px;display:flex;align-items:center;gap:8px;padding:0 12px;border-bottom:1px solid #17171b;font-size:11px;color:#8b8b94}
-  .win .tb img{width:12px;height:12px}
-  .win .tb .ctl{margin-left:auto;display:flex;gap:14px;color:#5c5c66;font-size:12px}
-  .win .side{padding:12px 10px;border-right:1px solid #17171b;font-size:11px;color:#a5a5ae;display:flex;flex-direction:column;gap:3px}
-  .win .side span{padding:6px 8px;border-radius:7px;position:relative}
-  .win .side span.on{background:#17171b;color:#fff}
-  .win .side span.on::before{content:"";position:absolute;left:-2px;top:8px;bottom:8px;width:3px;border-radius:3px;background:var(--accent)}
-  .win .side small{font-size:9px;color:#5c5c66;padding:8px 8px 2px;letter-spacing:.06em}
-  .win .main{padding:18px 20px;display:flex;flex-direction:column;gap:12px}
-  .win .main h4{font-size:20px;font-weight:600;letter-spacing:-.02em}
-  .tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-  .tile{background:#0f0f12;border:1px solid #1d1d22;border-radius:10px;padding:10px 12px;font-size:10px;color:#8b8b94}
-  .tile b{display:block;font-size:20px;color:#fff;font-weight:600;letter-spacing:-.02em;margin-top:2px}
-  .spark{height:120px;background:#0f0f12;border:1px solid #1d1d22;border-radius:10px;position:relative;overflow:hidden}
-  .spark canvas{position:absolute;inset:0}
-  .spark span{position:absolute;left:12px;top:8px;font-size:10px;color:#8b8b94}
-  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
-
-  .start{position:absolute;left:50%;bottom:80px;width:470px;height:330px;margin-left:-160px;border-radius:16px;background:rgba(11,11,14,.97);border:1px solid #26262d;
-         box-shadow:0 30px 80px -10px rgba(0,0,0,.9);padding:18px;animation:start 12s cubic-bezier(.2,.7,.2,1) infinite;opacity:0;transform:translateY(30px)}
-  .start .search{height:32px;border-radius:16px;background:#151519;border:1px solid #26262d;font-size:11px;color:#6b6b74;display:flex;align-items:center;padding:0 14px}
-  .start .lbl{font-size:11px;color:#c9c9d0;margin:16px 4px 10px;font-weight:600}
-  .start .grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px 6px}
-  .start .app{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:9px;color:#a5a5ae}
-  .start .ic{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
-  .start .app img{filter:drop-shadow(0 3px 6px rgba(0,0,0,.6))}
-  .start .user{position:absolute;left:0;right:0;bottom:0;height:46px;border-top:1px solid #1d1d22;display:flex;align-items:center;gap:10px;padding:0 18px;font-size:11px;color:#c9c9d0}
-  .start .user i{width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#2a2a31,#3a3a44)}
-  @keyframes start{0%,48%{opacity:0;transform:translateY(30px)}54%,86%{opacity:1;transform:none}92%,100%{opacity:0;transform:translateY(30px)}}
-
-  .dock{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);height:54px;padding:0 12px;border-radius:16px;background:rgba(11,11,14,.94);
-        border:1px solid #26262d;display:flex;align-items:center;gap:6px;box-shadow:0 20px 50px -15px rgba(0,0,0,.9)}
-  .dock .d{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;position:relative;transition:transform .3s}
-  .dock .d.run::after{content:"";position:absolute;bottom:-5px;left:50%;width:6px;height:3px;margin-left:-3px;border-radius:2px;background:var(--accent)}
-  .dock .d.act::after{width:16px;margin-left:-8px}
-  .dock .d.st{animation:press 12s infinite}
-  .dock .d .gl{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
-  .dock .d .gl svg{width:17px;height:17px}
-  .dock .d img{filter:drop-shadow(0 2px 4px rgba(0,0,0,.6))}
-  .dock .tray{margin-left:10px;padding-left:12px;border-left:1px solid #26262d;font-size:11px;color:#c9c9d0;display:flex;gap:12px;align-items:center;height:30px}
-  @keyframes press{0%,46%{background:transparent}49%,88%{background:#1d1d22}92%,100%{background:transparent}}
-
-  /* Escena en tema claro (predeterminado de AUREVIX OS) */
-  .stage.light .win{background:rgba(250,250,252,.94);border-color:#dcdee3;box-shadow:0 30px 80px -24px rgba(40,50,70,.35)}
-  .stage.light .win .tb{border-color:#e6e7eb;color:#6b6f7a}
-  .stage.light .win .side{border-color:#e6e7eb;color:#4a4e58}
-  .stage.light .win .side span.on{background:#e9ebef;color:#111}
-  .stage.light .win .side span.on::before{background:#4e9a1e}
-  .stage.light .win .main h4{color:#111}
-  .stage.light .tile,.stage.light .spark{background:#fff;border-color:#e3e5ea;color:#6b6f7a}
-  .stage.light .tile b{color:#111}
-  .stage.light .start{background:rgba(248,248,250,.97);border-color:#dcdee3;box-shadow:0 30px 80px -10px rgba(40,50,70,.35)}
-  .stage.light .start .search{background:#fff;border-color:#dcdee3;color:#8a8e98}
-  .stage.light .start .lbl,.stage.light .start .user{color:#22252c}
-  .stage.light .start .app{color:#4a4e58}
-  .stage.light .start .user{border-color:#e6e7eb}
-  .stage.light .dock{background:rgba(246,246,248,.94);border-color:#dcdee3;box-shadow:0 20px 50px -18px rgba(40,50,70,.4)}
-  .stage.light .dock .d.run::after{background:#4e9a1e}
-  .stage.light .dock .tray{border-color:#dcdee3;color:#22252c}
-  .stage.light .dock .d.st{animation-name:pressL}
-  @keyframes pressL{0%,46%{background:transparent}49%,88%{background:#e3e5ea}92%,100%{background:transparent}}
-  .themes{position:absolute;right:14px;top:14px;z-index:5;display:flex;gap:4px;padding:4px;border-radius:999px;background:rgba(5,5,6,.6);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.08)}
-  .themes button{font:inherit;font-size:12px;color:#c9c9d0;background:none;border:0;border-radius:999px;padding:5px 12px;cursor:pointer}
-  .themes button[aria-pressed="true"]{background:#f5f5f7;color:#050506;font-weight:600}
-  .themes button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-
-  /* ---------- Franja ---------- */
-  .band{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:22px 0;overflow:hidden;white-space:nowrap;position:relative}
-  .band .track{display:inline-flex;gap:56px;animation:marquee 40s linear infinite;padding-left:56px}
-  .band span{font-size:14px;color:var(--muted)}
-  .band b{color:var(--text);font-weight:600;margin-right:8px}
-  @keyframes marquee{to{transform:translateX(-50%)}}
-
-  /* ---------- Secciones en dos columnas ---------- */
-  .split{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:6vw;align-items:center}
-  .split.flip{grid-template-columns:minmax(0,7fr) minmax(0,5fr)}
-  .split.flip .copy{order:2}
-  .list{list-style:none;padding:0;margin-top:22px;display:grid;gap:12px}
-  .list li{position:relative;padding-left:20px;font-size:15px;color:var(--muted)}
-  .list li::before{content:"";position:absolute;left:0;top:.68em;width:9px;height:2px;background:var(--accent)}
-  .list b{color:var(--text);font-weight:600}
-  .panel{background:linear-gradient(180deg,#0e0e11,#09090b);border:1px solid #1f1f25;border-radius:20px;padding:22px;position:relative;overflow:hidden}
-  .panel .ph{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:14px}
-  .legend{display:flex;gap:16px}
-  .legend i{display:inline-block;width:10px;height:3px;border-radius:2px;margin-right:6px;vertical-align:middle}
-  .fps{width:100%;height:280px;display:block}
-  .toggles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
-  .tg{display:flex;align-items:center;justify-content:space-between;background:#111114;border:1px solid #1d1d22;border-radius:12px;padding:10px 12px;font-size:13px;color:#c9c9d0}
-  .sw{width:34px;height:20px;border-radius:999px;background:#26262d;position:relative;flex:none;animation:swbg 6s infinite}
-  .sw::after{content:"";position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:#8b8b94;animation:swk 6s infinite}
-  .tg:nth-child(2) .sw,.tg:nth-child(2) .sw::after{animation-delay:.6s}.tg:nth-child(3) .sw,.tg:nth-child(3) .sw::after{animation-delay:1.2s}.tg:nth-child(4) .sw,.tg:nth-child(4) .sw::after{animation-delay:1.8s}
-  @keyframes swbg{0%,15%{background:#26262d}25%,100%{background:var(--accent)}}
-  @keyframes swk{0%,15%{left:3px;background:#8b8b94}25%,100%{left:17px;background:#050506}}
-
-  /* ---------- Funciones (bento) ---------- */
-  .bento{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-top:44px}
-  .card{grid-column:span 2;background:linear-gradient(180deg,#0e0e11,#0a0a0c);border:1px solid #1f1f25;border-radius:20px;padding:22px;position:relative;overflow:hidden;min-height:250px;
-        display:flex;flex-direction:column;transition:transform .4s cubic-bezier(.2,.7,.2,1),border-color .3s}
-  .card:hover{transform:translateY(-3px);border-color:#2e2e36}
-  .card.wide{grid-column:span 3}
-  .card p{font-size:14px;color:var(--muted)}
-  .card .viz{margin-top:auto;padding-top:18px;height:120px;position:relative}
-  .bars{display:flex;align-items:flex-end;gap:6px;height:100%}
-  .bars i{flex:1;border-radius:6px 6px 2px 2px;background:#26262d;animation:bar 4s ease-in-out infinite}
-  .bars i.g{background:var(--accent)}
-  .bars i:nth-child(2){animation-delay:.3s}.bars i:nth-child(3){animation-delay:.6s}.bars i:nth-child(4){animation-delay:.9s}.bars i:nth-child(5){animation-delay:1.2s}.bars i:nth-child(6){animation-delay:1.5s}
-  @keyframes bar{0%,100%{height:30%}50%{height:var(--h,80%)}}
-  .ping{width:100%;height:100%}
-  .big{font-size:44px;font-weight:650;letter-spacing:-.03em;line-height:1}
-  .big small{font-size:14px;color:var(--muted);font-weight:400;margin-left:6px;letter-spacing:0}
-  .check{display:flex;flex-direction:column;gap:8px;font:12px/1.4 ui-monospace,Consolas,monospace;color:var(--muted)}
-  .check div{opacity:0;animation:line 6s infinite}
-  .check div:nth-child(2){animation-delay:.8s}.check div:nth-child(3){animation-delay:1.6s}.check div:nth-child(4){animation-delay:2.4s}
-  .check b{color:var(--accent);font-weight:600}
-  @keyframes line{0%{opacity:0;transform:translateX(-6px)}8%,85%{opacity:1;transform:none}100%{opacity:0}}
-  .island{position:absolute;left:50%;top:30px;transform:translateX(-50%);height:40px;border-radius:22px;background:#000;border:1px solid #23232a;display:flex;align-items:center;gap:10px;padding:0 16px;
-          font-size:12px;color:#ddd;animation:isl 7s cubic-bezier(.2,.7,.2,1) infinite;overflow:hidden;white-space:nowrap}
-  .island .art{width:22px;height:22px;border-radius:7px;background:linear-gradient(135deg,#ff6a3d,#c43c8d);flex:none}
-  @keyframes isl{0%,15%{width:120px}30%,75%{width:290px}90%,100%{width:120px}}
-  .upd{display:flex;align-items:center;gap:14px}
-  .ring{width:76px;height:76px;flex:none}
-  .ring circle{fill:none;stroke-width:6}
-  .ring .bgc{stroke:#1f1f25}.ring .fg{stroke:var(--accent);stroke-linecap:round;stroke-dasharray:201;stroke-dashoffset:201;animation:ring 5s ease-in-out infinite;transform:rotate(-90deg);transform-origin:50% 50%}
-  @keyframes ring{0%{stroke-dashoffset:201}70%,100%{stroke-dashoffset:0}}
-
-  /* ---------- Instalador animado ---------- */
-  .inst{background:#050506;border:1px solid #26262d;border-radius:16px;overflow:hidden;box-shadow:0 40px 90px -30px rgba(0,0,0,.9)}
-  .inst .tb{height:34px;display:flex;align-items:center;gap:9px;padding:0 14px;border-bottom:1px solid #17171b;font-size:12px;color:var(--muted)}
-  .inst .tb img{width:14px;height:14px}
-  .inst .in{padding:28px 32px 32px}
-  .inst .pct{display:flex;align-items:flex-end;gap:22px;margin:14px 0 12px}
-  .inst .pct b{font-size:64px;font-weight:300;letter-spacing:-.03em;line-height:.9;font-variant-numeric:tabular-nums}
-  .inst .pct div{font-size:15px;font-weight:600}
-  .inst .pct div span{display:block;font-size:12px;font-weight:400;color:var(--muted)}
-  .ibar{height:6px;border-radius:3px;background:#17171b;overflow:hidden}
-  .ibar i{display:block;height:100%;width:0;background:var(--accent);border-radius:3px}
-  .steps{list-style:none;padding:0;margin-top:22px;display:grid;gap:12px;font-size:14px}
-  .steps li{display:flex;gap:12px;align-items:center;color:#5c5c66}
-  .steps li::before{content:"";width:9px;height:9px;border-radius:50%;border:1.5px solid #5c5c66;flex:none}
-  .steps li.done{color:var(--muted)}.steps li.done::before{border:0;background:none;content:"✓";color:var(--accent);width:auto;height:auto;font-size:12px}
-  .steps li.now{color:#fff;font-weight:600}.steps li.now::before{border:0;background:var(--accent);animation:pulse 1s ease-in-out infinite alternate}
-  @keyframes pulse{to{opacity:.3}}
-
-  /* ---------- Iconos ---------- */
-  .icons{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px;margin-top:40px}
-  .icons figure{margin:0;border:1px solid var(--line);border-radius:20px;background:radial-gradient(120% 90% at 50% 0%,#141418,#09090b);padding:26px 10px 16px;text-align:center;
-                transition:transform .4s cubic-bezier(.2,.7,.2,1),border-color .3s}
-  .icons figure:hover{transform:translateY(-4px);border-color:#2e2e36}
-  .icons img{width:84px;height:84px;display:block;margin:0 auto;filter:drop-shadow(0 12px 18px rgba(0,0,0,.6));animation:bob 6s ease-in-out infinite}
-  .icons figure:nth-child(odd) img{animation-delay:-3s}
-  .icons figcaption{font-size:13px;color:var(--muted);margin-top:12px}
-  @media (min-width:1100px){
-    .icons{grid-template-columns:repeat(14,1fr);gap:10px}
-    .icons figure{padding:18px 4px 12px;border-radius:16px}
-    .icons img{width:58px;height:58px}
-    .icons figcaption{font-size:11px;margin-top:8px;line-height:1.25}
+  :root{
+    --bg:#060708;--text:#f4f5f2;--muted:#8d929a;--dim:#5b6068;--line:rgba(255,255,255,.07);--line2:rgba(255,255,255,.12);
+    --surface:#0d0f11;--surface2:#13161a;--accent:#8de03c;--accent2:#c6f59a;--accentD:#4e9a1e;
+    --ease:cubic-bezier(.2,.8,.2,1);--spring:cubic-bezier(.34,1.56,.64,1);
   }
-  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth;background:var(--bg)}
+  body{background:var(--bg);color:var(--text);font:15px/1.6 "Segoe UI Variable Text","Segoe UI",Inter,system-ui,-apple-system,"Helvetica Neue",sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  a{color:inherit}
+  img{max-width:100%;display:block}
+  button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:8px}
+
+  /* ---------- Fondo vivo ---------- */
+  .bgfx{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
+  .bgfx i{position:absolute;border-radius:50%;filter:blur(90px);opacity:.5;will-change:transform}
+  .bgfx i:nth-child(1){width:60vmax;height:60vmax;left:-20vmax;top:-25vmax;background:radial-gradient(circle,rgba(141,224,60,.20),transparent 60%);animation:drift1 26s ease-in-out infinite alternate}
+  .bgfx i:nth-child(2){width:55vmax;height:55vmax;right:-22vmax;top:30vh;background:radial-gradient(circle,rgba(46,160,140,.16),transparent 60%);animation:drift2 32s ease-in-out infinite alternate}
+  .bgfx i:nth-child(3){width:50vmax;height:50vmax;left:20vw;bottom:-30vmax;background:radial-gradient(circle,rgba(110,90,220,.10),transparent 60%);animation:drift1 38s ease-in-out infinite alternate-reverse}
+  .bgfx::after{content:"";position:absolute;inset:0;background:
+    linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px) 0 0/64px 64px,
+    linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px) 0 0/64px 64px;
+    mask-image:radial-gradient(ellipse at 50% 0%,#000 0%,transparent 70%);-webkit-mask-image:radial-gradient(ellipse at 50% 0%,#000 0%,transparent 70%)}
+  @keyframes drift1{to{transform:translate(12vw,10vh) scale(1.15)}}
+  @keyframes drift2{to{transform:translate(-14vw,-8vh) scale(1.1)}}
+
+  /* ---------- Navegación ---------- */
+  nav{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:30;width:min(1180px,calc(100% - 24px));display:flex;align-items:center;justify-content:space-between;
+      padding:8px 8px 8px 18px;border-radius:16px;background:rgba(12,14,16,.62);border:1px solid var(--line);
+      -webkit-backdrop-filter:saturate(1.6) blur(18px);backdrop-filter:saturate(1.6) blur(18px);font-size:13.5px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:650;letter-spacing:.04em;text-decoration:none}
+  .brand img{width:22px;height:22px}
+  .links{display:flex;gap:4px;align-items:center}
+  .links a{color:var(--muted);text-decoration:none;padding:7px 12px;border-radius:10px;transition:color .2s,background .2s}
+  .links a:hover{color:var(--text);background:rgba(255,255,255,.05)}
+  .pill{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--text);color:#08090a!important;text-decoration:none;font-weight:650;
+        padding:9px 16px;border-radius:11px;transition:transform .25s var(--spring),box-shadow .25s}
+  .pill:hover{transform:translateY(-1px);box-shadow:0 8px 30px rgba(141,224,60,.25)}
+  .pill:active{transform:scale(.97)}
+  .pill.big{font-size:16px;padding:15px 26px;border-radius:14px}
+  .pill.lime{background:var(--accent)}
+  .ghost{display:inline-flex;align-items:center;gap:8px;color:var(--text);text-decoration:none;padding:14px 22px;border-radius:14px;border:1px solid var(--line2);transition:background .2s,border-color .2s}
+  .ghost:hover{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.2)}
+  @media (max-width:820px){.links a:not(.pill){display:none}}
+
+  /* ---------- Tipografía y secciones ---------- */
+  .wrap{width:min(1180px,calc(100% - 40px));margin:0 auto}
+  section{padding:120px 0;position:relative;scroll-margin-top:70px}
+  .scene{scroll-margin-top:90px}
+  .eyebrow{font-size:12px;font-weight:650;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)}
+  h1{font-family:"Segoe UI Variable Display","Segoe UI",Inter,system-ui,sans-serif;font-size:clamp(42px,7.4vw,88px);line-height:1.02;letter-spacing:-.035em;font-weight:700}
+  h2{font-family:"Segoe UI Variable Display","Segoe UI",Inter,system-ui,sans-serif;font-size:clamp(32px,4.6vw,56px);line-height:1.06;letter-spacing:-.03em;font-weight:700;margin-top:14px}
+  h3{font-size:19px;letter-spacing:-.01em;font-weight:650}
+  .grad{background:linear-gradient(100deg,#fff 0%,var(--accent2) 45%,var(--accent) 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lead{font-size:clamp(16px,1.6vw,19px);color:var(--muted);max-width:620px}
+  .body{color:var(--muted);font-size:17px;max-width:640px;margin-top:16px}
+  .reveal{opacity:0;transform:translateY(26px);transition:opacity .9s var(--ease),transform .9s var(--ease)}
+  .reveal.in{opacity:1;transform:none}
+  .d1{transition-delay:.08s}.d2{transition-delay:.16s}.d3{transition-delay:.24s}
+
+  /* ---------- Portada ---------- */
+  .hero{padding:150px 0 40px;text-align:center}
+  .hero .lead{margin:22px auto 0}
+  .hero .row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:32px}
+  .badge{display:inline-flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border-radius:999px;border:1px solid var(--line2);background:rgba(255,255,255,.03);font-size:13px;color:var(--muted);margin-bottom:26px}
+  .badge b{background:var(--accent);color:#0a0b0c;border-radius:999px;padding:2px 9px;font-size:12px}
+
+  /* Escena: se dibuja a 1200×750 y se escala al ancho disponible (idéntica en PC y móvil). */
+  .scene{width:min(1180px,calc(100% - 24px));margin:56px auto 0;position:relative;text-align:left}
+  .frame{position:relative;border-radius:22px;padding:10px;background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.02));border:1px solid var(--line2);box-shadow:0 60px 140px -40px rgba(0,0,0,.9),0 0 0 1px rgba(0,0,0,.4) inset}
+  .viewport{position:relative;width:100%;aspect-ratio:16/10;border-radius:14px;overflow:hidden;background:#cfd8c8}
+  .desk{position:absolute;left:0;top:0;width:1200px;height:750px;transform-origin:0 0;transform:scale(var(--s,1));font-family:"Segoe UI Variable Text","Segoe UI",Inter,system-ui,sans-serif;color:#1b1d20}
+  .wall{position:absolute;inset:0;background-size:cover;background-position:center;transition:opacity .8s}
+  .wall.dark{opacity:0}
+  .desk.dk .wall.dark{opacity:1}
+  .desk.dk{color:#eef0ec}
+
+  /* Barra de tareas AUREVIX: flotante, a todo el ancho, cristal y sin bordes (como en Windows). */
+  .tbar{position:absolute;left:6px;right:6px;bottom:4px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;
+        background:linear-gradient(180deg,rgba(255,255,255,.62),rgba(241,246,234,.55) 45%,rgba(241,246,234,.55));
+        -webkit-backdrop-filter:blur(26px) saturate(1.6);backdrop-filter:blur(26px) saturate(1.6);box-shadow:0 10px 30px -10px rgba(30,50,15,.35);z-index:5}
+  .desk.dk .tbar{background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(11,11,14,.62) 45%,rgba(11,11,14,.62))}
+  .apps{display:flex;gap:4px}
+  .app{width:40px;height:40px;border-radius:8px;display:grid;place-items:center;position:relative;transition:transform .26s var(--spring),background .2s;transform-origin:50% 85%;cursor:default}
+  .app:hover{transform:scale(1.2);background:rgba(255,255,255,.45)}
+  .desk.dk .app:hover{background:rgba(255,255,255,.08)}
+  .app:active{transform:scale(.9)}
+  .app svg,.app img{width:24px;height:24px}
+  .app.run::after{content:"";position:absolute;bottom:2px;width:6px;height:3px;border-radius:2px;background:var(--accentD);transition:width .25s}
+  .app.act{background:rgba(255,255,255,.5)}
+  .desk.dk .app.act{background:rgba(255,255,255,.09)}
+  .app.act::after{width:16px;background:var(--accentD)}
+  .desk.dk .app.run::after{background:var(--accent)}
+  .tray{position:absolute;right:12px;display:flex;align-items:center;gap:12px;font-size:12px;text-align:right;line-height:1.25}
+  .tray svg{width:16px;height:16px;opacity:.8}
+
+  /* Nusa en la escena */
+  .nusa{position:absolute;top:10px;left:50%;transform:translateX(-50%);height:34px;min-width:150px;border-radius:20px;background:#050506;color:#fff;display:flex;align-items:center;gap:10px;padding:0 12px 0 6px;font-size:12px;z-index:6;box-shadow:0 10px 30px rgba(0,0,0,.35);transition:all .55s var(--spring)}
+  .nusa .art{width:24px;height:24px;border-radius:7px;background:conic-gradient(from 200deg,#ff7a59,#ffcf4a,#8de03c,#2ec4b6,#ff7a59)}
+  .nusa .eq{display:flex;gap:2px;align-items:flex-end;height:14px;margin-left:auto}
+  .nusa .eq i{width:3px;background:var(--accent);border-radius:2px;animation:eq 1s ease-in-out infinite}
+  .nusa .eq i:nth-child(2){animation-delay:-.3s}.nusa .eq i:nth-child(3){animation-delay:-.6s}.nusa .eq i:nth-child(4){animation-delay:-.15s}
+  @keyframes eq{0%,100%{height:30%}50%{height:100%}}
+
+  /* Ventanas */
+  .win{position:absolute;border-radius:10px;overflow:hidden;box-shadow:0 30px 70px -20px rgba(20,35,10,.45),0 0 0 1px rgba(0,0,0,.08);opacity:0;transform:translateY(16px) scale(.97);transition:opacity .45s var(--ease),transform .55s var(--spring);pointer-events:none}
+  .win.on{opacity:1;transform:none;pointer-events:auto}
+  .tt{height:34px;display:flex;align-items:center;gap:9px;padding:0 0 0 12px;font-size:12px}
+  .tt img{width:14px;height:14px}
+  .tt .sp{flex:1}
+  .tt .c{width:44px;text-align:center;opacity:.7;font-size:11px}
+
+  /* Control Center (tema claro) */
+  .cc{left:150px;top:64px;width:900px;height:560px;background:#f3f5f0}
+  .desk.dk .cc{background:#0b0b0e;color:#f2f2f4}
+  .cc .side{position:absolute;top:34px;bottom:0;left:0;width:200px;padding:14px 10px;background:rgba(255,255,255,.75);border-right:1px solid #dce2d4}
+  .desk.dk .cc .side{background:rgba(5,5,6,.8);border-color:#222228}
+  .cc .brandc{display:flex;gap:9px;align-items:center;margin:2px 8px 16px;font-size:13px;font-weight:650}
+  .cc .brandc img{width:22px;height:22px}.cc .brandc small{display:block;font-weight:400;font-size:11px;opacity:.6}
+  .nav2 div{height:30px;display:flex;align-items:center;gap:9px;padding:0 10px;border-radius:7px;font-size:12.5px;position:relative}
+  .nav2 .s{background:rgba(78,154,30,.12)}
+  .nav2 .s::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:3px;border-radius:2px;background:var(--accentD)}
+  .nav2 small{display:block;font-size:10px;letter-spacing:.08em;opacity:.55;margin:12px 10px 4px}
+  .cc .main{position:absolute;top:34px;left:200px;right:0;bottom:0;padding:26px 30px;background:radial-gradient(500px 360px at 100% 0,rgba(123,209,58,.22),transparent 70%)}
+  .cc h5{font-family:"Segoe UI Variable Display","Segoe UI",sans-serif;font-size:30px;font-weight:650;letter-spacing:-.02em}
+  .cc .mut{font-size:12px;opacity:.6;margin:2px 0 18px}
+  .mets{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .met{background:#fff;border:1px solid #dce2d4;border-radius:12px;padding:12px 14px;font-size:11px}
+  .desk.dk .met{background:#0e0e11;border-color:#222228}
+  .met b{display:block;font-size:22px;font-weight:650;margin-top:4px}
+  .met b.g{color:var(--accentD)}.desk.dk .met b.g{color:var(--accent)}
+  .met i{font-style:normal;opacity:.55}
+  .chart{margin-top:12px;background:#fff;border:1px solid #dce2d4;border-radius:12px;height:150px;position:relative;overflow:hidden}
+  .desk.dk .chart{background:#0e0e11;border-color:#222228}
+  .chart span{position:absolute;left:14px;top:10px;font-size:11px;opacity:.6}
+  .chart canvas{position:absolute;left:0;bottom:0;width:100%;height:115px}
+  .acts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+  .act{background:#fff;border:1px solid #dce2d4;border-radius:12px;padding:12px;font-size:11.5px;display:flex;gap:10px;align-items:center}
+  .desk.dk .act{background:#0e0e11;border-color:#222228}
+  .act svg{width:22px;height:22px;flex:none}
+  .act b{display:block;font-size:12.5px}
+
+  /* Menú Inicio AUREVIX: sin «Recomendado», cristal sobre el desenfoque de Windows */
+  .start{left:50%;margin-left:-320px;bottom:62px;width:640px;height:470px;border-radius:16px;padding:28px 34px;
+         background:linear-gradient(180deg,rgba(255,255,255,.70),rgba(241,246,234,.62) 45%,rgba(241,246,234,.62));-webkit-backdrop-filter:blur(30px) saturate(1.6);backdrop-filter:blur(30px) saturate(1.6);transform-origin:50% 100%}
+  .desk.dk .start{background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(16,16,20,.78) 45%,rgba(16,16,20,.78))}
+  .start .sr{height:36px;border-radius:18px;background:rgba(255,255,255,.9);border:1px solid rgba(0,0,0,.06);border-bottom:2px solid var(--accentD);display:flex;align-items:center;gap:10px;padding:0 14px;font-size:12.5px;color:#6b7078}
+  .desk.dk .start .sr{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.06);border-bottom-color:var(--accent);color:#9aa0a8}
+  .start .sr svg{width:16px;height:16px}
+  .start .hd{display:flex;justify-content:space-between;align-items:center;margin:22px 8px 12px;font-size:13px;font-weight:650}
+  .start .hd span{font-weight:400;font-size:11.5px;border-radius:6px;padding:3px 10px;background:rgba(255,255,255,.75);border:1px solid rgba(0,0,0,.06)}
+  .desk.dk .start .hd span{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.08)}
+  .pins{display:grid;grid-template-columns:repeat(6,1fr);gap:14px 4px}
+  .pin{text-align:center;font-size:11.5px;padding:6px 0;border-radius:8px;transition:background .2s}
+  .pin:hover{background:rgba(255,255,255,.5)}
+  .desk.dk .pin:hover{background:rgba(255,255,255,.06)}
+  .pin svg{width:32px;height:32px;display:block;margin:0 auto 6px}
+  .start .ft{position:absolute;left:0;right:0;bottom:0;height:58px;border-top:1px solid rgba(0,0,0,.06);display:flex;align-items:center;padding:0 40px;gap:10px;font-size:12.5px;background:rgba(255,255,255,.25)}
+  .desk.dk .start .ft{border-color:rgba(255,255,255,.06);background:rgba(255,255,255,.03)}
+  .start .ft i{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#c9d3c0,#98a38e)}
+  .start .ft svg{width:18px;height:18px;margin-left:auto;opacity:.75}
+
+  /* Configuración (fondo AUREVIX semitransparente, selección verde) */
+  .set{left:120px;top:44px;width:960px;height:600px;background:rgba(241,246,236,.92);-webkit-backdrop-filter:blur(30px);backdrop-filter:blur(30px)}
+  .desk.dk .set{background:rgba(11,11,14,.9)}
+  .set .side{position:absolute;top:34px;left:0;width:290px;bottom:0;padding:8px 14px}
+  .set .usr{display:flex;gap:12px;align-items:center;padding:8px 8px 16px}
+  .set .usr i{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#c9d3c0,#98a38e)}
+  .set .usr b{display:block;font-size:13.5px}.set .usr small{font-size:11.5px;opacity:.6}
+  .set .find{height:32px;border-radius:6px;background:rgba(255,255,255,.85);border:1px solid rgba(0,0,0,.06);border-bottom:2px solid var(--accentD);margin:0 6px 12px;font-size:12px;display:flex;align-items:center;padding:0 10px;color:#6b7078}
+  .desk.dk .set .find{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.06);border-bottom-color:var(--accent);color:#9aa0a8}
+  .set .nav2 div{height:34px;font-size:13px}
+  .set .nav2 svg{width:16px;height:16px}
+  .set .main{position:absolute;top:34px;left:300px;right:22px;bottom:0;padding:6px 10px}
+  .set h6{font-family:"Segoe UI Variable Display","Segoe UI",sans-serif;font-size:27px;font-weight:650;margin:2px 0 16px}
+  .set .prev{display:flex;gap:18px}
+  .set .shot{width:300px;height:180px;border-radius:10px;border:5px solid #16181b;background-size:cover;position:relative}
+  .set .shot::after{content:"";position:absolute;left:6px;right:6px;bottom:4px;height:10px;border-radius:4px;background:rgba(241,246,234,.85)}
+  .set .themes{display:grid;grid-template-columns:repeat(4,72px);gap:8px;align-content:start}
+  .set .themes div{height:46px;border-radius:7px;background-size:cover;background-position:center;border:2px solid transparent}
+  .set .themes .on{border-color:var(--accentD)}
+  .set .row2{margin-top:10px;background:rgba(255,255,255,.75);border:1px solid rgba(0,0,0,.05);border-radius:8px;padding:11px 14px;font-size:12.5px;display:flex;align-items:center;gap:12px}
+  .desk.dk .set .row2{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.05)}
+  .set .row2 svg{width:18px;height:18px}.set .row2 small{display:block;font-size:11px;opacity:.6}.set .row2 em{margin-left:auto;font-style:normal;opacity:.5}
+
+  /* Explorador (fondo acrílico de Windows) */
+  .exp{left:170px;top:70px;width:860px;height:540px;background:rgba(250,251,248,.96)}
+  .desk.dk .exp{background:rgba(22,22,26,.97)}
+  .exp .tabs{height:40px;display:flex;align-items:flex-end;padding:0 10px;gap:4px;background:rgba(225,233,216,.7);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px)}
+  .desk.dk .exp .tabs{background:rgba(40,46,36,.6)}
+  .exp .tab{height:32px;border-radius:8px 8px 0 0;background:rgba(250,251,248,.96);display:flex;align-items:center;gap:8px;padding:0 14px;font-size:12px;min-width:200px}
+  .desk.dk .exp .tab{background:rgba(22,22,26,.97)}
+  .exp .tab svg{width:14px;height:14px}
+  .exp .tabs .sp{flex:1}.exp .tabs .c{align-self:center;width:42px;text-align:center;font-size:11px;opacity:.7}
+  .exp .bar{height:44px;display:flex;align-items:center;gap:12px;padding:0 14px;font-size:12px;opacity:.85;border-bottom:1px solid rgba(0,0,0,.05)}
+  .desk.dk .exp .bar{border-color:rgba(255,255,255,.06)}
+  .exp .addr{flex:1;height:28px;border-radius:6px;background:rgba(0,0,0,.035);display:flex;align-items:center;padding:0 10px;gap:8px}
+  .desk.dk .exp .addr{background:rgba(255,255,255,.05)}
+  .exp .addr.s{flex:0 0 200px;opacity:.7}
+  .exp .nv{position:absolute;top:84px;left:0;bottom:0;width:200px;padding:10px 8px;border-right:1px solid rgba(0,0,0,.05);font-size:12.5px}
+  .desk.dk .exp .nv{border-color:rgba(255,255,255,.06)}
+  .exp .nv div{height:28px;display:flex;align-items:center;gap:9px;padding:0 10px;border-radius:5px}
+  .exp .nv .s{background:rgba(78,154,30,.12)}
+  .exp .nv svg{width:16px;height:16px}
+  .exp .nv hr{border:0;border-top:1px solid rgba(0,0,0,.06);margin:8px 6px}
+  .exp .ct{position:absolute;top:84px;left:200px;right:0;bottom:0;padding:16px 22px}
+  .exp h6{font-size:12.5px;font-weight:650;color:var(--accentD);margin:2px 0 12px}
+  .desk.dk .exp h6{color:var(--accent)}
+  .fold{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:20px}
+  .fold div{text-align:center;font-size:11.5px;padding:8px 0;border-radius:6px}
+  .fold svg{width:48px;height:48px;margin:0 auto 4px;display:block}
+  .drv{display:flex;gap:12px;align-items:center;font-size:12px;width:300px;padding:8px;border-radius:6px}
+  .drv svg{width:42px;height:42px;flex:none}
+  .drv .bb{height:10px;border-radius:3px;background:rgba(0,0,0,.08);margin:4px 0 3px;overflow:hidden}
+  .desk.dk .drv .bb{background:rgba(255,255,255,.1)}
+  .drv .bb i{display:block;height:100%;width:56%;background:var(--accentD)}
+  .drv small{opacity:.6}
+
+  /* Controles bajo la escena */
+  .controls{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:18px}
+  .seg{display:inline-flex;gap:2px;padding:4px;border-radius:13px;background:rgba(255,255,255,.04);border:1px solid var(--line)}
+  .seg button{padding:8px 14px;border-radius:9px;color:var(--muted);font-size:13.5px;transition:background .25s,color .25s}
+  .seg button[aria-pressed="true"]{background:var(--text);color:#08090a;font-weight:600}
+  .seg button:hover:not([aria-pressed="true"]){color:var(--text)}
+  .caption{color:var(--muted);font-size:13.5px;text-align:center;margin-top:14px;min-height:22px;transition:opacity .3s}
+  @media (max-width:640px){.controls{justify-content:center}.seg button{padding:7px 10px;font-size:12.5px}}
+
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:56px auto 0;width:min(1180px,calc(100% - 40px))}
+  .stat{padding:20px;border-radius:18px;border:1px solid var(--line);background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.01))}
+  .stat b{display:block;font-family:"Segoe UI Variable Display","Segoe UI",sans-serif;font-size:30px;letter-spacing:-.02em;font-weight:700}
+  .stat span{color:var(--muted);font-size:13.5px}
+  @media (max-width:820px){.stats{grid-template-columns:repeat(2,1fr)}.stat b{font-size:24px}}
+
+  .band{overflow:hidden;border-block:1px solid var(--line);padding:16px 0;margin-top:90px;mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);-webkit-mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)}
+  .track{display:flex;gap:44px;width:max-content;animation:band 50s linear infinite;color:var(--muted);font-size:14px;white-space:nowrap}
+  .track b{color:var(--text);margin-right:8px;font-weight:600}
+  @keyframes band{to{transform:translateX(-50%)}}
+
+  /* ---------- Rendimiento ---------- */
+  .split{display:grid;grid-template-columns:1fr 1.1fr;gap:64px;align-items:center}
+  .split.flip{grid-template-columns:1.1fr 1fr}
+  @media (max-width:960px){.split,.split.flip{grid-template-columns:1fr;gap:40px}.split.flip .copy{order:-1}}
+  .list{list-style:none;margin-top:28px;display:grid;gap:14px}
+  .list li{color:var(--muted);padding-left:28px;position:relative}
+  .list li::before{content:"";position:absolute;left:0;top:7px;width:14px;height:14px;border-radius:4px;background:var(--accent);mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12l5 5 9-10' stroke='black' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12l5 5 9-10' stroke='black' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat}
+  .list b{color:var(--text)}
+  .panel{border-radius:22px;border:1px solid var(--line2);background:linear-gradient(180deg,#0f1113,#0a0b0d);overflow:hidden;box-shadow:0 40px 100px -40px rgba(0,0,0,.9)}
+  .ph{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--line);font-size:13px;color:var(--muted)}
+  .ph b{color:var(--text);font-weight:600}
+  .tw{display:flex;align-items:flex-start;gap:14px;padding:14px 20px;border-bottom:1px solid var(--line)}
+  .tw:last-child{border-bottom:0}
+  .tw .t{flex:1}
+  .tw .t b{font-size:14px;font-weight:600}
+  .tw .t p{font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.45}
+  .tag{display:inline-block;font-size:10.5px;font-weight:650;padding:2px 8px;border-radius:999px;margin-left:8px;vertical-align:2px}
+  .tag.r{background:rgba(76,195,138,.15);color:#6fe0a8}.tag.p{background:rgba(141,224,60,.15);color:var(--accent)}.tag.c{background:rgba(232,163,61,.15);color:#f0b85e}.tag.o{background:rgba(255,255,255,.07);color:var(--muted)}
+  .sw{flex:none;width:44px;height:24px;border-radius:12px;background:#1d2024;border:1px solid var(--line2);position:relative;transition:background .25s,border-color .25s;margin-top:2px}
+  .sw::after{content:"";position:absolute;left:3px;top:3px;width:16px;height:16px;border-radius:50%;background:#7d838b;transition:transform .3s var(--spring),background .25s}
+  .sw[aria-checked="true"]{background:var(--accent);border-color:var(--accent)}
+  .sw[aria-checked="true"]::after{transform:translateX(20px);background:#fff}
+  .pfoot{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;background:rgba(255,255,255,.02);font-size:12.5px;color:var(--muted)}
+  .meter{height:6px;border-radius:3px;background:#1d2024;flex:1;margin:0 14px;overflow:hidden}
+  .meter i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accentD),var(--accent));transition:width .6s var(--ease)}
+  .cats{display:flex;flex-wrap:wrap;gap:8px;margin-top:26px}
+  .cats span{font-size:12.5px;color:var(--muted);border:1px solid var(--line2);padding:6px 11px;border-radius:999px}
+  .cats b{color:var(--text);font-weight:600;margin-left:4px}
+
+  /* ---------- Nusa ---------- */
+  .nusa-sec{text-align:center}
+  .nstage{position:relative;margin:54px auto 0;width:min(1000px,100%);height:440px;border-radius:28px;overflow:hidden;border:1px solid var(--line2);
+          background:url(img/fondo-nebula.webp) center/cover}
+  .nstage::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,transparent 30%,rgba(0,0,0,.55))}
+  .island{position:absolute;left:50%;top:18px;transform:translateX(-50%);z-index:2;background:#000;color:#fff;border-radius:22px;overflow:hidden;
+          width:210px;height:38px;transition:width .6s var(--spring),height .6s var(--spring),border-radius .6s var(--spring);box-shadow:0 20px 60px rgba(0,0,0,.6);text-align:left}
+  .island .st{position:absolute;inset:0;opacity:0;transition:opacity .35s;pointer-events:none;padding:14px}
+  .island .st.on{opacity:1;transition-delay:.25s}
+  .island .mini{display:flex;align-items:center;gap:10px;padding:7px 14px 7px 7px;font-size:13px}
+  .cover{border-radius:10px;background:conic-gradient(from 210deg,#ff7a59,#ffcf4a,#8de03c,#2ec4b6,#7a5cff,#ff7a59);flex:none}
+  .island .mini .cover{width:24px;height:24px;border-radius:7px}
+  .island .mini .eq{margin-left:auto;display:flex;gap:2px;align-items:flex-end;height:16px}
+  .island .mini .eq i{width:3px;border-radius:2px;background:var(--accent);animation:eq 1s ease-in-out infinite}
+  .island .mini .eq i:nth-child(2){animation-delay:-.3s}.island .mini .eq i:nth-child(3){animation-delay:-.6s}.island .mini .eq i:nth-child(4){animation-delay:-.2s}
+  .player{display:grid;grid-template-columns:76px 1fr;gap:16px;align-items:center}
+  .player .cover{width:76px;height:76px;border-radius:16px;animation:spinc 12s linear infinite}
+  @keyframes spinc{to{filter:hue-rotate(360deg)}}
+  .player b{font-size:17px;display:block}.player small{color:#9aa0a8;font-size:13px}
+  .prog{grid-column:1/-1;display:flex;align-items:center;gap:10px;font-size:11.5px;color:#9aa0a8}
+  .prog .pb{flex:1;height:5px;border-radius:3px;background:#26292d;overflow:hidden}
+  .prog .pb i{display:block;height:100%;width:38%;background:#fff;border-radius:3px;animation:prog 9s linear infinite}
+  @keyframes prog{from{width:20%}to{width:70%}}
+  .ctrls{grid-column:1/-1;display:flex;justify-content:center;gap:34px;font-size:20px;margin-top:2px}
+  .lyr{font-size:22px;font-weight:650;line-height:1.35;text-align:center;padding-top:6px}
+  .lyr span{display:block;color:#5d6168;transition:color .4s}
+  .lyr span.on{color:#fff}
+  .lyr span.nx{color:#8a8f96;font-size:16px}
+  .tmr{display:flex;align-items:center;gap:22px;height:100%;justify-content:center}
+  .tmr svg{width:96px;height:96px;transform:rotate(-90deg)}
+  .tmr circle{fill:none;stroke-width:8}
+  .tmr .bgc{stroke:#24272b}.tmr .fg{stroke:var(--accent);stroke-linecap:round;stroke-dasharray:264;stroke-dashoffset:66;animation:tm 6s linear infinite}
+  @keyframes tm{from{stroke-dashoffset:40}to{stroke-dashoffset:200}}
+  .tmr b{font-size:38px;font-variant-numeric:tabular-nums;font-weight:650}.tmr small{display:block;color:#9aa0a8;font-size:13px}
+  .files{display:flex;gap:14px;justify-content:center;align-items:center;height:100%}
+  .file{width:70px;height:86px;border-radius:12px;background:#15181b;border:1px solid #2a2e33;display:grid;place-items:center;font-size:11px;color:#9aa0a8;animation:drop 3s var(--spring) infinite}
+  .file:nth-child(2){animation-delay:.15s}.file:nth-child(3){animation-delay:.3s}
+  .file b{display:block;color:#fff;font-size:20px;margin-bottom:-14px}
+  @keyframes drop{0%{transform:translateY(-30px);opacity:0}20%,80%{transform:none;opacity:1}100%{transform:translateY(10px);opacity:0}}
+  .nlabels{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:22px}
+  .nlabels button{padding:8px 14px;border-radius:999px;border:1px solid var(--line2);color:var(--muted);font-size:13.5px;transition:all .25s}
+  .nlabels button[aria-pressed="true"]{background:var(--text);color:#08090a;border-color:var(--text);font-weight:600}
+  .nfeats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:40px;text-align:left}
+  .nfeats div{padding:18px;border-radius:16px;border:1px solid var(--line);background:rgba(255,255,255,.02)}
+  .nfeats b{display:block;font-size:15px;margin-bottom:4px}.nfeats span{color:var(--muted);font-size:13.5px}
+  @media (max-width:820px){.nfeats{grid-template-columns:1fr 1fr}.nstage{height:340px}}
+
+  /* ---------- Funciones ---------- */
+  .bento{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-top:46px}
+  .card{grid-column:span 2;border-radius:22px;border:1px solid var(--line);background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.01));padding:24px;position:relative;overflow:hidden;min-height:250px;display:flex;flex-direction:column;transition:border-color .3s,transform .4s var(--spring)}
+  .card:hover{border-color:rgba(141,224,60,.35);transform:translateY(-3px)}
+  .card.w3{grid-column:span 3}
+  .card p{color:var(--muted);font-size:14px;margin-top:6px}
+  .viz{margin-top:auto;padding-top:18px;height:120px;position:relative}
+  @media (max-width:960px){.bento{grid-template-columns:1fr 1fr}.card,.card.w3{grid-column:span 1}}
+  @media (max-width:640px){.bento{grid-template-columns:1fr}}
+  .bars{display:flex;align-items:flex-end;gap:8px;height:100%}
+  .bars i{flex:1;border-radius:6px 6px 3px 3px;background:#22262b;height:var(--h);transition:height .8s var(--ease)}
+  .bars i.g{background:linear-gradient(180deg,var(--accent),var(--accentD))}
+  .bigN{font-family:"Segoe UI Variable Display","Segoe UI",sans-serif;font-size:56px;font-weight:700;letter-spacing:-.03em;line-height:1}
+  .bigN small{display:block;font-size:13px;color:var(--muted);font-weight:400;letter-spacing:0;margin-top:6px}
+  .ring{width:84px;height:84px;transform:rotate(-90deg)}
+  .ring circle{fill:none;stroke-width:7}.ring .bgc{stroke:#22262b}.ring .fg{stroke:var(--accent);stroke-linecap:round;stroke-dasharray:201;stroke-dashoffset:201;animation:ringf 3.2s var(--ease) infinite}
+  @keyframes ringf{60%,100%{stroke-dashoffset:0}}
+  .chk{display:grid;gap:7px;font-size:13px;color:var(--muted)}
+  .chk div{display:flex;gap:8px;align-items:center;opacity:0;animation:chk 4s infinite}
+  .chk div:nth-child(2){animation-delay:.4s}.chk div:nth-child(3){animation-delay:.8s}.chk div:nth-child(4){animation-delay:1.2s}
+  .chk b{color:var(--accent)}
+  @keyframes chk{10%,85%{opacity:1}100%{opacity:0}}
+  .ping{width:100%;height:100%}
+
+  /* ---------- Instalar ---------- */
+  .inst{border-radius:16px;overflow:hidden;border:1px solid var(--line2);background:#0a0b0d;box-shadow:0 40px 100px -40px rgba(0,0,0,.9)}
+  .inst .tb{height:38px;display:flex;align-items:center;gap:10px;padding:0 16px;font-size:12.5px;color:var(--muted);border-bottom:1px solid var(--line)}
+  .inst .tb img{width:16px}
+  .inst .in{padding:26px}
+  .opts{display:grid;gap:10px}
+  .opt{display:flex;gap:14px;align-items:center;padding:14px;border-radius:14px;border:1px solid var(--line2);transition:border-color .3s,background .3s}
+  .opt.on{border-color:var(--accent);background:rgba(141,224,60,.06)}
+  .opt i{width:36px;height:36px;border-radius:10px;background:#16191c;display:grid;place-items:center;flex:none}
+  .opt i svg{width:18px;height:18px}
+  .opt b{display:block;font-size:14px}.opt span{font-size:12.5px;color:var(--muted)}
+  .dest{margin-top:14px;padding:14px;border-radius:14px;border:1px dashed var(--line2);display:flex;align-items:center;gap:12px;font-size:12.5px}
+  .dest code{font-family:ui-monospace,Consolas,monospace;color:var(--text);font-size:12px}
+  .dest small{display:block;color:var(--accent)}
+  .dest .btn{margin-left:auto;border:1px solid var(--line2);border-radius:9px;padding:6px 12px;color:var(--text)}
+  .prg{margin-top:18px}
+  .prg .top{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted)}
+  .prg .top b{color:var(--text);font-size:22px}
+  .pbar{height:8px;border-radius:4px;background:#1b1e22;margin-top:8px;overflow:hidden}
+  .pbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accentD),var(--accent));transition:width .4s linear}
 
   /* ---------- Fondos ---------- */
-  .walls{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:40px}
-  .wall{position:relative;aspect-ratio:16/10;border-radius:18px;overflow:hidden;border:1px solid var(--line)}
-  .wall img{width:100%;height:100%;max-width:none;object-fit:cover;display:block;animation:kb 18s ease-in-out infinite alternate}
-  .wall:nth-child(3n+2) img{animation-delay:-6s}.wall:nth-child(3n) img{animation-delay:-12s}
-  .wall span{position:absolute;left:14px;bottom:12px;font-size:12px;background:rgba(5,5,6,.55);backdrop-filter:blur(8px);padding:4px 10px;border-radius:999px}
-  @keyframes kb{from{transform:scale(1.1) translate(1.5%,1%)}to{transform:scale(1.1) translate(-2.5%,-2%)}}
+  .walls{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:44px}
+  .wl{position:relative;border-radius:16px;overflow:hidden;aspect-ratio:16/10;border:1px solid var(--line)}
+  .wl img{width:100%;height:100%;object-fit:cover;transition:transform 1.2s var(--ease)}
+  .wl:hover img{transform:scale(1.06)}
+  .wl span{position:absolute;left:10px;bottom:10px;font-size:12px;padding:4px 10px;border-radius:999px;background:rgba(0,0,0,.45);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#fff}
+  @media (max-width:820px){.walls{grid-template-columns:1fr 1fr}}
 
-  /* ---------- Seguridad ---------- */
-  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:40px}
-  .stat{border:1px solid var(--line);border-radius:18px;padding:22px;background:#0b0b0d}
-  .stat b{display:block;font-size:34px;font-weight:650;letter-spacing:-.03em;line-height:1.1}
-  .stat span{font-size:13px;color:var(--muted)}
+  /* ---------- Seguridad, versiones y descarga ---------- */
+  .sec4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:40px}
+  @media (max-width:820px){.sec4{grid-template-columns:1fr 1fr}}
+  .vlist{margin-top:36px;border:1px solid var(--line);border-radius:18px;overflow:hidden}
+  .vrow{display:grid;grid-template-columns:150px 1fr auto;gap:16px;align-items:center;padding:16px 20px;border-bottom:1px solid var(--line)}
+  .vrow:last-child{border-bottom:0}
+  .vrow .v{font-weight:650}.vrow .v small{display:block;color:var(--muted);font-weight:400;font-size:12px}
+  .vrow .t{color:var(--muted);font-size:14px}.vrow .t span{display:block;font-size:13px}
+  .vrow .t .tg{display:inline-block;margin-left:8px;font-size:11px;font-weight:650;background:var(--accent);color:#0a0b0c;padding:1px 8px;border-radius:999px}
+  .vrow .a{display:flex;gap:8px}.vrow .a .ghost{padding:7px 12px;font-size:13px;border-radius:10px}
+  @media (max-width:820px){.vrow{grid-template-columns:1fr}}
+  .download{text-align:center;padding-bottom:90px}
+  .download .meta{color:var(--muted);font-size:13.5px;margin-top:14px}
+  .download .hash{color:var(--dim);font:11px ui-monospace,Consolas,monospace;margin-top:6px;word-break:break-all}
+  .options{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:46px;text-align:left}
+  .options div{padding:22px;border-radius:18px;border:1px solid var(--line);background:rgba(255,255,255,.02)}
+  .options .n{color:var(--accent);font-size:12px;font-weight:650;letter-spacing:.1em}
+  .options h3{margin:8px 0 4px}.options p{color:var(--muted);font-size:14px}
+  @media (max-width:820px){.options{grid-template-columns:1fr}}
+  .more{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:24px}
+  .more .ghost{padding:10px 16px;font-size:13.5px}
+  .legal{color:var(--dim);font-size:12.5px;max-width:720px;margin:30px auto 0}
+  footer{border-top:1px solid var(--line);padding:26px 0;color:var(--dim);font-size:12.5px}
+  footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 
-  /* ---------- Versiones y descarga ---------- */
-  .vlist{margin-top:28px;border-top:1px solid var(--line)}
-  .vrow{display:grid;grid-template-columns:110px minmax(0,1fr) auto;gap:24px;align-items:center;padding:18px 0;border-bottom:1px solid var(--line)}
-  .vrow .v{font-size:20px;font-weight:600}
-  .vrow .v small{display:block;font-size:12px;font-weight:400;color:var(--muted);margin-top:2px}
-  .vrow .t{font-size:14px}
-  .vrow .t span{display:block;color:var(--muted);font-size:13px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .vrow .a{display:flex;gap:18px;align-items:center}
-  .tag{font-size:11px;color:#050506;background:var(--accent);border-radius:999px;padding:2px 9px;font-weight:600;margin-left:8px;vertical-align:middle}
-  .download{text-align:center;overflow:hidden}
-  .download::before{content:"";position:absolute;left:50%;top:40%;width:900px;height:900px;margin:-450px 0 0 -450px;background:radial-gradient(closest-side,rgba(141,224,60,.16),transparent);pointer-events:none}
-  .download h2{font-size:clamp(36px,5vw,68px)}
-  .meta{color:var(--muted);font-size:13px;margin-top:14px}
-  .hash{font:11px/1.5 ui-monospace,Consolas,monospace;color:var(--dim);word-break:break-all;max-width:560px;margin:10px auto 0}
-  .options{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:18px;overflow:hidden;margin:56px auto 0;max-width:980px;text-align:left;position:relative}
-  .opt{background:rgba(14,14,17,.92);padding:26px}
-  .opt .n{font-size:12px;color:var(--accent)}
-  .opt h3{margin:8px 0 6px}
-  .opt p{font-size:13px;color:var(--muted)}
-  .more{display:flex;gap:22px;justify-content:center;margin-top:28px;flex-wrap:wrap;position:relative}
-  .legal{max-width:640px;margin:40px auto 0;font-size:12px;color:var(--dim);position:relative}
-  footer{border-top:1px solid var(--line);padding:26px 7vw 34px;color:var(--dim);font-size:12px;display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
-
-  .reveal{opacity:0;transform:translateY(18px);transition:opacity .9s cubic-bezier(.2,.7,.2,1),transform .9s cubic-bezier(.2,.7,.2,1)}
-  .reveal.in{opacity:1;transform:none}
-  .reveal.d1{transition-delay:.08s}.reveal.d2{transition-delay:.16s}.reveal.d3{transition-delay:.24s}
-
-  @media (max-width:980px){
-    .hero{grid-template-columns:1fr;padding-top:100px;min-height:auto}
-    .split,.split.flip{grid-template-columns:1fr;gap:36px}
-    .split.flip .copy{order:0}
-    .bento{grid-template-columns:1fr 1fr}
-    .card,.card.wide{grid-column:span 1}
-    #dock2{transform:translateX(-50%) scale(.8)!important;transform-origin:50% 100%}
-    .stats{grid-template-columns:1fr 1fr}
-    .walls{grid-template-columns:1fr 1fr}
-  }
-  @media (max-width:640px){
-    nav{padding:12px 16px}
-    .links a:not(.pill){display:none}
-    section{padding:80px 16px}
-    .bento,.options{grid-template-columns:1fr}
-    .walls{grid-template-columns:1fr 1fr;gap:10px}
-    .wall span{font-size:11px;left:8px;bottom:8px}
-    .toggles{grid-template-columns:1fr}
-    #dock2{transform:translateX(-50%) scale(.62)!important;transform-origin:50% 100%}
-    .icons{grid-template-columns:repeat(3,1fr);gap:8px}
-    .icons figure{padding:16px 6px 10px;border-radius:16px}
-    .icons img{width:58px;height:58px}
-    .icons figcaption{font-size:11px}
-    .vrow{grid-template-columns:1fr;gap:8px}
-    .vrow .t span{white-space:normal}
-    .inst .in{padding:20px}
-    .inst .pct b{font-size:48px}
-  }
+  @media (max-width:640px){section{padding:84px 0}.hero{padding-top:120px}}
   @media (prefers-reduced-motion:reduce){
-    html{scroll-behavior:auto}
     *,*::before,*::after{animation:none!important;transition:none!important}
-    .reveal{opacity:1;transform:none}
-    .start{opacity:1;transform:none}
-    .notch .song{opacity:1}
-    .check div{opacity:1}
+    .reveal{opacity:1;transform:none}.win.on{opacity:1}
   }
 </style>
 </head>
 <body>
+<div class="bgfx" aria-hidden="true"><i></i><i></i><i></i></div>
+
 <nav aria-label="Principal">
-  <a class="brand" href="#inicio"><img src="logo.png" alt="" width="20" height="20">AUREVIX</a>
+  <a class="brand" href="#inicio"><img src="logo.png" alt="" width="22" height="22">AUREVIX</a>
   <div class="links">
+    <a href="#sistema">Sistema</a>
     <a href="#rendimiento">Rendimiento</a>
-    <a href="#funciones">Funciones</a>
-    <a href="#fondos">Fondos</a>
-    <a href="#seguridad">Seguridad</a>
+    <a href="#nusa">Nusa</a>
+    <a href="#instalar">Instalar</a>
     <a href="#versiones">Versiones</a>
     <a class="pill" href="#descargar">Descargar</a>
   </div>
 </nav>
 
 <main>
+  <!-- ================= Portada ================= -->
   <section class="hero" id="inicio">
-    <div>
-      <div class="eyebrow reveal" id="ver">AUREVIX OS</div>
-      <h1 class="reveal d1">Un sistema nuevo.<br><span class="grad">Tus programas de siempre.</span></h1>
-      <p class="lead reveal d2">Windows 11 oficial con otra cara y más rendimiento. Tema claro, fondos propios, barra de tareas flotante con efecto cristal y menú Inicio rediseñado, y todo lo que no usas, fuera.</p>
+    <div class="wrap">
+      <div class="badge reveal"><b id="ver">0.7</b>Shell propio, cristal y 95 ajustes reversibles</div>
+      <h1 class="reveal d1">Windows 11.<br><span class="grad">Como debería ser.</span></h1>
+      <p class="lead reveal d2">AUREVIX es Windows 11 oficial con una capa propia: barra de tareas flotante de cristal, menú Inicio limpio, Configuración rediseñada y el sistema optimizado desde el primer arranque. Tus programas y juegos, igual que siempre.</p>
       <div class="row reveal d3">
-        <a class="pill big" href="#descargar">Descargar AUREVIX</a>
-        <a class="ghost" href="#funciones">Qué incluye</a>
-      </div>
-      <div class="chips reveal d3">
-        <span class="chip"><b>100 %</b> compatible con Windows</span>
-        <span class="chip"><b>8</b> fondos propios y efecto cristal</span>
-        <span class="chip"><b>88</b> ajustes de rendimiento</span>
-        <span class="chip"><b>Un clic</b> para volver a Windows 11</span>
+        <a class="pill big lime" href="#descargar">Descargar AUREVIX</a>
+        <a class="ghost" href="#sistema">Ver el sistema</a>
       </div>
     </div>
 
-    <div class="device reveal d2" id="device" role="img" aria-label="Escritorio de AUREVIX OS en tema claro: fondo Daylight, barra de tareas tipo dock, menú Inicio y AUREVIX Control Center">
-      <div class="themes" role="group" aria-label="Tema del escritorio de ejemplo"><button type="button" data-t="light" aria-pressed="true">Claro</button><button type="button" data-t="dark" aria-pressed="false">Oscuro</button></div>
-      <div class="stage light" id="stage">
-        <canvas id="aurora" width="1200" height="750"></canvas>
-        <div class="notch"><span class="art"></span><span class="song">Midnight Drive · Lumen</span><span class="eq"><i></i><i></i><i></i><i></i></span></div>
+    <div class="scene reveal d2" id="sistema">
+      <div class="frame">
+        <div class="viewport" id="viewport">
+          <div class="desk" id="desk" role="img" aria-label="Escritorio real de AUREVIX OS: fondo Daylight, barra de tareas flotante de cristal con el logo AUREVIX y ventanas del sistema">
+            <div class="wall" style="background-image:url(img/fondo-daylight.webp)"></div>
+            <div class="wall dark" style="background-image:url(img/fondo-aurora.webp)"></div>
 
-        <div class="win">
-          <div class="tb"><img src="logo.png" alt="">AUREVIX Control Center<span class="ctl">— ▢ ✕</span></div>
-          <div class="side">
-            <span class="on">Inicio</span><span>Diagnóstico</span>
-            <small>RENDIMIENTO</small><span>Optimización</span><span>Game Boost</span><span>Benchmark</span><span>Red</span>
-            <small>SISTEMA</small><span>Apariencia</span><span>Limpieza</span><span>Actualizaciones</span>
-          </div>
-          <div class="main">
-            <h4>Buenas noches</h4>
-            <div class="tiles">
-              <div class="tile">Procesador<b id="cpu">12 %</b></div>
-              <div class="tile">Memoria<b id="ram">31 %</b></div>
-              <div class="tile">Game Boost<b style="color:var(--accent)">Activo</b></div>
+            <div class="nusa" aria-hidden="true"><span class="art"></span><span>Golden Hour · Lumen</span><span class="eq"><i></i><i></i><i></i><i></i></span></div>
+
+            <!-- Control Center -->
+            <div class="win cc" data-v="cc">
+              <div class="tt"><img src="logo.png" alt="">AUREVIX Control Center<span class="sp"></span><span class="c">—</span><span class="c">▢</span><span class="c">✕</span></div>
+              <div class="side">
+                <div class="brandc"><img src="logo.png" alt=""><div>AUREVIX<small>Control Center</small></div></div>
+                <div class="nav2"><div class="s">Inicio</div><div>Diagnóstico</div><small>RENDIMIENTO</small><div>Optimización</div><div>Game Boost</div><div>Benchmark</div><div>Red</div><small>SISTEMA</small><div>Apariencia</div><div>Limpieza</div><div>Actualizaciones</div><div>Recuperación</div></div>
+              </div>
+              <div class="main">
+                <h5 id="greet">Buenas tardes</h5>
+                <div class="mut">AUREVIX 0.7 · Windows 11 · Todo en orden</div>
+                <div class="mets">
+                  <div class="met">Procesador<b id="cpu">6 %</b><i>16 hilos</i></div>
+                  <div class="met">Memoria<b id="ram">28 %</b><i>9,0 de 32 GB</i></div>
+                  <div class="met">Ping<b id="pingv">14 ms</b><i>Cloudflare</i></div>
+                  <div class="met">Optimización<b class="g">Rendimiento</b><i>aplicado al instalar</i></div>
+                </div>
+                <div class="chart"><span>Uso del procesador · tiempo real</span><canvas id="spark" width="660" height="230"></canvas></div>
+                <div class="acts">
+                  <div class="act"><svg viewBox="0 0 24 24" fill="none" stroke="#4e9a1e" stroke-width="2" stroke-linecap="round"><path d="M4 18V9M10 18V5M16 18v-7M22 18H2"/></svg><div><b>Diagnóstico</b>CPU, GPU, discos y drivers</div></div>
+                  <div class="act"><svg viewBox="0 0 24 24" fill="none" stroke="#4e9a1e" stroke-width="2" stroke-linecap="round"><rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7 11v3M5.5 12.5h3M16 12h.01M18 14h.01"/></svg><div><b>Game Boost</b>Prioridad al juego</div></div>
+                  <div class="act"><svg viewBox="0 0 24 24" fill="none" stroke="#4e9a1e" stroke-width="2" stroke-linecap="round"><path d="M12 3a9 9 0 1 0 9 9"/><path d="M12 7v5l3 3"/></svg><div><b>95 ajustes</b>Uno a uno, reversibles</div></div>
+                </div>
+              </div>
             </div>
-            <div class="spark"><span>Uso del procesador</span><canvas id="spark" width="460" height="120"></canvas></div>
-            <div class="tiles">
-              <div class="tile">Disco<b>412 GB</b></div>
-              <div class="tile">Ping<b id="pingv">14 ms</b></div>
-              <div class="tile">Optimización<b>Rendimiento</b></div>
+
+            <!-- Menú Inicio -->
+            <div class="win start" data-v="start">
+              <div class="sr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Busca apps, configuración y documentos</div>
+              <div class="hd">Ancladas<span>Todas ›</span></div>
+              <div class="pins" id="pins"></div>
+              <div class="ft"><i></i>Tú<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v8M6.3 6.3a8 8 0 1 0 11.4 0"/></svg></div>
+            </div>
+
+            <!-- Configuración -->
+            <div class="win set" data-v="set">
+              <div class="tt">‹&nbsp;&nbsp;Configuración<span class="sp"></span><span class="c">—</span><span class="c">▢</span><span class="c">✕</span></div>
+              <div class="side">
+                <div class="usr"><i></i><div><b>Tú</b><small>Cuenta local</small></div></div>
+                <div class="find">Buscar una configuración</div>
+                <div class="nav2" id="setnav"></div>
+              </div>
+              <div class="main">
+                <h6>Personalización</h6>
+                <div class="prev"><div class="shot" style="background-image:url(img/fondo-daylight.webp)"></div>
+                  <div><div style="font-size:12.5px;font-weight:650;margin-bottom:8px">Selecciona un tema</div><div class="themes" id="themes"></div></div></div>
+                <div class="row2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 16 5-5 4 4 3-3 6 6"/></svg><div>Fondo<small>AUREVIX Daylight</small></div><em>›</em></div>
+                <div class="row2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor"/></svg><div>Colores<small>Claro · acento verde AUREVIX</small></div><em>›</em></div>
+                <div class="row2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="15" width="18" height="5" rx="2"/></svg><div>Barra de tareas<small>Flotante, con efecto cristal</small></div><em>›</em></div>
+              </div>
+            </div>
+
+            <!-- Explorador -->
+            <div class="win exp" data-v="exp">
+              <div class="tabs"><div class="tab"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="12" rx="2" fill="#5c6b7a"/><rect x="5" y="7" width="14" height="8" rx="1" fill="#8de03c"/><path d="M9 20h6" stroke="#5c6b7a" stroke-width="2"/></svg>Este equipo<span style="margin-left:auto;opacity:.5">✕</span></div><span style="align-self:center;padding:0 8px;opacity:.6">+</span><span class="sp"></span><span class="c">—</span><span class="c">▢</span><span class="c">✕</span></div>
+              <div class="bar">‹ › ↑ ⟳<div class="addr">Este equipo ›</div><div class="addr s">Buscar en Este equipo</div></div>
+              <div class="nv" id="expnav"></div>
+              <div class="ct">
+                <h6>Carpetas</h6>
+                <div class="fold" id="folders"></div>
+                <h6>Dispositivos y unidades</h6>
+                <div style="display:flex;gap:10px">
+                  <div class="drv"><svg viewBox="0 0 48 48"><rect x="4" y="14" width="40" height="22" rx="6" fill="#8f99a6"/><rect x="8" y="18" width="20" height="4" rx="2" fill="#5c6670"/><circle cx="37" cy="25" r="2.5" fill="#8de03c"/></svg><div style="flex:1">Windows (C:)<div class="bb"><i></i></div><small>418 GB libres de 952 GB</small></div></div>
+                  <div class="drv"><svg viewBox="0 0 48 48"><rect x="4" y="14" width="40" height="22" rx="6" fill="#8f99a6"/><rect x="8" y="18" width="20" height="4" rx="2" fill="#5c6670"/><circle cx="37" cy="25" r="2.5" fill="#6f7884"/></svg><div style="flex:1">Juegos (D:)<div class="bb"><i style="width:72%"></i></div><small>520 GB libres de 1,8 TB</small></div></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Barra de tareas -->
+            <div class="tbar">
+              <div class="apps" id="apps"></div>
+              <div class="tray"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 15 6-6 6 6"/></svg><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12.5a10 10 0 0 1 14 0M8 15.5a6 6 0 0 1 8 0"/><circle cx="12" cy="18.5" r="1" fill="currentColor"/></svg><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16 9a4 4 0 0 1 0 6"/></svg><div id="clock">18:24<br>12/11/2026</div></div>
             </div>
           </div>
         </div>
-
-        <div class="start" aria-hidden="true">
-          <div class="search">Escribe para buscar</div>
-          <div class="lbl">Anclado</div>
-          <div class="grid" id="startgrid"></div>
-          <div class="user"><i></i>Tú<span style="margin-left:auto;color:#6b6b74">⏻</span></div>
-        </div>
-
-        <div class="dock" id="dock"></div>
       </div>
+      <div class="controls">
+        <div class="seg" role="group" aria-label="Vista del escritorio" id="views">
+          <button type="button" data-v="cc" aria-pressed="true">Control Center</button>
+          <button type="button" data-v="start" aria-pressed="false">Inicio</button>
+          <button type="button" data-v="set" aria-pressed="false">Configuración</button>
+          <button type="button" data-v="exp" aria-pressed="false">Explorador</button>
+        </div>
+        <div class="seg" role="group" aria-label="Tema" id="theme">
+          <button type="button" data-t="light" aria-pressed="true">Claro</button>
+          <button type="button" data-t="dark" aria-pressed="false">Oscuro</button>
+        </div>
+      </div>
+      <p class="caption" id="caption">AUREVIX Control Center en tema claro, sobre el fondo Daylight. Pasa el ratón por los iconos de la barra.</p>
+    </div>
+
+    <div class="stats">
+      <div class="stat reveal"><b>95</b><span>ajustes de rendimiento, uno a uno</span></div>
+      <div class="stat reveal d1"><b>0 archivos</b><span>de Windows modificados por el Shell</span></div>
+      <div class="stat reveal d2"><b>8 fondos</b><span>en 4K, claros y oscuros</span></div>
+      <div class="stat reveal d3"><b>1 clic</b><span>para volver a Windows 11</span></div>
     </div>
   </section>
 
   <div class="band" aria-hidden="true"><div class="track" id="band"></div></div>
 
+  <!-- ================= Rendimiento ================= -->
   <section id="rendimiento">
     <div class="wrap split">
       <div class="copy">
         <div class="eyebrow reveal">Rendimiento</div>
-        <h2 class="reveal d1">Menos procesos de fondo. Más equipo para ti.</h2>
-        <p class="body reveal d2">Desde el primer arranque AUREVIX deja Windows en su nivel Rendimiento: quita apps promocionales, para servicios que no usas, da prioridad a lo que tienes delante y mide el resultado con tus juegos.</p>
+        <h2 class="reveal d1">Rápido desde el primer arranque. Y bajo tu control.</h2>
+        <p class="body reveal d2">Al instalarse, AUREVIX aplica su nivel Rendimiento: menos procesos en segundo plano, prioridad a lo que tienes delante y apagados más ágiles. En el Control Center cada ajuste tiene su interruptor, te dice si lo recomendamos y lo deshace exactamente como estaba.</p>
         <ul class="list reveal d3">
-          <li><b>Game Boost.</b> Detecta el juego, le da prioridad y aparta lo demás. Al cerrarlo, todo vuelve.</li>
-          <li><b>Benchmark.</b> FPS medios y 1 % lows antes y después, con PresentMon.</li>
-          <li><b>Todo reversible.</b> Cada ajuste se explica y se deshace con un clic.</li>
+          <li><b>Recomendado, Para jugar o Competitivo.</b> Cada ajuste lleva su etiqueta y sus inconvenientes, sin letra pequeña.</li>
+          <li><b>Nada a ciegas.</b> Defender, Firewall, Windows Update y UAC nunca se tocan. Los ajustes de red agresivos son opcionales.</li>
+          <li><b>Mantenimiento oficial.</b> DISM, SFC, TRIM y limpieza de DNS con un botón, sin abrir la consola.</li>
         </ul>
+        <div class="cats reveal d3" id="cats"></div>
       </div>
-      <div class="panel reveal d2">
-        <div class="ph"><span>Tiempo por fotograma · ilustración</span><span class="legend"><span><i style="background:#5c5c66"></i>Windows sin ajustar</span><span><i style="background:var(--accent)"></i>AUREVIX</span></span></div>
-        <canvas class="fps" id="fps" width="760" height="280"></canvas>
-        <div class="toggles">
-          <div class="tg">Apps de fondo en pausa<span class="sw"></span></div>
-          <div class="tg">Energía sin ahorros<span class="sw"></span></div>
-          <div class="tg">Memoria en espera libre<span class="sw"></span></div>
-          <div class="tg">Prioridad al juego<span class="sw"></span></div>
+      <div class="panel reveal d2" aria-label="Ajustes del Control Center">
+        <div class="ph"><b>Optimización · Todos los ajustes</b><span>Recomendados</span></div>
+        <div id="tweaks"></div>
+        <div class="pfoot"><span id="tcount">0 de 8 activados</span><div class="meter"><i id="tmeter"></i></div><span>Reversible</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= Nusa ================= -->
+  <section id="nusa" class="nusa-sec">
+    <div class="wrap">
+      <div class="eyebrow reveal">Nusa, incluida</div>
+      <h2 class="reveal d1">La parte de arriba de tu pantalla, viva.</h2>
+      <p class="body reveal d2" style="margin-inline:auto">Nusa convierte la zona superior en una isla que se adapta a lo que estás haciendo: tu música con letras sincronizadas, un temporizador o los archivos que arrastras. El asistente de AUREVIX la instala desde Microsoft Store.</p>
+      <div class="nstage reveal d2">
+        <div class="island" id="island" aria-live="polite">
+          <div class="st on" data-s="mini" style="padding:0"><div class="mini"><span class="cover"></span>Golden Hour · Lumen<span class="eq"><i></i><i></i><i></i><i></i></span></div></div>
+          <div class="st" data-s="player"><div class="player"><span class="cover"></span><div><b>Golden Hour</b><small>Lumen · Afterglow</small></div>
+            <div class="prog">1:24<span class="pb"><i></i></span>3:47</div><div class="ctrls">⏮ &nbsp;⏸&nbsp; ⏭</div></div></div>
+          <div class="st" data-s="lyrics"><div class="lyr" id="lyr"></div></div>
+          <div class="st" data-s="timer"><div class="tmr"><svg viewBox="0 0 96 96"><circle class="bgc" cx="48" cy="48" r="42"/><circle class="fg" cx="48" cy="48" r="42"/></svg><div><b id="tmr">24:59</b><small>Concentración · Pomodoro</small></div></div></div>
+          <div class="st" data-s="files"><div class="files"><div class="file"><div><b>▤</b><br>informe.pdf</div></div><div class="file"><div><b>▧</b><br>foto.png</div></div><div class="file"><div><b>♪</b><br>demo.mp3</div></div></div></div>
         </div>
       </div>
-    </div>
-  </section>
-
-  <section id="funciones">
-    <div class="wrap">
-      <div class="eyebrow reveal">Funciones</div>
-      <h2 class="reveal d1">Todo lo de Windows. Y lo que le faltaba.</h2>
-      <p class="body reveal d2">Un solo panel, AUREVIX Control Center, para el rendimiento, la red, la limpieza, el aspecto y las actualizaciones.</p>
-      <div class="bento">
-        <article class="card wide reveal">
-          <h3>AUREVIX Shell</h3>
-          <p>Barra de tareas flotante con efecto cristal y logo AUREVIX, menú Inicio y Configuración con el diseño AUREVIX desde que enciendes. Componente propio, sin tocar archivos de Windows.</p>
-          <div class="viz"><div class="dock" id="dock2" style="position:absolute;bottom:14px;transform:translateX(-50%) scale(.92)"></div></div>
-        </article>
-        <article class="card wide reveal d1">
-          <h3>Nusa incluida</h3>
-          <p>La parte de arriba de la pantalla se convierte en una isla con tu música, letras sincronizadas, temporizador y archivos.</p>
-          <div class="viz"><div class="island"><span class="art"></span>Neon Rain · Kairo<span style="margin-left:auto;color:var(--accent)">2:14</span></div></div>
-        </article>
-        <article class="card reveal">
-          <h3>Game Boost</h3>
-          <p>Prioridad al juego, apps de fondo apartadas y temporizador a 0,5 ms.</p>
-          <div class="viz"><div class="bars"><i style="--h:40%"></i><i style="--h:55%"></i><i class="g" style="--h:96%"></i><i style="--h:35%"></i><i style="--h:50%"></i><i style="--h:30%"></i></div></div>
-        </article>
-        <article class="card reveal d1">
-          <h3>Red</h3>
-          <p>DNS rápido, prioridad por juego y adaptador sin ahorro de energía.</p>
-          <div class="viz"><canvas class="ping" id="ping" width="320" height="120"></canvas></div>
-        </article>
-        <article class="card reveal d2">
-          <h3>Limpieza</h3>
-          <p>Temporales, apps preinstaladas y programas de inicio, en una pantalla.</p>
-          <div class="viz" style="display:flex;align-items:flex-end"><div class="big"><span id="gb">0,0</span><small>GB liberados</small></div></div>
-        </article>
-        <article class="card reveal">
-          <h3>Actualizaciones firmadas</h3>
-          <p>Te avisa cuando hay versión nueva, la verifica e instala sola.</p>
-          <div class="viz upd"><svg class="ring" viewBox="0 0 76 76"><circle class="bgc" cx="38" cy="38" r="32"/><circle class="fg" cx="38" cy="38" r="32"/></svg><div><b>Verificando…</b><p>Firma ECDSA y SHA-256</p></div></div>
-        </article>
-        <article class="card reveal d1">
-          <h3>Sin avisos de permisos</h3>
-          <p>AUREVIX Core Service hace los cambios de sistema por ti, con reglas estrictas.</p>
-          <div class="viz"><div class="check"><div><b>✓</b> Punto de restauración</div><div><b>✓</b> Firewall</div><div><b>✓</b> Benchmark</div><div><b>✓</b> Actualización</div></div></div>
-        </article>
-        <article class="card reveal d2">
-          <h3>Diagnóstico local</h3>
-          <p>CPU, gráfica, discos y drivers en un minuto. Nada sale de tu PC.</p>
-          <div class="viz"><div class="bars"><i class="g" style="--h:70%"></i><i class="g" style="--h:45%"></i><i class="g" style="--h:88%"></i><i class="g" style="--h:60%"></i><i class="g" style="--h:75%"></i><i class="g" style="--h:52%"></i></div></div>
-        </article>
+      <div class="nlabels" id="nlabels" role="group" aria-label="Modos de Nusa">
+        <button type="button" data-s="mini" aria-pressed="true">Reposo</button>
+        <button type="button" data-s="player" aria-pressed="false">Música</button>
+        <button type="button" data-s="lyrics" aria-pressed="false">Letras</button>
+        <button type="button" data-s="timer" aria-pressed="false">Temporizador</button>
+        <button type="button" data-s="files" aria-pressed="false">Archivos</button>
+      </div>
+      <div class="nfeats">
+        <div class="reveal"><b>Música</b><span>Spotify, Apple Music, YouTube Music y más, con controles.</span></div>
+        <div class="reveal d1"><b>Letras</b><span>Sincronizadas, línea a línea, sin abrir otra ventana.</span></div>
+        <div class="reveal d2"><b>Temporizador</b><span>Pomodoro y cuenta atrás siempre a la vista.</span></div>
+        <div class="reveal d3"><b>Archivos</b><span>Suelta archivos en la isla y llévalos donde quieras.</span></div>
       </div>
     </div>
   </section>
 
+  <!-- ================= Funciones ================= -->
+  <section id="funciones">
+    <div class="wrap">
+      <div class="eyebrow reveal">Control Center</div>
+      <h2 class="reveal d1">Un panel para todo lo que Windows esconde.</h2>
+      <p class="body reveal d2">Rendimiento, red, limpieza, aspecto, recuperación y actualizaciones, en una app nativa que sigue el tema de Windows.</p>
+      <div class="bento">
+        <article class="card w3 reveal"><h3>Game Boost</h3><p>Detecta el juego, le da prioridad, aparta lo demás y fija el temporizador a 0,5 ms. Al cerrarlo, todo vuelve.</p>
+          <div class="viz"><div class="bars" id="gbars"><i style="--h:42%"></i><i style="--h:55%"></i><i class="g" style="--h:96%"></i><i style="--h:30%"></i><i style="--h:48%"></i><i style="--h:26%"></i><i style="--h:38%"></i></div></div></article>
+        <article class="card w3 reveal d1"><h3>Red sin sorpresas</h3><p>DNS rápido, prioridad para el juego y adaptador sin ahorro de energía. Mide el ping en vivo.</p>
+          <div class="viz"><canvas class="ping" id="ping" width="560" height="200"></canvas></div></article>
+        <article class="card reveal"><h3>Limpieza</h3><p>Temporales, apps preinstaladas y programas de inicio, en una pantalla.</p>
+          <div class="viz" style="display:flex;align-items:flex-end"><div class="bigN"><span id="gb">0,0</span> GB<small>liberados en este equipo</small></div></div></article>
+        <article class="card reveal d1"><h3>Actualizaciones firmadas</h3><p>Firma ECDSA P-256 y SHA-256 antes de instalar. El servidor nunca controla tu PC.</p>
+          <div class="viz" style="display:flex;align-items:center;gap:16px"><svg class="ring" viewBox="0 0 76 76"><circle class="bgc" cx="38" cy="38" r="32"/><circle class="fg" cx="38" cy="38" r="32"/></svg><div><b>Verificando…</b><p style="margin:0">Firma válida</p></div></div></article>
+        <article class="card reveal d2"><h3>Sin avisos de permisos</h3><p>AUREVIX Core Service hace los cambios de sistema por ti, con reglas estrictas y copia de todo.</p>
+          <div class="viz"><div class="chk"><div><b>✓</b> Punto de restauración</div><div><b>✓</b> Copia del registro</div><div><b>✓</b> Ajuste aplicado</div><div><b>✓</b> Comprobado</div></div></div></article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= Instalar ================= -->
   <section id="instalar">
     <div class="wrap split flip">
-      <div class="inst reveal">
+      <div class="inst reveal" aria-label="AUREVIX Installer">
         <div class="tb"><img src="logo.png" alt="">AUREVIX Installer</div>
         <div class="in">
-          <div class="eyebrow" style="color:var(--muted)">En curso</div>
-          <h3 style="font-size:24px">Creando el USB de AUREVIX OS</h3>
-          <div class="pct"><b id="ipct">0 %</b><div id="ieta">Calculando…<span id="istep">Preparando</span></div></div>
-          <div class="ibar"><i id="ibar"></i></div>
-          <ul class="steps" id="isteps">
-            <li>Descargar AUREVIX</li><li>Obtener Windows 11 de Microsoft</li><li>Preparar la ISO</li><li>Crear y comprobar el USB</li>
-          </ul>
+          <div class="eyebrow" style="color:var(--muted)">¿Qué quieres hacer?</div>
+          <div class="opts" style="margin-top:12px">
+            <div class="opt"><i><svg viewBox="0 0 24 24" fill="none" stroke="#8de03c" stroke-width="2" stroke-linecap="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg></i><div><b>Instalar en este Windows</b><span>Sin borrar nada · unos 2 min</span></div></div>
+            <div class="opt"><i><svg viewBox="0 0 24 24" fill="none" stroke="#8de03c" stroke-width="2" stroke-linecap="round"><path d="M4 12a8 8 0 1 0 2.3-5.7M4 4v4h4"/></svg></i><div><b>Reinstalar limpio</b><span>Windows 11 desde cero, sin USB</span></div></div>
+            <div class="opt on"><i><svg viewBox="0 0 24 24" fill="none" stroke="#8de03c" stroke-width="2" stroke-linecap="round"><rect x="8" y="3" width="8" height="9" rx="1"/><rect x="6" y="11" width="12" height="10" rx="2"/></svg></i><div><b>Crear USB o ISO</b><span>Para otro PC o para guardar</span></div></div>
+          </div>
+          <div class="dest"><div>Guardar la ISO en<br><code id="dpath">D:\ISOs\AUREVIX_OS_20261112.iso</code><small id="dfree">612 GB libres · suficiente</small></div><span class="btn">Cambiar…</span></div>
+          <div class="prg"><div class="top"><span id="istep">Descargando Windows 11 de Microsoft</span><b id="ipct">0 %</b></div><div class="pbar"><i id="ibar"></i></div></div>
         </div>
       </div>
       <div class="copy">
         <div class="eyebrow reveal">Instalación</div>
         <h2 class="reveal d1">Un instalador. Tres caminos.</h2>
-        <p class="body reveal d2">Te dice cuánto falta, comprueba el espacio antes de empezar y verifica el resultado al terminar.</p>
+        <p class="body reveal d2">Comprueba el espacio antes de empezar, te dice cuánto falta y verifica el resultado al terminar. Windows siempre llega de Microsoft.</p>
         <ul class="list reveal d3">
-          <li><b>En este Windows.</b> Añade AUREVIX sin borrar nada. Unos 2 minutos.</li>
-          <li><b>Reinstalar limpio.</b> Windows 11 desde cero, sin USB y en español.</li>
-          <li><b>USB o ISO.</b> Enchufa un pendrive y lo deja listo para arrancar.</li>
+          <li><b>En este Windows.</b> Añade AUREVIX sin borrar nada.</li>
+          <li><b>Reinstalar limpio.</b> Windows 11 desde cero, en español y casi automático.</li>
+          <li><b>USB o ISO donde tú quieras.</b> Elige la carpeta o la unidad de destino; avisa si no hay sitio.</li>
         </ul>
       </div>
     </div>
   </section>
 
-
+  <!-- ================= Fondos ================= -->
   <section id="fondos">
     <div class="wrap">
       <div class="eyebrow reveal">Fondos</div>
-      <h2 class="reveal d1">Ocho fondos en 4K: cuatro claros y cuatro oscuros.</h2>
-      <p class="body reveal d2">Daylight es el predeterminado. Todos se eligen en un clic desde Apariencia.</p>
-      <div class="walls reveal d2">
-        <div class="wall"><img src="img/fondo-daylight.webp" width="1920" height="1080" alt="Fondo Daylight" loading="lazy"><span>Daylight · predeterminado</span></div>
-        <div class="wall"><img src="img/fondo-mist.webp" width="1920" height="1080" alt="Fondo Mist" loading="lazy"><span>Mist · claro</span></div>
-        <div class="wall"><img src="img/fondo-sand.webp" width="1920" height="1080" alt="Fondo Sand" loading="lazy"><span>Sand · claro</span></div>
-        <div class="wall"><img src="img/fondo-glacier.webp" width="1920" height="1080" alt="Fondo Glacier" loading="lazy"><span>Glacier · claro</span></div>
-        <div class="wall"><img src="img/fondo-aurora.webp" width="1920" height="1080" alt="Fondo Aurora" loading="lazy"><span>Aurora · oscuro</span></div>
-        <div class="wall"><img src="img/fondo-tide.webp" width="1920" height="1080" alt="Fondo Tide" loading="lazy"><span>Tide · oscuro</span></div>
-        <div class="wall"><img src="img/fondo-dusk.webp" width="1920" height="1080" alt="Fondo Dusk" loading="lazy"><span>Dusk · oscuro</span></div>
-        <div class="wall"><img src="img/fondo-nebula.webp" width="1920" height="1080" alt="Fondo Nebula" loading="lazy"><span>Nebula · oscuro</span></div>
+      <h2 class="reveal d1">Ocho fondos en 4K. Cuatro claros, cuatro oscuros.</h2>
+      <p class="body reveal d2">Daylight es el predeterminado. Todos se cambian en un clic desde Apariencia.</p>
+      <div class="walls">
+        <div class="wl reveal"><img src="img/fondo-daylight.webp" width="1920" height="1080" alt="Fondo Daylight" loading="lazy"><span>Daylight · predeterminado</span></div>
+        <div class="wl reveal d1"><img src="img/fondo-mist.webp" width="1920" height="1080" alt="Fondo Mist" loading="lazy"><span>Mist</span></div>
+        <div class="wl reveal d2"><img src="img/fondo-sand.webp" width="1920" height="1080" alt="Fondo Sand" loading="lazy"><span>Sand</span></div>
+        <div class="wl reveal d3"><img src="img/fondo-glacier.webp" width="1920" height="1080" alt="Fondo Glacier" loading="lazy"><span>Glacier</span></div>
+        <div class="wl reveal"><img src="img/fondo-aurora.webp" width="1920" height="1080" alt="Fondo Aurora" loading="lazy"><span>Aurora</span></div>
+        <div class="wl reveal d1"><img src="img/fondo-tide.webp" width="1920" height="1080" alt="Fondo Tide" loading="lazy"><span>Tide</span></div>
+        <div class="wl reveal d2"><img src="img/fondo-dusk.webp" width="1920" height="1080" alt="Fondo Dusk" loading="lazy"><span>Dusk</span></div>
+        <div class="wl reveal d3"><img src="img/fondo-nebula.webp" width="1920" height="1080" alt="Fondo Nebula" loading="lazy"><span>Nebula</span></div>
       </div>
     </div>
   </section>
 
+  <!-- ================= Seguridad ================= -->
   <section id="seguridad">
     <div class="wrap">
       <div class="eyebrow reveal">Seguridad</div>
       <h2 class="reveal d1">Firmado. Verificado. Tuyo.</h2>
-      <p class="body reveal d2">Defender, Firewall, SmartScreen y UAC siguen activos. Cada actualización llega firmada y se comprueba antes de instalarse. El servidor nunca controla tu PC.</p>
-      <div class="stats reveal d3">
-        <div class="stat"><b>P-256</b><span>firma ECDSA de cada versión</span></div>
-        <div class="stat"><b>SHA-256</b><span>cada paquete verificado</span></div>
-        <div class="stat"><b>0</b><span>datos personales enviados</span></div>
-        <div class="stat"><b>1 clic</b><span>para volver a Windows 11</span></div>
+      <p class="body reveal d2">Defender, Firewall, SmartScreen y UAC siguen activos. Cada cambio guarda una copia y se deshace exactamente. Ningún dato personal sale de tu PC.</p>
+      <div class="sec4">
+        <div class="stat reveal"><b>P-256</b><span>firma ECDSA de cada versión</span></div>
+        <div class="stat reveal d1"><b>SHA-256</b><span>cada paquete verificado</span></div>
+        <div class="stat reveal d2"><b>0</b><span>datos personales enviados</span></div>
+        <div class="stat reveal d3"><b>Copia</b><span>de todo antes de cada cambio</span></div>
       </div>
     </div>
   </section>
 
+  <!-- ================= Versiones ================= -->
   <section id="versiones">
     <div class="wrap">
       <div class="eyebrow reveal">Versiones</div>
       <h2 class="reveal d1">Todas las versiones publicadas.</h2>
-      <p class="body reveal d2">Cada una con su instalador. El instalador crea el USB o la ISO de AUREVIX OS en tu PC con Windows 11 oficial.</p>
-      <div class="vlist reveal d2" id="vlist"><div class="vrow"><div class="t"><span>Cargando versiones…</span></div></div></div>
+      <div class="vlist reveal d2" id="vlist"><div class="vrow"><div class="t">Cargando versiones…</div></div></div>
     </div>
   </section>
 
+  <!-- ================= Descargar ================= -->
   <section class="download" id="descargar">
-    <div class="eyebrow reveal" id="dl-badge">Buscando la última versión…</div>
-    <h2 class="reveal d1">Empieza aquí.</h2>
-    <div class="reveal d2" style="margin-top:26px;position:relative"><a class="pill big" id="dl-main" href="#descargar" aria-disabled="true">Descargar AUREVIX Installer</a></div>
-    <div class="meta reveal d2" id="dl-meta">Para Windows 10 y 11 · 64 bits</div>
-    <div class="hash reveal d3" id="dl-hash"></div>
-    <div class="options reveal d3">
-      <div class="opt"><div class="n">01</div><h3>Instalar en este Windows</h3><p>Añade AUREVIX sin borrar nada. Tus archivos y programas siguen igual.</p></div>
-      <div class="opt"><div class="n">02</div><h3>Reinstalar limpio</h3><p>Descarga Windows 11 oficial y reinstala el PC desde cero, sin USB. Borra lo que haya en el disco del sistema.</p></div>
-      <div class="opt"><div class="n">03</div><h3>Crear USB o ISO</h3><p>Enchufa un pendrive: AUREVIX lo detecta y monta dentro Windows 11 con todo listo.</p></div>
+    <div class="wrap">
+      <div class="eyebrow reveal" id="dl-badge">Buscando la última versión…</div>
+      <h2 class="reveal d1">Empieza aquí.</h2>
+      <div class="reveal d2" style="margin-top:28px"><a class="pill big lime" id="dl-main" href="https://github.com/s0k1x/aurevix-OS/releases/latest">Descargar AUREVIX Installer</a></div>
+      <div class="meta reveal d2" id="dl-meta">Para Windows 10 y 11 · 64 bits</div>
+      <div class="hash reveal d3" id="dl-hash"></div>
+      <div class="options">
+        <div class="reveal"><div class="n">01</div><h3>Instalar en este Windows</h3><p>Añade AUREVIX sin borrar nada. Tus archivos y programas siguen igual.</p></div>
+        <div class="reveal d1"><div class="n">02</div><h3>Reinstalar limpio</h3><p>Descarga Windows 11 oficial y reinstala el PC desde cero, sin USB.</p></div>
+        <div class="reveal d2"><div class="n">03</div><h3>Crear USB o ISO</h3><p>Monta Windows 11 con AUREVIX en un pendrive o en una ISO, donde tú elijas.</p></div>
+      </div>
+      <div class="more reveal">
+        <a class="ghost" id="dl-setup" href="#">Solo Control Center (.exe)</a>
+        <a class="ghost" id="dl-iso" href="#">ISO Builder (avanzado)</a>
+        <a class="ghost" href="https://github.com/s0k1x/aurevix-OS" rel="noopener">Código en GitHub</a>
+      </div>
+      <p class="legal reveal">Windows se descarga siempre de Microsoft y se activa con tu propia licencia: AUREVIX no distribuye Windows ni incluye claves. Por eso no hay una ISO lista para descargar: el Installer la crea en tu PC. Nusa es una app de rama2555 que se instala desde Microsoft Store.</p>
     </div>
-    <div class="more reveal">
-      <a class="ghost" id="dl-setup" href="#">Solo Control Center (.exe)</a>
-      <a class="ghost" id="dl-iso" href="#">ISO Builder (avanzado)</a>
-      <a class="ghost" href="#versiones">Todas las versiones</a>
-    </div>
-    <p class="legal reveal">Windows se descarga siempre desde Microsoft y se activa con tu propia licencia: AUREVIX no distribuye Windows ni incluye claves. Por eso no hay una ISO lista para descargar; el Installer la crea en tu PC. Nusa es una app de rama2555 que se instala desde Microsoft Store.</p>
   </section>
 </main>
 
 <footer>
-  <span>AUREVIX OS · Versión de pruebas. Úsala primero en una máquina virtual.</span>
-  <span>Windows es una marca de Microsoft. AUREVIX no está afiliado a Microsoft. · <a href="https://github.com/s0k1x/aurevix-OS" rel="noopener">GitHub</a></span>
+  <div class="wrap">
+    <span>AUREVIX OS · Proyecto independiente. Pruébalo primero en una máquina virtual.</span>
+    <span>Windows es una marca de Microsoft. AUREVIX no está afiliado a Microsoft.</span>
+  </div>
 </footer>
 
 <script>
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $ = id => document.getElementById(id);
 
-/* ---------- Iconos (dibujados aquí, sin imágenes externas) ---------- */
-const svg = d => `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
-const I = {
-  folder: svg('<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>'),
-  web: svg('<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 2.5 15.4 0 18M12 3c-2.5 2.6-2.5 15.4 0 18"/>'),
-  term: svg('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 9 3 3-3 3M12 15h5"/>'),
-  store: svg('<path d="M5 8h14l-1 12H6zM9 8a3 3 0 0 1 6 0"/>'),
-  gear: svg('<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>'),
-  music: svg('<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>'),
-  game: svg('<rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7 11v3M5.5 12.5h3M16 12h.01M18 14h.01"/>'),
-  mail: svg('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>'),
-  photo: svg('<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/>'),
-  calc: svg('<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01"/>'),
-  chat: svg('<path d="M21 12a8 8 0 0 1-12 7l-5 1 1-4a8 8 0 1 1 16-4z"/>'),
-  code: svg('<path d="m8 8-4 4 4 4M16 8l4 4-4 4M14 4l-4 16"/>')
+/* ---------- Iconos propios (SVG con degradado, sin imágenes externas) ---------- */
+const G = (id, a, b) => `<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs>`;
+let gi = 0;
+const ICON = {
+  folder: () => { const g = 'g' + gi++; return `<svg viewBox="0 0 48 48">${G(g, '#f7d27a', '#e5a93a')}<path d="M5 13a4 4 0 0 1 4-4h10l4 4h16a4 4 0 0 1 4 4v18a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4z" fill="url(#${g})"/><rect x="5" y="18" width="38" height="21" rx="4" fill="#f9dc90"/></svg>`; },
+  web: () => { const g = 'g' + gi++; return `<svg viewBox="0 0 48 48">${G(g, '#5fd6c4', '#1f8f9e')}<circle cx="24" cy="24" r="19" fill="url(#${g})"/><path d="M5 24h38M24 5c6 5 6 33 0 38M24 5c-6 5-6 33 0 38" stroke="#fff" stroke-opacity=".85" stroke-width="2.4" fill="none"/></svg>`; },
+  term: () => `<svg viewBox="0 0 48 48"><rect x="5" y="8" width="38" height="32" rx="6" fill="#262a30"/><rect x="5" y="8" width="38" height="7" rx="3" fill="#3a3f47"/><path d="m13 22 6 5-6 5" stroke="#8de03c" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M23 33h10" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>`,
+  settings: () => { const g = 'g' + gi++; return `<svg viewBox="0 0 48 48">${G(g, '#a5adb8', '#6b7480')}<path d="M24 5l4 5 6-2 1 6 6 2-2 6 5 4-5 4 2 6-6 2-1 6-6-2-4 5-4-5-6 2-1-6-6-2 2-6-5-4 5-4-2-6 6-2 1-6 6 2z" fill="url(#${g})"/><circle cx="24" cy="24" r="8" fill="#fff"/><circle cx="24" cy="24" r="4" fill="#8de03c"/></svg>`; },
+  store: () => { const g = 'g' + gi++; return `<svg viewBox="0 0 48 48">${G(g, '#9ee65a', '#4e9a1e')}<path d="M8 16h32l-3 25H11z" fill="url(#${g})"/><path d="M17 16a7 7 0 0 1 14 0" stroke="#4e9a1e" stroke-width="3" fill="none"/><path d="m24 23 2 4.5 5 .5-4 3 1 5-4-2.5-4 2.5 1-5-4-3 5-.5z" fill="#fff"/></svg>`; },
+  search: () => `<svg viewBox="0 0 48 48"><circle cx="21" cy="21" r="12" stroke="currentColor" stroke-width="4" fill="none"/><path d="m30 30 9 9" stroke="currentColor" stroke-width="4" stroke-linecap="round"/></svg>`,
+  mail: () => { const g = 'g' + gi++; return `<svg viewBox="0 0 48 48">${G(g, '#7cb7ff', '#3b7be0')}<rect x="5" y="11" width="38" height="27" rx="5" fill="url(#${g})"/><path d="m7 14 17 13 17-13" stroke="#fff" stroke-width="3" fill="none"/></svg>`; },
+  cal: () => `<svg viewBox="0 0 48 48"><rect x="6" y="8" width="36" height="34" rx="6" fill="#fff" stroke="#d7dbe0"/><rect x="6" y="8" width="36" height="10" rx="5" fill="#8de03c"/><text x="24" y="36" font-size="15" font-weight="700" text-anchor="middle" fill="#262a30" font-family="Segoe UI,sans-serif">12</text></svg>`,
+  photo: () => `<svg viewBox="0 0 48 48"><rect x="5" y="8" width="38" height="32" rx="6" fill="#6aa8f0"/><path d="M5 34l11-12 9 9 6-6 12 11v2a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4z" fill="#8de03c"/><circle cx="33" cy="17" r="4" fill="#ffe08a"/></svg>`,
+  music: () => { const g = 'g' + gi++; return `<svg viewBox="0 0 48 48">${G(g, '#ff8a7a', '#e0457b')}<rect x="5" y="5" width="38" height="38" rx="10" fill="url(#${g})"/><path d="M20 32V15l14-3v17" stroke="#fff" stroke-width="3" fill="none"/><circle cx="17" cy="32" r="4" fill="#fff"/><circle cx="31" cy="29" r="4" fill="#fff"/></svg>`; },
+  calc: () => `<svg viewBox="0 0 48 48"><rect x="9" y="5" width="30" height="38" rx="6" fill="#30353c"/><rect x="13" y="9" width="22" height="9" rx="2" fill="#bfe79a"/><g fill="#7c858f"><rect x="13" y="22" width="6" height="5" rx="1.5"/><rect x="21" y="22" width="6" height="5" rx="1.5"/><rect x="13" y="30" width="6" height="5" rx="1.5"/><rect x="21" y="30" width="6" height="5" rx="1.5"/></g><rect x="29" y="22" width="6" height="13" rx="1.5" fill="#8de03c"/></svg>`,
+  notes: () => `<svg viewBox="0 0 48 48"><rect x="9" y="5" width="30" height="38" rx="5" fill="#fff" stroke="#d7dbe0"/><path d="M15 15h18M15 22h18M15 29h12" stroke="#9aa3ad" stroke-width="2.5" stroke-linecap="round"/><path d="m29 38 10-10" stroke="#8de03c" stroke-width="4" stroke-linecap="round"/></svg>`,
+  game: () => `<svg viewBox="0 0 48 48"><path d="M10 16h28a7 7 0 0 1 7 8l-2 9a5 5 0 0 1-8 2l-4-4H17l-4 4a5 5 0 0 1-8-2l-2-9a7 7 0 0 1 7-8z" fill="#5c6670"/><path d="M14 22v6M11 25h6" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><circle cx="32" cy="23" r="2.3" fill="#8de03c"/><circle cx="36" cy="27" r="2.3" fill="#fff"/></svg>`,
+  perf: () => `<svg viewBox="0 0 48 48"><rect x="5" y="6" width="38" height="36" rx="7" fill="#262a30"/><g fill="#7c858f"><rect x="11" y="26" width="5" height="10" rx="1.5"/><rect x="19" y="20" width="5" height="16" rx="1.5"/><rect x="35" y="22" width="5" height="14" rx="1.5"/></g><rect x="27" y="12" width="5" height="24" rx="1.5" fill="#8de03c"/></svg>`,
+  aurevix: () => `<img src="logo.png" alt="">`,
 };
-const glyphBg = { web: 'linear-gradient(145deg,#2fbf71,#1c7a49)', mail: 'linear-gradient(145deg,#3c9de0,#245f8a)', photo: 'linear-gradient(145deg,#c43c8d,#7a2458)',
-  music: 'linear-gradient(145deg,#e0683c,#8a3f24)', game: 'linear-gradient(145deg,#3a3a44,#17171b)', term: 'linear-gradient(145deg,#2a2a31,#0e0e11)',
-  store: 'linear-gradient(145deg,#5b6cf0,#353f8f)', gear: 'linear-gradient(145deg,#3a3a44,#17171b)', calc: 'linear-gradient(145deg,#3a3a44,#17171b)',
-  chat: 'linear-gradient(145deg,#2fbf71,#1c7a49)', code: 'linear-gradient(145deg,#5b6cf0,#353f8f)' };
-const dockItems = [['logo', 'Inicio', 'st'], ['img:folder', '', 'run act'], ['img:pc', '', ''], ['web', '', 'run'], ['game', '', 'run'], ['music', '', ''], ['term', '', ''], ['gear', '', 'run'], ['img:bin-empty', '', '']];
-function buildDock(el, withTray) {
-  for (const [k, , cls] of dockItems) {
-    const d = document.createElement('div'); d.className = 'd ' + cls;
-    d.innerHTML = k === 'logo' ? '<img src="logo.png" alt="" width="20" height="20">'
-      : k.startsWith('img:') ? `<img src="img/icons/${k.slice(4)}.png" alt="" width="30" height="30">`
-      : `<span class="gl" style="background:${glyphBg[k] || '#2a2a31'}">${I[k]}</span>`;
-    el.appendChild(d);
-  }
-  if (withTray) { const t = document.createElement('div'); t.className = 'tray'; t.innerHTML = '<span>ES</span><span>⌁ ◔</span><span id="clock">21:47</span>'; el.appendChild(t); }
+
+/* Barra de tareas: Inicio (logo AUREVIX), búsqueda y apps ancladas */
+const apps = [['aurevix', 'Inicio', 'start'], ['search', 'Búsqueda'], ['folder', 'Explorador', 'exp', 1], ['web', 'Navegador', null, 1], ['term', 'Terminal', null, 1], ['store', 'Tienda'], ['settings', 'Configuración', 'set'], ['perf', 'AUREVIX Control Center', 'cc', 1]];
+$('apps').innerHTML = apps.map(([k, n, v, run]) => `<div class="app${run ? ' run' : ''}" title="${n}" ${v ? `data-open="${v}"` : ''}>${ICON[k]()}</div>`).join('');
+
+$('pins').innerHTML = [['folder', 'Explorador'], ['web', 'Navegador'], ['mail', 'Correo'], ['cal', 'Calendario'], ['photo', 'Fotos'], ['music', 'Música'],
+  ['settings', 'Configuración'], ['store', 'Tienda'], ['term', 'Terminal'], ['calc', 'Calculadora'], ['notes', 'Bloc de notas'], ['game', 'Juegos'],
+  ['perf', 'Control Center'], ['folder', 'Descargas'], ['photo', 'Capturas'], ['music', 'Nusa'], ['web', 'Noticias'], ['cal', 'Reloj']]
+  .map(([k, n]) => `<div class="pin">${ICON[k]()}${n}</div>`).join('');
+
+const line = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+$('setnav').innerHTML = [['<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8"/>', 'Sistema'], ['<path d="m7 7 10 10-5 4V3l5 4L7 17"/>', 'Bluetooth y dispositivos'],
+  ['<path d="M2 9a15 15 0 0 1 20 0M5 13a10 10 0 0 1 14 0M9 17a4 4 0 0 1 6 0"/>', 'Red e Internet'], ['<path d="M4 20c4 0 6-2 6-6l8-8a2 2 0 0 0-3-3l-8 8c-4 0-6 2-6 6"/>', 'Personalización', 1],
+  ['<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>', 'Aplicaciones'],
+  ['<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>', 'Cuentas'], ['<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>', 'Hora e idioma'], ['<rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7 11v3M5.5 12.5h3"/>', 'Juegos'],
+  ['<path d="M12 2l8 4v6c0 5-3.5 9-8 10-4.5-1-8-5-8-10V6z"/>', 'Privacidad y seguridad'], ['<path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v4h-4"/>', 'Windows Update']]
+  .map(([d, n, s]) => `<div class="${s ? 's' : ''}">${line(d)}${n}</div>`).join('');
+$('themes').innerHTML = ['daylight', 'mist', 'sand', 'glacier', 'aurora', 'tide', 'dusk', 'nebula'].map((w, i) => `<div class="${i ? '' : 'on'}" style="background-image:url(img/fondo-${w}.webp)"></div>`).join('');
+
+$('expnav').innerHTML = [['<path d="M3 11 12 4l9 7v9H3z"/>', 'Inicio'], ['<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 16 5-5 4 4 3-3 6 6"/>', 'Galería'], ['hr'],
+  ['<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M9 20h6"/>', 'Escritorio'], ['<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>', 'Descargas'], ['<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/>', 'Documentos'],
+  ['<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="2"/>', 'Imágenes'], ['<path d="M9 18V6l10-2v12"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="16" r="2"/>', 'Música'], ['hr'],
+  ['<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>', 'Este equipo', 1], ['<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>', 'Red']]
+  .map(([d, n, s]) => d === 'hr' ? '<hr>' : `<div class="${s ? 's' : ''}">${line(d)}${n}</div>`).join('');
+$('folders').innerHTML = ['Escritorio', 'Descargas', 'Documentos', 'Imágenes', 'Música', 'Vídeos'].map(n => `<div>${ICON.folder()}${n}</div>`).join('');
+
+/* ---------- Escala de la escena (1200×750 → ancho real) ---------- */
+const desk = $('desk'), vp = $('viewport');
+const fit = () => desk.style.setProperty('--s', vp.clientWidth / 1200);
+new ResizeObserver(fit).observe(vp); fit();
+
+/* ---------- Vistas y tema ---------- */
+const captions = {
+  cc: 'AUREVIX Control Center en tema claro, sobre el fondo Daylight. Pasa el ratón por los iconos de la barra.',
+  start: 'Menú Inicio AUREVIX: sin «Recomendado», solo tus apps, con cristal sobre el desenfoque de Windows.',
+  set: 'Configuración de Windows con el fondo AUREVIX y la sección seleccionada en verde.',
+  exp: 'Explorador de archivos con el fondo acrílico de Windows y los iconos de siempre.',
+};
+let view = 'cc', userTouched = false;
+function show(v) {
+  view = v;
+  document.querySelectorAll('.win').forEach(w => w.classList.toggle('on', w.dataset.v === v));
+  document.querySelectorAll('#views button').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === v));
+  document.querySelectorAll('.app[data-open]').forEach(a => a.classList.toggle('act', a.dataset.open === v));
+  const c = $('caption'); c.style.opacity = 0; setTimeout(() => { c.textContent = captions[v]; c.style.opacity = 1; }, 200);
 }
-buildDock(document.getElementById('dock'), true);
-buildDock(document.getElementById('dock2'), false);
-const apps = [['img:folder', 'Explorador'], ['img:pc', 'Este equipo'], ['web', 'Navegador'], ['mail', 'Correo'], ['photo', 'Fotos'], ['music', 'Música'],
-              ['game', 'Juegos'], ['term', 'Terminal'], ['img:network', 'Red'], ['img:user', 'Tu carpeta'], ['store', 'Store'], ['gear', 'Ajustes']];
-const sg = document.getElementById('startgrid');
-for (const [k, n] of apps) sg.insertAdjacentHTML('beforeend', k.startsWith('img:')
-  ? `<div class="app"><img src="img/icons/${k.slice(4)}.png" alt="" width="38" height="38">${n}</div>`
-  : `<div class="app"><div class="ic" style="background:${glyphBg[k]}">${I[k]}</div>${n}</div>`);
-document.getElementById('band').innerHTML = (b => b + b)(['<span><b>Windows 11</b>oficial de Microsoft</span>', '<span><b>AUREVIX Shell</b>barra, Inicio y Configuración</span>', '<span><b>88</b>ajustes reversibles</span>',
-  '<span><b>Game Boost</b>prioridad automática</span>', '<span><b>Nusa</b>isla de música</span>', '<span><b>Cristal</b>barra e Inicio</span>', '<span><b>8</b>fondos en 4K</span>', '<span><b>0</b>datos enviados</span>', '<span><b>Firmado</b>cada actualización</span>'].join(''));
+document.querySelectorAll('#views button').forEach(b => b.onclick = () => { userTouched = true; show(b.dataset.v); });
+document.querySelectorAll('.app[data-open]').forEach(a => a.onclick = () => { userTouched = true; show(a.dataset.open); });
+document.querySelectorAll('#theme button').forEach(b => b.onclick = () => {
+  desk.classList.toggle('dk', b.dataset.t === 'dark');
+  document.querySelectorAll('#theme button').forEach(x => x.setAttribute('aria-pressed', x === b));
+});
+show('cc');
+if (!reduce) setInterval(() => { if (!userTouched) show({ cc: 'start', start: 'set', set: 'exp', exp: 'cc' }[view]); }, 5200);
 
-let redraw = false;
-document.querySelectorAll('.themes button').forEach(b => b.addEventListener('click', () => {
-  const light = b.dataset.t === 'light';
-  document.getElementById('stage').classList.toggle('light', light);
-  document.querySelectorAll('.themes button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
-  redraw = true;
-}));
+/* Reloj y saludo */
+const tick = () => { const d = new Date(); $('clock').innerHTML = d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) + '<br>' + d.toLocaleDateString('es-ES');
+  const h = d.getHours(); $('greet').textContent = h < 6 || h >= 21 ? 'Buenas noches' : h < 13 ? 'Buenos días' : 'Buenas tardes'; };
+tick(); setInterval(tick, 20000);
 
-/* ---------- Escena: escala la pantalla de 1200x750 al ancho disponible ---------- */
-const device = document.getElementById('device'), stage = document.getElementById('stage');
-const fit = () => { stage.style.transform = `scale(${device.clientWidth / 1200})`; };
-addEventListener('resize', fit); fit();
-
-/* Solo se anima lo que se ve (ahorra CPU y batería). */
-const visible = new Set();
-const vio = new IntersectionObserver(es => es.forEach(e => e.isIntersecting ? visible.add(e.target) : visible.delete(e.target)), { rootMargin: '100px' });
-
-/* ---------- Fondo Aurora animado ---------- */
+/* Gráfica de CPU en vivo */
 (() => {
-  const cv = document.getElementById('aurora'), ctx = cv.getContext('2d'); vio.observe(cv);
-  const W = 1200, H = 750, ribbons = [
-    [.78, .09, .55, .4, 70, 'rgba(141,224,60,', .30], [.70, .07, .72, 2.1, 46, 'rgba(47,191,113,', .34],
-    [.62, .06, .95, 3.6, 22, 'rgba(141,224,60,', .55], [.60, .05, 1.05, 4.4, 5, 'rgba(233,255,176,', .9]];
-  let t = 0, last = performance.now();
-  const lightCol = { 'rgba(141,224,60,': 'rgba(120,205,60,', 'rgba(47,191,113,': 'rgba(70,190,130,', 'rgba(233,255,176,': 'rgba(255,255,255,' };
-  function draw(now) {
-    const dt = Math.min((now - last) / 1000, .05); last = now;
-    if (visible.has(cv) || t === 0 || redraw) {
-      redraw = false;
-      if (!reduce) t += dt * .12;
-      const light = stage.classList.contains('light');
-      ctx.fillStyle = light ? '#f2f4ef' : '#050506'; ctx.fillRect(0, 0, W, H);
-      const g = ctx.createRadialGradient(W * .64, H * 1.05, 0, W * .64, H * 1.05, W * .7);
-      g.addColorStop(0, light ? 'rgba(141,224,60,.35)' : 'rgba(141,224,60,.20)'); g.addColorStop(1, 'rgba(141,224,60,0)'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-      ctx.globalCompositeOperation = light ? 'source-over' : 'lighter';
-      for (const [cy, amp, fr, ph, wd, col0, k] of ribbons) {
-        const col = light ? lightCol[col0] : col0;
-        for (let pass = 0; pass < 2; pass++) {
-          ctx.beginPath();
-          for (let x = 0; x <= W; x += 8) {
-            const u = x / W, y = H * (cy - .30 * (u - .5) + amp * Math.sin(fr * u * 6.28 + ph + t) + .35 * amp * Math.sin(fr * 2.3 * u * 6.28 + ph * 1.7 - t * .7));
-            x ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
-          }
-          ctx.strokeStyle = col + (k * (pass ? .35 : .9)) + ')';
-          ctx.lineWidth = pass ? wd * 2.2 + 2 : Math.max(wd * .55, 1.6);
-          ctx.filter = pass ? `blur(${wd * .8 + 4}px)` : (wd > 10 ? `blur(${wd * .4}px)` : 'none');
-          ctx.stroke();
-        }
-      }
-      ctx.filter = 'none'; ctx.globalCompositeOperation = 'source-over';
-    }
-    requestAnimationFrame(draw);
-  }
-  requestAnimationFrame(draw);
-})();
-
-/* ---------- Gráficas pequeñas ---------- */
-function liveLine(id, gen, color, fill, min, max) {
-  const cv = document.getElementById(id), ctx = cv.getContext('2d'); vio.observe(cv);
-  const n = 60, data = Array.from({ length: n }, gen);
-  const tick = () => {
-    if (visible.has(cv)) {
-      data.shift(); data.push(gen());
-      const W = cv.width, H = cv.height;
-      ctx.clearRect(0, 0, W, H); ctx.beginPath();
-      data.forEach((v, i) => { const x = i / (n - 1) * W, y = H - 10 - (v - min) / (max - min) * (H - 30); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
-      ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.stroke();
-      if (fill) { ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath(); const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, fill); g.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = g; ctx.fill(); }
-    }
+  const c = $('spark'), x = c.getContext('2d'), pts = Array.from({ length: 60 }, () => 8 + Math.random() * 10);
+  const draw = () => {
+    pts.shift(); pts.push(Math.max(3, Math.min(70, pts[pts.length - 1] + (Math.random() - .5) * 9)));
+    x.clearRect(0, 0, c.width, c.height);
+    const dk = desk.classList.contains('dk'), col = dk ? '#8de03c' : '#4e9a1e';
+    const step = c.width / (pts.length - 1), y = v => c.height - 10 - v / 80 * (c.height - 20);
+    const gr = x.createLinearGradient(0, 0, 0, c.height); gr.addColorStop(0, dk ? 'rgba(141,224,60,.35)' : 'rgba(78,154,30,.25)'); gr.addColorStop(1, 'rgba(141,224,60,0)');
+    x.beginPath(); pts.forEach((v, i) => i ? x.lineTo(i * step, y(v)) : x.moveTo(0, y(v)));
+    x.lineWidth = 3; x.strokeStyle = col; x.stroke(); x.lineTo(c.width, c.height); x.lineTo(0, c.height); x.fillStyle = gr; x.fill();
+    $('cpu').textContent = Math.round(pts[pts.length - 1]) + ' %';
   };
-  tick(); if (!reduce) setInterval(tick, 500);
+  draw(); if (!reduce) setInterval(draw, 700);
+  if (!reduce) setInterval(() => { $('ram').textContent = (27 + Math.round(Math.random() * 3)) + ' %'; $('pingv').textContent = (12 + Math.round(Math.random() * 5)) + ' ms'; }, 1800);
+})();
+
+/* Cinta */
+$('band').innerHTML = (b => b + b)(['<span><b>Windows 11</b>oficial de Microsoft</span>', '<span><b>AUREVIX Shell</b>barra, Inicio y Configuración</span>', '<span><b>95</b>ajustes reversibles</span>',
+  '<span><b>Game Boost</b>prioridad automática</span>', '<span><b>Nusa</b>isla dinámica</span>', '<span><b>Cristal</b>barra e Inicio</span>', '<span><b>8</b>fondos en 4K</span>',
+  '<span><b>0</b>datos enviados</span>', '<span><b>Firmado</b>cada actualización</span>'].join(''));
+
+/* ---------- Rendimiento: interruptores reales del Control Center ---------- */
+const TW = [
+  ['Apagado y reinicio más rápidos', 'Espera 2 s, no 5, a las apps colgadas al apagar.', 'r'],
+  ['Sin sugerencias ni promociones', 'Fuera anuncios de Inicio, consejos y apps sugeridas.', 'r'],
+  ['Telemetría opcional desactivada', 'Menos procesos y red en segundo plano.', 'r'],
+  ['Sin historial de actividad', 'Windows no guarda ni sube lo que usas.', 'r'],
+  ['Modo de juego y GPU acelerada', 'Prioridad al juego y programación de GPU por hardware.', 'r'],
+  ['Sin grabación en segundo plano', 'Game DVR apagado: menos tirones al jugar.', 'p'],
+  ['Prioridad alta para juegos', 'MMCSS da más CPU y GPU al juego.', 'p'],
+  ['Plan Máximo rendimiento', 'Sin ahorro de energía. Más consumo.', 'c'],
+];
+const tagTxt = { r: 'Recomendado', p: 'Para jugar', c: 'Competitivo' };
+$('tweaks').innerHTML = TW.map(([t, d, k], i) => `<div class="tw"><div class="t"><b>${t}</b><span class="tag ${k}">${tagTxt[k]}</span><p>${d}</p></div><button class="sw" role="switch" aria-checked="false" aria-label="${t}" data-i="${i}"></button></div>`).join('');
+const sws = [...document.querySelectorAll('.sw')];
+const upd = () => { const on = sws.filter(s => s.getAttribute('aria-checked') === 'true').length; $('tcount').textContent = `${on} de ${sws.length} activados`; $('tmeter').style.width = on / sws.length * 100 + '%'; };
+sws.forEach(s => s.onclick = () => { s.setAttribute('aria-checked', s.getAttribute('aria-checked') !== 'true'); upd(); });
+const perfObs = new IntersectionObserver(es => es.forEach(e => { if (!e.isIntersecting) return; perfObs.disconnect();
+  sws.forEach((s, i) => setTimeout(() => { if (i < 7) { s.setAttribute('aria-checked', 'true'); upd(); } }, reduce ? 0 : 350 + i * 260)); }), { threshold: .4 });
+perfObs.observe($('tweaks'));
+$('cats').innerHTML = [['Juegos', 16], ['Inicio y fondo', 14], ['Energía', 13], ['Interfaz', 12], ['Privacidad', 9], ['Planes de energía', 7], ['Gráficos', 5], ['Ratón y USB', 5], ['Modos', 5], ['Red', 4], ['Almacenamiento', 2], ['Mantenimiento', 2]].map(([n, c]) => `<span>${n}<b>${c}</b></span>`).join('');
+
+/* ---------- Nusa: la isla cambia de forma según lo que hace ---------- */
+const shapes = { mini: [240, 38, 22], player: [440, 190, 34], lyrics: [500, 150, 34], timer: [420, 150, 34], files: [380, 140, 30] };
+const isl = $('island');
+let nState = 'mini', nTouched = false;
+function nusa(s) {
+  nState = s; const [w, h, r] = shapes[s];
+  isl.style.width = w + 'px'; isl.style.height = h + 'px'; isl.style.borderRadius = r + 'px';
+  isl.querySelectorAll('.st').forEach(e => e.classList.toggle('on', e.dataset.s === s));
+  document.querySelectorAll('#nlabels button').forEach(b => b.setAttribute('aria-pressed', b.dataset.s === s));
 }
-let cpu = 12;
-liveLine('spark', () => (cpu = Math.max(4, Math.min(40, cpu + (Math.random() - .5) * 8))), '#8de03c', 'rgba(141,224,60,.25)', 0, 50);
-let pg = 14;
-liveLine('ping', () => (pg = Math.max(9, Math.min(22, pg + (Math.random() - .5) * 3))), '#8de03c', 'rgba(141,224,60,.18)', 0, 30);
-if (!reduce) setInterval(() => {
-  document.getElementById('cpu').textContent = Math.round(cpu) + ' %';
-  document.getElementById('ram').textContent = (29 + Math.round(Math.random() * 4)) + ' %';
-  document.getElementById('pingv').textContent = Math.round(pg) + ' ms';
-}, 1200);
-const clock = () => { const c = document.getElementById('clock'); if (c) c.textContent = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }); };
-clock(); setInterval(clock, 15000);
+document.querySelectorAll('#nlabels button').forEach(b => b.onclick = () => { nTouched = true; nusa(b.dataset.s); });
+const fitIsland = () => { const max = isl.parentElement.clientWidth - 24; for (const k in shapes) shapes[k][0] = Math.min(shapes[k][0], max); };
+fitIsland(); nusa('mini');
+if (!reduce) setInterval(() => { if (!nTouched) nusa({ mini: 'player', player: 'lyrics', lyrics: 'timer', timer: 'files', files: 'mini' }[nState]); }, 3600);
+const LY = ['Corremos sin mirar atrás', 'con la ciudad en los cristales', 'y el sol cayendo en la ventana', 'todo empieza otra vez'];
+let li = 0;
+const lyr = () => { $('lyr').innerHTML = `<span>${LY[li % 4]}</span><span class="on">${LY[(li + 1) % 4]}</span><span class="nx">${LY[(li + 2) % 4]}</span>`; li++; };
+lyr(); if (!reduce) setInterval(lyr, 1500);
+let ts = 24 * 60 + 59; if (!reduce) setInterval(() => { ts = ts > 0 ? ts - 1 : 1499; $('tmr').textContent = `${String(ts / 60 | 0).padStart(2, '0')}:${String(ts % 60).padStart(2, '0')}`; }, 1000);
 
-/* ---------- Tiempo por fotograma (ilustración: misma media, menos picos) ---------- */
+/* ---------- Funciones: ping, limpieza y Game Boost ---------- */
 (() => {
-  const cv = document.getElementById('fps'), ctx = cv.getContext('2d'); vio.observe(cv);
-  const n = 120; let off = 0;
-  const rnd = s => { const x = Math.sin(s * 127.1) * 43758.5453; return x - Math.floor(x); };
-  const before = i => 16.7 + (rnd(i) - .5) * 4 + (rnd(i * 3.1) > .93 ? 14 + rnd(i * 7) * 16 : 0);
-  const after = i => 16.7 + (rnd(i * 1.7) - .5) * 1.6 + (rnd(i * 5.3) > .985 ? 4 : 0);
-  function draw() {
-    if (visible.has(cv) || off === 0) {
-      const W = cv.width, H = cv.height; ctx.clearRect(0, 0, W, H);
-      ctx.strokeStyle = '#1f1f25'; ctx.lineWidth = 1;
-      for (const v of [16.7, 33.3]) { const y = H - v / 50 * H; ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); ctx.fillStyle = '#5c5c66'; ctx.font = '12px system-ui'; ctx.textAlign = 'right'; ctx.fillText(String(v).replace('.', ',') + ' ms', W - 6, y - 8); ctx.textAlign = 'left'; }
-      for (const [f, col, w] of [[before, '#5c5c66', 1.5], [after, '#8de03c', 2.2]]) {
-        ctx.beginPath();
-        for (let i = 0; i < n; i++) { const x = i / (n - 1) * W, y = H - f(i + Math.floor(off)) / 50 * H; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
-        ctx.strokeStyle = col; ctx.lineWidth = w; ctx.stroke();
-      }
-      if (!reduce) off += .5;
-    }
-    requestAnimationFrame(draw);
-  }
-  requestAnimationFrame(draw);
+  const c = $('ping'), x = c.getContext('2d'), p = Array.from({ length: 50 }, () => 14 + Math.random() * 4);
+  const size = () => { const r = devicePixelRatio || 1; c.width = c.clientWidth * r; c.height = c.clientHeight * r; };
+  size(); addEventListener('resize', size);
+  const draw = () => { p.shift(); p.push(Math.random() < .06 ? 22 + Math.random() * 6 : 13 + Math.random() * 4);
+    x.clearRect(0, 0, c.width, c.height); const s = c.width / (p.length - 1), y = v => c.height - (v - 5) / 30 * c.height;
+    x.strokeStyle = 'rgba(255,255,255,.06)'; x.lineWidth = 1; for (let i = 1; i < 4; i++) { x.beginPath(); x.moveTo(0, i * c.height / 4); x.lineTo(c.width, i * c.height / 4); x.stroke(); }
+    x.beginPath(); p.forEach((v, i) => i ? x.lineTo(i * s, y(v)) : x.moveTo(0, y(v))); x.lineWidth = 2.5 * (devicePixelRatio || 1); x.strokeStyle = '#8de03c'; x.stroke();
+    const r = devicePixelRatio || 1; x.fillStyle = '#8de03c'; x.font = `600 ${16 * r}px Segoe UI, sans-serif`; x.textAlign = 'right'; x.fillText(Math.round(p[p.length - 1]) + ' ms', c.width - 4 * r, 18 * r); };
+  draw(); if (!reduce) setInterval(draw, 600);
 })();
+const gbObs = new IntersectionObserver(es => es.forEach(e => { if (!e.isIntersecting) return; gbObs.disconnect();
+  let v = 0; const t = setInterval(() => { v += .37; if (v >= 12.4) { v = 12.4; clearInterval(t); } $('gb').textContent = v.toFixed(1).replace('.', ','); }, 40); }), { threshold: .5 });
+gbObs.observe($('gb'));
+if (!reduce) setInterval(() => document.querySelectorAll('#gbars i:not(.g)').forEach(i => i.style.setProperty('--h', 18 + Math.random() * 40 + '%')), 1400);
 
-/* ---------- Contador de limpieza ---------- */
+/* ---------- Installer: progreso de ejemplo ---------- */
 (() => {
-  const el = document.getElementById('gb'); let v = 0;
-  const io = new IntersectionObserver(es => { if (!es[0].isIntersecting) return; io.disconnect();
-    if (reduce) { el.textContent = '6,8'; return; }
-    const t0 = performance.now(); const step = now => { v = Math.min(6.8, (now - t0) / 1800 * 6.8); el.textContent = v.toFixed(1).replace('.', ','); if (v < 6.8) requestAnimationFrame(step); }; requestAnimationFrame(step);
-  }); io.observe(el);
-})();
-
-/* ---------- Instalador animado ---------- */
-(() => {
-  const pct = document.getElementById('ipct'), bar = document.getElementById('ibar'), eta = document.getElementById('ieta'), lis = [...document.querySelectorAll('#isteps li')];
-  const stages = [['Descargando AUREVIX', 4], ['Descargando Windows 11 de Microsoft', 58], ['Montando la ISO de Windows', 6], ['Copiando Windows 11 al USB', 32]];
+  const steps = ['Descargando AUREVIX', 'Descargando Windows 11 de Microsoft', 'Preparando la ISO', 'Creando y comprobando la ISO', 'ISO lista · SHA-256 verificado'];
   let p = 0;
-  function render() {
-    let acc = 0, idx = 0;
-    for (let i = 0; i < stages.length; i++) { if (p >= acc + stages[i][1]) { acc += stages[i][1]; idx = i + 1; } else break; }
-    idx = Math.min(idx, stages.length - 1);
-    lis.forEach((li, i) => li.className = p >= 100 || i < idx ? 'done' : i === idx ? 'now' : '');
-    pct.textContent = Math.floor(p) + ' %'; bar.style.width = p + '%';
-    const left = Math.max(1, Math.round((100 - p) * .22));
-    eta.firstChild.textContent = p >= 100 ? 'Listo' : `Quedan unos ${left} min`;
-    document.getElementById('istep').textContent = p >= 100 ? 'USB comprobado' : stages[idx][0];
-  }
-  if (reduce) { p = 46; render(); return; }
-  setInterval(() => { p += p >= 100 ? -100 : .6; if (p < 0) p = 0; render(); }, 120);
+  const run = () => { p = p >= 100 ? 0 : p + 1; $('ibar').style.width = p + '%'; $('ipct').textContent = p + ' %';
+    $('istep').textContent = steps[Math.min(4, p >= 100 ? 4 : Math.floor(p / 25))]; };
+  if (!reduce) setInterval(run, 120); else { $('ibar').style.width = '64%'; $('ipct').textContent = '64 %'; }
 })();
 
-/* ---------- Aparición de textos ---------- */
-(() => {
-  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .15 });
-  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
-})();
+/* ---------- Aparición al hacer scroll ---------- */
+const ro = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); ro.unobserve(e.target); } }), { threshold: .12 });
+document.querySelectorAll('.reveal').forEach(el => ro.observe(el));
 
 /* ---------- Última versión (Supabase, solo lectura) ---------- */
 (async () => {
   const URL_ = 'https://zttqiphwurnferzlubzy.supabase.co';
   const KEY = 'sb_publishable_ajRvbzV1NHhEGUITm0DGZQ_YdbGjAgL'; // clave pública: solo lee versiones publicadas (RLS)
-  const $ = id => document.getElementById(id);
   const safe = u => /^https:\/\//.test(u || '') ? u : null;
   const mb = b => b ? Math.round(b / 1048576) + ' MB' : '';
   try {
@@ -749,16 +911,15 @@ clock(); setInterval(clock, 15000);
     const rel = (await r.json())[0];
     if (!rel) { $('dl-badge').textContent = 'Próximamente'; return; }
     const date = new Date(rel.released_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
-    $('ver').textContent = `AUREVIX OS ${rel.version}`;
+    $('ver').textContent = rel.version;
     $('dl-badge').textContent = `Versión ${rel.version} · ${date}`;
     const main = safe(rel.launcher_url) || safe(rel.installer_url);
-    if (main) { $('dl-main').href = main; $('dl-main').removeAttribute('aria-disabled'); }
+    if (main) $('dl-main').href = main;
     if (!rel.launcher_url) $('dl-main').textContent = 'Descargar AUREVIX';
     $('dl-meta').textContent = `Para Windows 10 y 11 · 64 bits · ${mb(rel.launcher_size || rel.installer_size)}`;
     $('dl-hash').textContent = 'SHA-256 ' + (rel.launcher_sha256 || rel.installer_sha256 || '');
     if (safe(rel.installer_url)) $('dl-setup').href = rel.installer_url; else $('dl-setup').remove();
     if (safe(rel.isobuilder_url)) $('dl-iso').href = rel.isobuilder_url; else $('dl-iso').remove();
-    // Historial
     const h = await fetch(`${URL_}/rest/v1/releases?select=version,released_at,title,notes,launcher_url,installer_url&channel=eq.stable&published=eq.true&order=released_at.desc&limit=12`,
       { headers: { apikey: KEY, Authorization: 'Bearer ' + KEY } });
     const list = h.ok ? await h.json() : [];
@@ -770,7 +931,7 @@ clock(); setInterval(clock, 15000);
       const ver = el('div', 'v', v.version);
       ver.appendChild(el('small', '', new Date(v.released_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })));
       const t = el('div', 't', (v.title || 'AUREVIX OS ' + v.version).replace(/^#+\s*/, ''));
-      if (i === 0) t.appendChild(el('b', 'tag', 'Última'));
+      if (i === 0) t.appendChild(el('b', 'tg', 'Última'));
       const first = (v.notes || '').split('\n').map(x => x.replace(/^[-*#\s]+/, '').replace(/\*\*/g, '')).find(x => x && !/^AUREVIX OS/.test(x));
       if (first) t.appendChild(el('span', '', first));
       const a = el('div', 'a');
@@ -781,12 +942,10 @@ clock(); setInterval(clock, 15000);
       row.append(ver, t, a); box.appendChild(row);
     });
   } catch {
-    $('vlist').textContent = '';
-    $('dl-badge').textContent = 'No se pudo cargar la versión';
-    $('dl-main').href = 'https://github.com/s0k1x/aurevix-OS/releases/latest';
+    $('vlist').innerHTML = '<div class="vrow"><div class="t">Consulta todas las versiones en <a href="https://github.com/s0k1x/aurevix-OS/releases">GitHub</a>.</div></div>';
+    $('dl-badge').textContent = 'Última versión';
   }
 })();
-
 </script>
 </body>
 </html>

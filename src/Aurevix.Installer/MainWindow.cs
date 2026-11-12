@@ -298,6 +298,7 @@ public sealed class MainWindow : Window
 
         // Dónde se guarda la ISO: Descargas por defecto; «Cambiar…» abre el diálogo de Windows.
         var isoOutput = DefaultIsoPath();
+        Action? refresh = null; // se asigna a Update() más abajo
         var destPath = new TextBlock { Text = isoOutput, TextTrimming = TextTrimming.CharacterEllipsis, Foreground = Ui.Brush("Text") };
         var destFree = Ui.Muted("");
         void UpdateDest()
@@ -324,7 +325,7 @@ public sealed class MainWindow : Window
                             Title = "Dónde guardar la ISO de AUREVIX OS", Filter = "Imagen ISO|*.iso", DefaultExt = ".iso",
                             FileName = Path.GetFileName(isoOutput), InitialDirectory = Path.GetDirectoryName(isoOutput), OverwritePrompt = true
                         };
-                        if (dlg.ShowDialog(this) == true) { isoOutput = dlg.FileName; UpdateDest(); Update(); }
+                        if (dlg.ShowDialog(this) == true) { isoOutput = dlg.FileName; UpdateDest(); refresh?.Invoke(); }
                     }))
                 }
             }
@@ -369,6 +370,7 @@ public sealed class MainWindow : Window
                            (usb ? " Se borrará el contenido del pendrive." : $" Necesita unos 9 GB libres en {Path.GetPathRoot(isoOutput)}.");
             create.IsEnabled = !usb || (disks.Selected >= 0 && disks.Selected < diskList.Length);
         }
+        refresh = Update;
         kind.Changed += _ => Update();
         disks.Changed += _ => Update();
         src.Changed += i =>

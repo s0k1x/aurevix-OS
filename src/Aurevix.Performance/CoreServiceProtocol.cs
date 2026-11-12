@@ -21,6 +21,7 @@ public static class CoreServiceProtocol
     {
         ["dism-cleanup"] = "Limpiar componentes antiguos de Windows Update (DISM /StartComponentCleanup)",
         ["retrim"] = "Optimizar el SSD del sistema (TRIM)",
+        ["trim-on"] = "Activar TRIM en NTFS si estuviera desactivado",
         ["flush-dns"] = "Vaciar la caché DNS",
         ["tcp-defaults"] = "Restablecer los ajustes TCP óptimos de Windows (autoajuste y RSS)",
         ["network-repair"] = "Reparar la red (Winsock e IP; requiere reiniciar)",
