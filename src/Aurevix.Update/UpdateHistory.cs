@@ -23,7 +23,16 @@ public sealed class UpdateHistory
         if (Entries.Count > 50) Entries.RemoveRange(0, Entries.Count - 50);
     }
 
-    /// <summary>Última actualización correcta con un instalador anterior guardado para rollback.</summary>
+    /// <summary>Última actualización lanzada/instalada con un instalador anterior guardado para rollback.</summary>
     public UpdateHistoryEntry? LastRollbackCandidate() =>
-        Entries.LastOrDefault(e => e.Result == "ok" && e.InstallerBackupPath is not null && File.Exists(e.InstallerBackupPath));
+        Entries.LastOrDefault(e => e.Result is "ok" or "launched" or "installed" && e.InstallerBackupPath is not null && File.Exists(e.InstallerBackupPath));
+
+    /// <summary>Actualiza el resultado de la última entrada hacia esa versión (p. ej. "installed" al arrancar con ella). Devuelve false si no existe.</summary>
+    public bool MarkResult(string version, string result)
+    {
+        var i = Entries.FindLastIndex(e => e.ToVersion == version);
+        if (i < 0) return false;
+        Entries[i] = Entries[i] with { Result = result };
+        return true;
+    }
 }

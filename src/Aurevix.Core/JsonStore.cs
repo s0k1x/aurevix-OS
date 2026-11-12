@@ -65,5 +65,8 @@ public sealed class AurevixState
     public string? PreviousProfile { get; set; }
     public string? SkippedVersion { get; set; }
     public DateTime? LastUpdateCheckUtc { get; set; }
+    /// <summary>Obsoleto: secuencia única anterior a la separación por canal. Se conserva solo para leer estados antiguos.</summary>
     public string? LastSeenManifestSequence { get; set; }
+    /// <summary>Última secuencia de manifiesto vista en cada canal (para detectar bajadas de versión sin confundir un cambio de canal).</summary>
+    public Dictionary<string, long> ManifestSequenceByChannel { get; set; } = new();
 }

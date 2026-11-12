@@ -28,6 +28,9 @@ public sealed class MainWindow : Window
     private readonly ContentControl _host = new();
     private CancellationTokenSource? _cts;
     private DispatcherTimer? _usbTimer;
+    private Action? _prepDetach, _prepNext;
+    private ProgressView? _currentView; // la pantalla de progreso en curso (para avisos como «Deteniendo la preparación…»)
+    private static readonly bool Screenshots = Environment.GetCommandLineArgs().Any(a => a.Equals("--render-screenshots", StringComparison.OrdinalIgnoreCase));
 
     public MainWindow()
     {
@@ -59,7 +62,11 @@ public sealed class MainWindow : Window
         {
             if (_cts is not null && MessageBox.Show("Hay una operación en curso. ¿Cancelarla y salir?", "AUREVIX Installer", MessageBoxButton.YesNo) != MessageBoxResult.Yes)
                 e.Cancel = true;
-            else _cts?.Cancel();
+            else
+            {
+                _cts?.Cancel();
+                IsoPreparer.Instance.Shutdown(); // deja guardado el avance de la descarga para continuar la próxima vez
+            }
         };
         Home();
     }
@@ -69,6 +76,9 @@ public sealed class MainWindow : Window
     private void Present(params UIElement[] content)
     {
         _usbTimer?.Stop();
+        _prepDetach?.Invoke(); // la tarjeta de preparación de la pantalla anterior deja de escuchar
+        _prepDetach = _prepNext;
+        _prepNext = null;
         var column = new StackPanel { MaxWidth = 760, HorizontalAlignment = HorizontalAlignment.Stretch, Margin = new Thickness(40, 32, 40, 20) };
         var brand = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 30) };
         brand.Children.Add(new Image { Source = new System.Windows.Media.Imaging.BitmapImage(new Uri("pack://application:,,,/Assets/aurevix.ico")), Width = 24, Height = 24, Margin = new Thickness(0, 0, 10, 0) });
@@ -84,7 +94,9 @@ public sealed class MainWindow : Window
 
     private static TextBlock Heading(string text) { var t = Ui.H1(text); t.FontSize = 38; t.Margin = new Thickness(0, 0, 0, 10); return t; }
 
-    private void Home() => Present(
+    private void Home()
+    {
+        Present(
         Ui.Eyebrow("BIENVENIDO"),
         Heading("¿Qué quieres hacer?"),
         Spaced(Ui.Muted("AUREVIX OS es Windows 11 oficial con una capa propia: diagnóstico, perfiles, estilo minimalista y actualizaciones firmadas."), 22),
@@ -93,13 +105,112 @@ public sealed class MainWindow : Window
         Kit.OptionCard("\uE777", "INSTALACIÓN LIMPIA  ·  UNOS 45-90 MIN", "Reinstalar este PC con AUREVIX OS",
             "Descarga Windows 11 oficial de Microsoft, reinstala Windows desde cero y deja AUREVIX listo. Borra programas y archivos de la unidad del sistema.", CleanInstallIntro),
         Kit.OptionCard("\uE88E", "PARA OTRO PC O PARA GUARDAR  ·  UNOS 15-40 MIN", "Crear un USB o una ISO de AUREVIX OS",
-            "Enchufa un pendrive de 8 GB o más y AUREVIX monta dentro Windows 11 oficial con todo preparado. También puedes crear solo la ISO.", () => MediaIntro()));
+            "Enchufa un pendrive de 8 GB o más y AUREVIX monta dentro Windows 11 oficial con todo preparado. También puedes crear solo la ISO.", () => MediaIntro()),
+        PreparedCard());
+        if (!Screenshots) IsoPreparer.Instance.Start(); // preparación automática en segundo plano (si hay sitio y no está desactivada)
+    }
+
+    /// <summary>Tarjeta pequeña con el estado de la ISO que se prepara en segundo plano, y la casilla para desactivarla.</summary>
+    private UIElement PreparedCard()
+    {
+        var prep = IsoPreparer.Instance;
+        var title = new TextBlock { FontSize = 14, FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap, Foreground = Ui.Brush("Text") };
+        var detail = Ui.Muted(""); detail.FontSize = 12; detail.Margin = new Thickness(0, 2, 0, 0); detail.TextTrimming = TextTrimming.CharacterEllipsis;
+        var bar = new ThinProgress { Margin = new Thickness(0, 10, 0, 0) };
+        var action = Ui.Button("Pausar", () => { });
+        action.Margin = new Thickness(0, 10, 0, 0); action.HorizontalAlignment = HorizontalAlignment.Left;
+        Action? onAction = null;
+        action.Click += (_, _) => onAction?.Invoke();
+        var accept = Ui.Button("Preparar ahora", () => prep.AutoEnabled = true, primary: true);
+        accept.Margin = new Thickness(0, 10, 8, 0);
+        var decline = Ui.Button("No, gracias", () => prep.AutoEnabled = false);
+        decline.Margin = new Thickness(0, 10, 0, 0);
+        var choice = new StackPanel { Orientation = Orientation.Horizontal, Children = { accept, decline } };
+        var auto = new CheckBox { Content = "Preparar la ISO automáticamente", IsChecked = prep.AutoEnabled, Margin = new Thickness(0, 10, 0, 0), Foreground = Ui.Brush("TextMuted") };
+        auto.Click += (_, _) => prep.AutoEnabled = auto.IsChecked == true;
+
+        void Render()
+        {
+            var st = prep.State;
+            var pct = (int)Math.Round(prep.Fraction * 100);
+            title.Visibility = bar.Visibility = detail.Visibility = action.Visibility = Visibility.Visible;
+            detail.Text = "";
+            var undecided = !prep.AutoDecided;
+            choice.Visibility = undecided ? Visibility.Visible : Visibility.Collapsed;
+            auto.Visibility = undecided ? Visibility.Collapsed : Visibility.Visible;
+            if (!undecided) auto.IsChecked = prep.AutoEnabled;
+            if (undecided)
+            {
+                // Sin descargas por sorpresa: hasta que el usuario decida no se descarga nada.
+                title.Text = "¿Preparamos ya la ISO de AUREVIX en segundo plano? Descarga unos 7 GB de Windows desde Microsoft y necesita 18 GB libres. Así estará lista cuando la necesites.";
+                detail.Text = IsoPreparer.IsMetered() ? "Tu conexión es de uso medido: te lo preguntaremos antes de descargar." : "";
+                bar.Visibility = action.Visibility = Visibility.Collapsed;
+                detail.Visibility = detail.Text.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+                return;
+            }
+            switch (st)
+            {
+                case PrepState.Running:
+                    title.Text = $"Preparando la ISO de AUREVIX en segundo plano · {pct} %";
+                    detail.Text = prep.Detail;
+                    bar.SetValue(prep.Fraction);
+                    action.Content = "Pausar"; onAction = prep.Pause;
+                    break;
+                case PrepState.Paused:
+                    title.Text = $"Preparación de la ISO en pausa · {pct} %";
+                    bar.SetValue(prep.Fraction);
+                    action.Content = "Continuar"; onAction = prep.Resume;
+                    break;
+                case PrepState.Ready:
+                    title.Text = "ISO lista";
+                    detail.Text = "Crear la ISO será casi inmediato.";
+                    bar.Visibility = action.Visibility = Visibility.Collapsed;
+                    break;
+                case PrepState.NoSpace:
+                    title.Text = "No se prepara la ISO en segundo plano";
+                    detail.Text = prep.Detail;
+                    bar.Visibility = action.Visibility = Visibility.Collapsed;
+                    break;
+                case PrepState.Metered:
+                    title.Text = "No se prepara la ISO en segundo plano";
+                    detail.Text = "Tu conexión es de uso medido y la preparación descarga unos 7 GB. No se descarga nada hasta que lo confirmes.";
+                    bar.Visibility = Visibility.Collapsed;
+                    action.Content = "Preparar igualmente"; onAction = prep.PrepareAnyway;
+                    break;
+                case PrepState.Failed:
+                    title.Text = "No se pudo preparar la ISO en segundo plano";
+                    detail.Text = prep.Detail;
+                    bar.Visibility = Visibility.Collapsed;
+                    action.Content = "Reintentar"; onAction = prep.Retry;
+                    break;
+                default:
+                    title.Visibility = bar.Visibility = detail.Visibility = action.Visibility = Visibility.Collapsed;
+                    break;
+            }
+        }
+        Render();
+
+        var dispatcher = Dispatcher;
+        var queued = 0;
+        void OnChanged()
+        {
+            if (Interlocked.Exchange(ref queued, 1) == 1) return; // como mucho una actualización pendiente
+            _ = dispatcher.InvokeAsync(() => { Interlocked.Exchange(ref queued, 0); Render(); });
+        }
+        prep.Changed += OnChanged;
+        _prepNext = () => prep.Changed -= OnChanged;
+
+        var card = Ui.Card(title, detail, bar, action, choice, auto);
+        card.Margin = new Thickness(0, 6, 0, 0);
+        return card;
+    }
 
     // ------------------------------------------------------------------ Progreso común
 
     private ProgressView Progress(string title, string note, params StageSpec[] stages)
     {
         var view = new ProgressView(stages);
+        _currentView = view;
         Present(Ui.Eyebrow("EN CURSO"), Heading(title), Spaced(Ui.Muted(note), 34), view.Root,
             Ui.Row(Ui.Button("Cancelar", () =>
             {
@@ -109,11 +220,23 @@ public sealed class MainWindow : Window
         return view;
     }
 
-    private async Task RunAsync(Func<CancellationToken, Task> work, Action onDone)
+    private async Task RunAsync(Func<CancellationToken, Task> work, Action onDone, bool waitForPreparer = false)
     {
         _cts = new CancellationTokenSource();
         try
         {
+            // La preparación en segundo plano usa las mismas carpetas de trabajo: se detiene (y continúa luego), salvo
+            // que esta operación sea «Crear ISO», que espera a que termine para no duplicar trabajo.
+            if (!waitForPreparer)
+            {
+                var prep = IsoPreparer.Instance;
+                if (prep.IsBusy) _currentView?.Reporter.Report(new Step("Deteniendo la preparación…"));
+                // Esperar no debe impedir cancelar: si el usuario cancela, se sale sin esperar a que termine de detenerse.
+                using var wait = CancellationTokenSource.CreateLinkedTokenSource(_cts.Token);
+                await Task.WhenAny(prep.SuspendAsync(), Task.Delay(Timeout.Infinite, wait.Token));
+                wait.Cancel();
+                _cts.Token.ThrowIfCancellationRequested();
+            }
             await work(_cts.Token);
             _cts = null;
             onDone();
@@ -177,9 +300,12 @@ public sealed class MainWindow : Window
     {
         var size = MediaEngine.CacheBytes();
         if (size < 500_000_000) return new Border { Height = 0 };
-        var row = Ui.Row(Ui.Button($"Liberar espacio · borrar la ISO de Windows descargada ({Eta.Bytes(size)})", () =>
+        var row = Ui.Row(Ui.Button($"Liberar espacio · borrar la ISO de Windows descargada ({Eta.Bytes(size)}) y la ISO preparada", async () =>
         {
+            // Primero se detiene la preparación; después no se relanza sola.
+            await IsoPreparer.Instance.HoldAsync();
             MediaEngine.ClearCache();
+            IsoPreparer.Discard();
             Home();
         }));
         row.Margin = new Thickness(0, 0, 0, 14);
@@ -440,6 +566,40 @@ public sealed class MainWindow : Window
         return ownIso;
     }
 
+    /// <summary>Progreso que descarta avisos hasta que se «abre» (así los de Windows no pisan la etapa de AUREVIX).</summary>
+    private sealed class GatedProgress(IProgress<Step> inner) : IProgress<Step>
+    {
+        public volatile bool Open;
+        public void Report(Step value) { if (Open) inner.Report(value); }
+    }
+
+    /// <summary>
+    /// Descarga AUREVIX y Windows a la vez. La etapa 0 se da por hecha en cuanto termina AUREVIX; después se muestra
+    /// el avance de Windows (etapa 1). Si una de las dos falla, se cancela la otra. <paramref name="knownSetup"/> evita repetir AUREVIX.
+    /// </summary>
+    private async Task<(string setup, string iso)> DownloadBothAsync(string? ownIso, ProgressView v, CancellationToken ct, string? knownSetup = null)
+    {
+        v.SetStage(knownSetup is null ? 0 : 1);
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        var gate = new GatedProgress(v.Reporter) { Open = knownSetup is not null };
+        var setupTask = knownSetup is not null ? Task.FromResult(knownSetup) : _engine.DownloadAurevixAsync(v.Reporter, linked.Token);
+        var isoTask = GetIsoAsync(ownIso, gate, linked.Token);
+        try
+        {
+            var first = await Task.WhenAny(setupTask, isoTask);
+            if (first == isoTask) await isoTask; // si Windows falla antes, se avisa enseguida
+            var setup = await setupTask;
+            if (knownSetup is null) { v.SetStage(1); gate.Open = true; }
+            return (setup, await isoTask);
+        }
+        catch
+        {
+            linked.Cancel();
+            try { await Task.WhenAll(setupTask, isoTask); } catch { }
+            throw;
+        }
+    }
+
     private Task CreateUsb(UsbDisk disk, string? ownIso)
     {
         var v = Progress("Creando el USB de AUREVIX OS", "No desenchufes el pendrive ni apagues el equipo hasta que termine.",
@@ -449,10 +609,7 @@ public sealed class MainWindow : Window
         return RunAsync(async ct =>
         {
             if (ownIso is null) MediaEngine.RequireFreeSpace(MediaEngine.WorkRoot, _engine.IsoCached ? 500_000_000 : MediaEngine.WindowsIsoBytes + 500_000_000, "La descarga de Windows 11");
-            v.SetStage(0);
-            var setup = await _engine.DownloadAurevixAsync(v.Reporter, ct);
-            v.SetStage(1);
-            var iso = await GetIsoAsync(ownIso, v.Reporter, ct);
+            var (setup, iso) = await DownloadBothAsync(ownIso, v, ct);
             v.SetStage(2);
             v.Reporter.Report(new Step("Montando la ISO de Windows"));
             var root = await _engine.MountAsync(iso, ct);
@@ -478,6 +635,7 @@ public sealed class MainWindow : Window
     {
         var downloads = Path.GetDirectoryName(output)!;
         string? hash = null;
+        var usedPrepared = false;
         var v = Progress("Creando la ISO de AUREVIX OS", $"Se guardará en {output}",
             new StageSpec("Descargar AUREVIX", 15),
             new StageSpec(ownIso is null ? "Obtener Windows 11" : "Usar tu ISO de Windows", ownIso is null && !_engine.IsoCached ? 600 : 10),
@@ -486,11 +644,33 @@ public sealed class MainWindow : Window
         {
             Directory.CreateDirectory(downloads);
             MediaEngine.RequireFreeSpace(downloads, MediaEngine.WindowsIsoBytes + 1_000_000_000, "La ISO resultante");
+            string? knownSetup = null;
+            var prep = IsoPreparer.Instance;
+            if (ownIso is null && (prep.IsBusy || IsoPreparer.HasPrepared))
+            {
+                // Primero se espera al preparador y solo después se descarga AUREVIX: nunca dos descargas a la vez.
+                v.SetStage(0);
+                while (prep.IsBusy) await prep.WaitAsync(v.Reporter, ct);
+                // Con la versión actual de AUREVIX se sabe si la ISO preparada sirve.
+                knownSetup = await _engine.DownloadAurevixAsync(v.Reporter, ct);
+                if (IsoPreparer.IsReadyFor(_engine.AurevixVersion))
+                {
+                    v.SetStage(3);
+                    v.Reporter.Report(new Step("Usando la ISO ya preparada", 0));
+                    var sameDrive = IsoPreparer.IsSameVolume(IsoPreparer.IsoPath, output);
+                    var move = sameDrive && MessageBox.Show(
+                        "La ISO ya preparada está en la misma unidad que el destino.\n\n¿Quieres moverla (es instantáneo y no ocupa el doble)? " +
+                        "Si la mueves, AUREVIX tendrá que prepararla de nuevo más adelante.\n\nSí = mover   ·   No = copiar", "AUREVIX Installer",
+                        MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) == MessageBoxResult.Yes;
+                    hash = await prep.DeliverAsync(output, move, v.Reporter, ct);
+                    usedPrepared = true;
+                    IsoPreparer.RecordBuilt(_engine.AurevixVersion); // esta versión ya está creada: no se prepara otra igual
+                    v.Complete();
+                    return;
+                }
+            }
             if (ownIso is null) MediaEngine.RequireFreeSpace(MediaEngine.WorkRoot, _engine.IsoCached ? 500_000_000 : MediaEngine.WindowsIsoBytes + 500_000_000, "La descarga de Windows 11");
-            v.SetStage(0);
-            var setup = await _engine.DownloadAurevixAsync(v.Reporter, ct);
-            v.SetStage(1);
-            var iso = await GetIsoAsync(ownIso, v.Reporter, ct);
+            var (setup, iso) = await DownloadBothAsync(ownIso, v, ct, knownSetup);
             v.SetStage(2);
             v.Reporter.Report(new Step("Montando la ISO de Windows"));
             var root = await _engine.MountAsync(iso, ct);
@@ -500,8 +680,10 @@ public sealed class MainWindow : Window
                 hash = await _engine.BuildIsoAsync(root, setup, output, v.Reporter, ct);
             }
             finally { await _engine.DismountAsync(iso); }
+            if (ownIso is null) IsoPreparer.RecordBuilt(_engine.AurevixVersion);
             v.Complete();
-        }, () => Done("ISO lista", "Es para tu uso: no la compartas, la licencia de Windows no lo permite.", ok: true,
+        }, waitForPreparer: ownIso is null, onDone: () => Done("ISO lista", (usedPrepared ? "Usando la ISO ya preparada: no hizo falta volver a construirla. " : "") +
+            "Es para tu uso: no la compartas, la licencia de Windows no lo permite.", ok: true,
             Ui.Card(Ui.Muted("Archivo"), Ui.Text(output), Spaced(Ui.Muted("SHA-256 (también guardado en un .sha256 junto a la ISO)"), 0), Ui.Text(hash ?? "", 12)),
             Ui.Row(Ui.Button("Abrir carpeta", () => OpenFolder(downloads), primary: true)),
             CleanupRow()));

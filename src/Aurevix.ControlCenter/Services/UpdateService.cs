@@ -46,12 +46,50 @@ public sealed class UpdateService
         }
     }
 
+    private static readonly TimeSpan FirstCheckDelay = TimeSpan.FromSeconds(45);
+    private static readonly TimeSpan RetryDelay = TimeSpan.FromMinutes(2);
+    private bool _firstDone;
+
     public void StartBackgroundChecks()
     {
+        _timer?.Dispose();
+        _timer = null;
         if (!AppServices.Settings.CheckUpdatesAutomatically) return;
-        var interval = TimeSpan.FromHours(Math.Clamp(AppServices.Settings.UpdateCheckIntervalHours, 1, 24));
         // Primer chequeo a los 45 s del inicio de sesión para no ralentizar el arranque.
-        _timer = new System.Threading.Timer(async _ => await CheckAsync(notify: true), null, TimeSpan.FromSeconds(45), interval);
+        _timer = new System.Threading.Timer(OnTimer, null, _firstDone ? NextInterval() : FirstCheckDelay, Timeout.InfiniteTimeSpan);
+    }
+
+    /// <summary>Vuelve a leer los ajustes de actualización (activado e intervalo) y reprograma las comprobaciones.</summary>
+    public void RestartChecks() => StartBackgroundChecks();
+
+    /// <summary>Intervalo de los ajustes con una variación aleatoria de ±10 % para no sincronizar todos los equipos.</summary>
+    private static TimeSpan NextInterval()
+    {
+        var hours = Math.Clamp(AppServices.Settings.UpdateCheckIntervalHours, 1, 24);
+        return TimeSpan.FromHours(hours * (0.9 + Random.Shared.NextDouble() * 0.2));
+    }
+
+    private async void OnTimer(object? _)
+    {
+        var next = NextInterval();
+        try
+        {
+            var r = await CheckAsync(notify: true);
+            // Si la primera comprobación falla (p. ej. aún sin red), se reintenta pronto.
+            if (!_firstDone && r.Status == UpdateStatus.Error) next = RetryDelay;
+            else _firstDone = true;
+        }
+        catch (Exception ex)
+        {
+            AurevixLog.Warn($"Fallo en la comprobación periódica de actualizaciones: {ex.Message}");
+            if (!_firstDone) next = RetryDelay;
+        }
+        try
+        {
+            // Si se desactivó o se reprogramó mientras tanto, el temporizador ya no es el mismo.
+            if (AppServices.Settings.CheckUpdatesAutomatically) _timer?.Change(next, Timeout.InfiniteTimeSpan);
+        }
+        catch (ObjectDisposedException) { }
     }
 
     public async Task<UpdateCheckResult> CheckAsync(bool notify)
@@ -60,12 +98,14 @@ public sealed class UpdateService
         try
         {
             var state = AppServices.State;
-            _ = long.TryParse(state.LastSeenManifestSequence, out var lastSeq);
-            var result = await _client.CheckAsync(AppServices.CurrentVersion, AppServices.Settings.UpdateChannel, InstallId, lastSeq);
+            // La secuencia vista se guarda por canal: cambiar de canal no debe verse como una bajada de versión.
+            var channel = AppServices.Settings.UpdateChannel;
+            state.ManifestSequenceByChannel.TryGetValue(channel, out var lastSeq);
+            var result = await _client.CheckAsync(AppServices.CurrentVersion, channel, InstallId, lastSeq);
             LastResult = result;
             state.LastUpdateCheckUtc = DateTime.UtcNow;
             if (result.Manifest is { } m && result.Status != UpdateStatus.Error && m.Sequence > lastSeq)
-                state.LastSeenManifestSequence = m.Sequence.ToString();
+                state.ManifestSequenceByChannel[channel] = m.Sequence;
             AppServices.SaveState();
             AurevixLog.Info($"Comprobación de actualizaciones: {result.Status} — {result.Message}");
 
@@ -114,8 +154,12 @@ public sealed class UpdateService
     /// <summary>Instalador anterior conservado para volver a la versión previa (rollback manual).</summary>
     public static string? FindPreviousInstaller()
     {
-        var entries = UpdateHistory.Load().Entries;
-        // El instalador de la versión actual es el último lanzado; el anterior es el penúltimo.
+        // Historial del usuario (instalación local) + el del servicio (%ProgramData%\AUREVIX\update-history.json),
+        // ordenados por fecha: el instalador de la versión actual es el último; el anterior, el penúltimo.
+        var machine = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "AUREVIX", "update-history.json");
+        var entries = UpdateHistory.Load().Entries
+            .Concat(File.Exists(machine) ? JsonStore.LoadOrDefault<UpdateHistory>(machine).Entries : new List<UpdateHistoryEntry>())
+            .OrderBy(e => e.AtUtc).ToList();
         return entries.Count >= 2 && File.Exists(entries[^2].InstallerBackupPath) ? entries[^2].InstallerBackupPath : null;
     }
 }
