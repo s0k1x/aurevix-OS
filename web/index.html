@@ -14,7 +14,7 @@
     --ease:cubic-bezier(.2,.8,.2,1);--spring:cubic-bezier(.34,1.56,.64,1);
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  html{scroll-behavior:smooth;background:var(--bg)}
+  html{scroll-behavior:smooth;background:var(--bg);-webkit-text-size-adjust:100%;text-size-adjust:100%}
   body{background:var(--bg);color:var(--text);font:15px/1.6 "Segoe UI Variable Text","Segoe UI",Inter,system-ui,-apple-system,"Helvetica Neue",sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
   a{color:inherit}
   img{max-width:100%;display:block}
@@ -233,13 +233,19 @@
   .seg button[aria-pressed="true"]{background:var(--text);color:#08090a;font-weight:600}
   .seg button:hover:not([aria-pressed="true"]){color:var(--text)}
   .caption{color:var(--muted);font-size:13.5px;text-align:center;margin-top:14px;min-height:22px;transition:opacity .3s}
-  @media (max-width:640px){.controls{justify-content:center}.seg button{padding:7px 10px;font-size:12.5px}}
+  .seg button{white-space:nowrap}
+  @media (max-width:640px){.controls{flex-direction:column;align-items:center}
+    #views{max-width:100%;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+    #views::-webkit-scrollbar{display:none}
+    #views button{flex:none;scroll-snap-align:center}
+    .seg button{padding:7px 10px;font-size:12.5px;min-height:40px}}
 
   .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:56px auto 0;width:min(1180px,calc(100% - 40px))}
   .stat{padding:20px;border-radius:18px;border:1px solid var(--line);background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.01))}
-  .stat b{display:block;font-family:"Segoe UI Variable Display","Segoe UI",sans-serif;font-size:30px;letter-spacing:-.02em;font-weight:700}
+  .stat b{display:block;white-space:nowrap;hyphens:none;-webkit-hyphens:none;font-family:"Segoe UI Variable Display","Segoe UI",sans-serif;font-size:30px;letter-spacing:-.02em;font-weight:700}
   .stat span{color:var(--muted);font-size:13.5px}
   @media (max-width:820px){.stats{grid-template-columns:repeat(2,1fr)}.stat b{font-size:24px}}
+  @media (max-width:640px){.stat{padding:16px 14px}.stat b{font-size:clamp(18px,6.4vw,24px)}}
 
   .band{overflow:hidden;border-block:1px solid var(--line);padding:16px 0;margin-top:90px;mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);-webkit-mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)}
   .track{display:flex;gap:44px;width:max-content;animation:band 50s linear infinite;color:var(--muted);font-size:14px;white-space:nowrap}
@@ -397,12 +403,14 @@
   .vrow .t .tg{display:inline-block;margin-left:8px;font-size:11px;font-weight:650;background:var(--accent);color:#0a0b0c;padding:1px 8px;border-radius:999px}
   .vrow .a{display:flex;gap:8px}.vrow .a .ghost{padding:7px 12px;font-size:13px;border-radius:10px}
   @media (max-width:820px){.vrow{grid-template-columns:1fr}}
+  .vrow .t:only-child{grid-column:1/-1;width:100%}
+  .vrow:only-child{grid-template-columns:1fr}
   .download{text-align:center;padding-bottom:90px}
   .download .meta{color:var(--muted);font-size:13.5px;margin-top:14px}
   .download .hash{color:var(--dim);font:11px ui-monospace,Consolas,monospace;margin-top:6px;word-break:break-all}
   .options{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:46px;text-align:left}
-  .options div{padding:22px;border-radius:18px;border:1px solid var(--line);background:rgba(255,255,255,.02)}
-  .options .n{color:var(--accent);font-size:12px;font-weight:650;letter-spacing:.1em}
+  .options>div{padding:22px;border-radius:18px;border:1px solid var(--line);background:rgba(255,255,255,.02)}
+  .options .n{display:inline-block;color:var(--accent);font-size:12px;font-weight:650;letter-spacing:.1em;padding:3px 10px;border-radius:999px;background:rgba(141,224,60,.12)}
   .options h3{margin:8px 0 4px}.options p{color:var(--muted);font-size:14px}
   @media (max-width:820px){.options{grid-template-columns:1fr}}
   .more{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:24px}
@@ -440,7 +448,8 @@
   .faq .ans p{padding:0 20px 18px;color:var(--muted);font-size:14.5px;max-width:70ch}
   @media (max-width:640px){#novedades .wrap,#faq .wrap{width:calc(100% - 32px)}.tl{padding-left:28px}.tli{padding:18px}.tli::before{left:-27px}.faq summary{padding:16px;font-size:15px}.faq .ans p{padding:0 16px 16px}}
 
-  @media (max-width:640px){section{padding:84px 0}.hero{padding-top:120px}}
+  @media (max-width:640px){section{padding:68px 0}.hero{padding-top:120px}.download{padding-bottom:68px}
+    .faq summary{min-height:44px}.links a{min-height:40px;display:inline-flex;align-items:center}}
   @media (prefers-reduced-motion:reduce){
     *,*::before,*::after{animation:none!important;transition:none!important}
     .reveal{opacity:1;transform:none}.win.on{opacity:1}
@@ -468,7 +477,7 @@
   <!-- ================= Portada ================= -->
   <section class="hero" id="inicio">
     <div class="wrap">
-      <div class="badge reveal"><b id="ver">0.7</b>Shell propio, cristal y 102 ajustes reversibles</div>
+      <div class="badge reveal"><b id="ver">0.10</b>Tu color, tus juegos y un PC que se cuida solo</div>
       <h1 class="reveal d1">Windows 11.<br><span class="grad">Como debería ser.</span></h1>
       <p class="lead reveal d2">AUREVIX es Windows 11 oficial con una capa propia: barra de tareas flotante de cristal, menú Inicio limpio, Configuración rediseñada y el sistema optimizado desde el primer arranque. Tus programas y juegos, igual que siempre.</p>
       <div class="row reveal d3">
@@ -491,11 +500,11 @@
               <div class="tt"><img src="logo.png" alt="">AUREVIX Control Center<span class="sp"></span><span class="c">—</span><span class="c">▢</span><span class="c">✕</span></div>
               <div class="side">
                 <div class="brandc"><img src="logo.png" alt=""><div>AUREVIX<small>Control Center</small></div></div>
-                <div class="nav2"><div class="s">Inicio</div><div>Diagnóstico</div><small>RENDIMIENTO</small><div>Optimización</div><div>Game Boost</div><div>Benchmark</div><div>Red</div><small>SISTEMA</small><div>Apariencia</div><div>Limpieza</div><div>Actualizaciones</div><div>Recuperación</div></div>
+                <div class="nav2"><div class="s">Inicio</div><div>Diagnóstico</div><small>RENDIMIENTO</small><div>Optimización</div><div>Juegos</div><div>Game Boost</div><div>Benchmark</div><div>Red</div><small>SISTEMA</small><div>Apariencia</div><div>Limpieza</div><div>Herramientas</div><div>Actualizaciones</div><div>Recuperación</div></div>
               </div>
               <div class="main">
                 <h5 id="greet">Buenas tardes</h5>
-                <div class="mut">AUREVIX 0.7 · Windows 11 · Todo en orden</div>
+                <div class="mut">AUREVIX 0.10 · Windows 11 · Todo en orden</div>
                 <div class="mets">
                   <div class="met">Procesador<b id="cpu">6 %</b><i>16 hilos</i></div>
                   <div class="met">Memoria<b id="ram">28 %</b><i>9,0 de 32 GB</i></div>
@@ -793,13 +802,16 @@
       <div class="tl">
       <article class="tli reveal new">
         <div class="ver">0.10.0 <span class="tg">Nueva</span></div>
-        <h3>Tu color, tema automático y un PC que se cuida solo</h3>
+        <h3>Tu color, tus juegos y un PC que se cuida solo</h3>
         <ul>
           <li><b>Color de acento a elegir</b> entre 7 colores, aplicado al momento.</li>
           <li><b>Tema claro/oscuro automático</b> a una hora fija o con el sol de tu zona.</li>
           <li><b>Perfiles automáticos</b> (opcionales): Gaming, Eficiencia y Productividad.</li>
           <li><b>Antes y después</b> de optimizar: arranque, procesos, memoria y espacio.</li>
           <li><b>Avisos de salud</b> en la bandeja: disco, temperatura, driver o reinicio pendiente.</li>
+          <li><b>Biblioteca de juegos</b>: Steam, Epic y GOG con Jugar y Game Boost.</li>
+          <li><b>Pantalla de bloqueo a tu gusto</b>.</li>
+          <li><b>Mantenimiento semanal y asistente de drivers</b>.</li>
         </ul>
       </article>
       <article class="tli reveal">
