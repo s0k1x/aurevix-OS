@@ -308,6 +308,13 @@ public sealed class MediaEngine
 
     public bool IsoCached => File.Exists(IsoCachePath) && new FileInfo(IsoCachePath).Length > 3_000_000_000;
 
+    /// <summary>Bytes libres en la unidad de <paramref name="path"/> (-1 si no se puede leer).</summary>
+    public static long FreeBytes(string path)
+    {
+        try { return new DriveInfo(Path.GetPathRoot(Path.GetFullPath(path))!).AvailableFreeSpace; }
+        catch { return -1; }
+    }
+
     /// <summary>Lanza un error claro, antes de empezar, si la unidad de <paramref name="path"/> no tiene sitio.</summary>
     public static void RequireFreeSpace(string path, long bytes, string what)
     {
