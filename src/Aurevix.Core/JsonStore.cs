@@ -54,6 +54,24 @@ public sealed class AurevixSettings
     public int LogRetentionDays { get; set; } = 14;
     /// <summary>Por defecto no se envía nada al servidor salvo la consulta del manifiesto.</summary>
     public bool ShareAnonymousDiagnostics { get; set; }
+
+    /// <summary>Color de acento AUREVIX (#RRGGBB). Lo usan el tema de Windows, AUREVIX Shell y el Control Center.</summary>
+    public string AccentColor { get; set; } = "#8DE03C";
+    /// <summary>Tema automático: "off" (manual), "hours" (horario fijo) o "sun" (amanecer y anochecer aproximados).</summary>
+    public string ThemeSchedule { get; set; } = "off";
+    /// <summary>Con ThemeSchedule = "hours": minutos desde medianoche en que empieza el tema claro / el oscuro.</summary>
+    public int LightFromMinutes { get; set; } = 7 * 60;
+    public int DarkFromMinutes { get; set; } = 20 * 60;
+    /// <summary>Fondos de día y de noche del tema automático (nombres de Assets/Wallpapers sin extensión).</summary>
+    public string DayWallpaper { get; set; } = "Aurevix-Daylight";
+    public string NightWallpaper { get; set; } = "Aurevix-Aurora";
+    /// <summary>Perfiles automáticos: Juego al abrir un juego, Batería al desenchufar, Trabajo con apps de oficina.</summary>
+    public bool AutoProfiles { get; set; } = true;
+    public bool AutoProfileGaming { get; set; } = true;
+    public bool AutoProfileBattery { get; set; } = true;
+    public bool AutoProfileWork { get; set; }
+    /// <summary>Avisos de salud en la bandeja (disco lleno o con fallos, temperatura alta, driver de gráfica antiguo).</summary>
+    public bool HealthAlerts { get; set; } = true;
 }
 
 /// <summary>Estado de la instalación (primer inicio, perfil activo, versión omitida…).</summary>
@@ -69,4 +87,8 @@ public sealed class AurevixState
     public string? LastSeenManifestSequence { get; set; }
     /// <summary>Última secuencia de manifiesto vista en cada canal (para detectar bajadas de versión sin confundir un cambio de canal).</summary>
     public Dictionary<string, long> ManifestSequenceByChannel { get; set; } = new();
+    /// <summary>Último aviso de salud mostrado por tipo (para no repetir el mismo aviso más de una vez al día).</summary>
+    public Dictionary<string, DateTime> HealthAlertLastUtc { get; set; } = new();
+    /// <summary>Último «antes y después» de una optimización (JSON de SystemSnapshot), para mostrarlo en Inicio y Optimización.</summary>
+    public string? LastOptimizationReport { get; set; }
 }
