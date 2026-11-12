@@ -88,6 +88,16 @@ public sealed class AppearancePage : UserControl
             wallRow,
             Ui.Row(Ui.Button("Restaurar fondo original", RestoreWallpaper))));
 
+        var lockRow = Ui.Wrap();
+        foreach (var w in walls) lockRow.Children.Add(WallpaperTile(w, p => _ = SetLockScreenAsync(p)));
+        body.Children.Add(Ui.Card(Ui.H2("Pantalla de bloqueo e inicio de sesión"),
+            Ui.Muted("Elige la imagen que ves al bloquear el equipo. En Windows 11 la pantalla de inicio de sesión usa la misma imagen que la de bloqueo."),
+            lockRow,
+            Ui.Row(
+                Ui.Button("Elegir imagen…", () => _ = PickLockScreenAsync()),
+                Ui.Button("Usar el mismo fondo del escritorio", () => _ = LockFromDesktopAsync()),
+                Ui.Button("Restablecer la de Windows", () => _ = RestoreLockScreenAsync()))));
+
         body.Children.Add(Ui.Card(Ui.H2("Volver a Windows 11 original"),
             Ui.Muted("Desactiva AUREVIX Shell y deshace todos los cambios de apariencia hechos por AUREVIX, en orden inverso. Tus programas y archivos no se tocan."),
             Ui.Row(Ui.Button("Restablecer aspecto de Windows 11", RestoreAll))));
@@ -249,7 +259,7 @@ public sealed class AppearancePage : UserControl
     }
 
     /// <summary>Miniatura pulsable de un fondo (se decodifica a tamaño pequeño para no cargar el 4K entero).</summary>
-    private static UIElement WallpaperTile(string path)
+    private static UIElement WallpaperTile(string path, Action<string>? onPick = null)
     {
         var bmp = new System.Windows.Media.Imaging.BitmapImage();
         bmp.BeginInit();
@@ -269,8 +279,52 @@ public sealed class AppearancePage : UserControl
         var tile = new StackPanel { Margin = new Thickness(0, 0, 12, 12), Children = { frame, label } };
         frame.MouseEnter += (_, _) => frame.BorderBrush = Ui.Brush("Accent");
         frame.MouseLeave += (_, _) => frame.BorderBrush = Ui.Brush("BorderBrushAx");
-        frame.MouseLeftButtonUp += (_, _) => SetWallpaper(path);
+        frame.MouseLeftButtonUp += (_, _) => { if (onPick is null) SetWallpaper(path); else onPick(path); };
         return tile;
+    }
+
+    private static async Task SetLockScreenAsync(string path)
+    {
+        if (await AurevixStyle.SetLockScreenAsync(path))
+            MessageBox.Show("Listo: esta es ahora tu pantalla de bloqueo y de inicio de sesión. Bloquea el equipo (Windows + L) para verla.", "Apariencia");
+        else
+            MessageBox.Show("Windows no permitió cambiar la pantalla de bloqueo en este equipo.", "Apariencia", MessageBoxButton.OK, MessageBoxImage.Warning);
+    }
+
+    private static async Task PickLockScreenAsync()
+    {
+        var dlg = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Elegir imagen para la pantalla de bloqueo",
+            Filter = "Imágenes (*.jpg;*.jpeg;*.png;*.bmp)|*.jpg;*.jpeg;*.png;*.bmp"
+        };
+        if (dlg.ShowDialog() == true) await SetLockScreenAsync(dlg.FileName);
+    }
+
+    private static async Task LockFromDesktopAsync()
+    {
+        var current = SystemTools.CurrentWallpaper();
+        if (string.IsNullOrEmpty(current) || !File.Exists(current))
+        {
+            MessageBox.Show("No se pudo encontrar la imagen del fondo de escritorio actual.", "Apariencia", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+        await SetLockScreenAsync(current);
+    }
+
+    private static async Task RestoreLockScreenAsync()
+    {
+        if (await AurevixStyle.RestoreLockScreenAsync())
+        {
+            MessageBox.Show("Pantalla de bloqueo restablecida a la de Windows.", "Apariencia");
+            return;
+        }
+        if (MessageBox.Show("No hay una imagen original guardada. Puedes volver a Windows destacado desde Configuración > Personalización > Pantalla de bloqueo.\n\n¿Abrir esa página ahora?",
+                "Apariencia", MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.Yes)
+        {
+            try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("ms-settings:lockscreen") { UseShellExecute = true }); }
+            catch (Exception ex) { Core.Logging.AurevixLog.Warn($"Abrir Configuración: {ex.Message}"); }
+        }
     }
 
     private static string OriginalWallpaperFile => Path.Combine(AurevixPaths.Backups, "original-wallpaper.txt");

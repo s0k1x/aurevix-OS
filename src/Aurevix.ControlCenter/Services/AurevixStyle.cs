@@ -493,6 +493,63 @@ public static class AurevixStyle
         catch { return null; }
     }
 
+    private static string LockScreenDirectory =>
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AUREVIX", "lockscreen");
+
+    private static string OriginalLockScreenFile => Path.Combine(AurevixPaths.Backups, "original-lockscreen.txt");
+
+    /// <summary>Pone una imagen como pantalla de bloqueo (y de inicio de sesión en Windows 11). La copia antes a %LOCALAPPDATA%\AUREVIX\lockscreen.</summary>
+    public static async Task<bool> SetLockScreenAsync(string path)
+    {
+        try
+        {
+            if (!File.Exists(path)) return false;
+            // Guardar la imagen original de Windows una sola vez, antes del primer cambio.
+            var state = Path.Combine(AurevixPaths.Backups, "style-original.json");
+            var hasBackup = File.Exists(OriginalLockScreenFile) ||
+                (File.Exists(state) && JsonStore.LoadOrDefault<OriginalStyle>(state).LockScreen is { Length: > 0 });
+            if (!hasBackup && TryGetLockScreen() is { Length: > 0 } current
+                && !current.StartsWith(LockScreenDirectory, StringComparison.OrdinalIgnoreCase))
+                File.WriteAllText(OriginalLockScreenFile, current);
+
+            Directory.CreateDirectory(LockScreenDirectory);
+            // Nombre único: Windows puede mantener bloqueada la copia anterior.
+            var dest = Path.Combine(LockScreenDirectory, $"lock-{DateTime.Now:yyyyMMddHHmmss}{Path.GetExtension(path).ToLowerInvariant()}");
+            File.Copy(path, dest, overwrite: true);
+            var ok = await TrySetLockScreenAsync(dest);
+            if (ok)
+                foreach (var old in Directory.GetFiles(LockScreenDirectory, "lock-*").Where(f => !f.Equals(dest, StringComparison.OrdinalIgnoreCase)))
+                    try { File.Delete(old); } catch { }
+            return ok;
+        }
+        catch (Exception ex)
+        {
+            AurevixLog.Warn($"Pantalla de bloqueo no cambiada: {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>Vuelve a la imagen de bloqueo original guardada. Devuelve false si no hay copia o Windows no lo permite.</summary>
+    public static async Task<bool> RestoreLockScreenAsync()
+    {
+        try
+        {
+            string? original = null;
+            var state = Path.Combine(AurevixPaths.Backups, "style-original.json");
+            if (File.Exists(state)) original = JsonStore.LoadOrDefault<OriginalStyle>(state).LockScreen;
+            if (string.IsNullOrEmpty(original) && File.Exists(OriginalLockScreenFile)) original = File.ReadAllText(OriginalLockScreenFile).Trim();
+            if (string.IsNullOrEmpty(original) || !File.Exists(original)) return false;
+            if (!await TrySetLockScreenAsync(original)) return false;
+            try { File.Delete(OriginalLockScreenFile); } catch { }
+            return true;
+        }
+        catch (Exception ex)
+        {
+            AurevixLog.Warn($"Pantalla de bloqueo no restaurada: {ex.Message}");
+            return false;
+        }
+    }
+
     private static async Task<bool> TrySetLockScreenAsync(string path)
     {
         try
