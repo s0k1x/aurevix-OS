@@ -30,6 +30,11 @@ public sealed class RecoveryPage : UserControl
             Ui.Muted("Exporta ajustes, estado, copias de seguridad de cambios e informes a un archivo .zip en tu carpeta Documentos."),
             Ui.Row(Ui.Button("Exportar configuración", Export), Ui.Button("Abrir carpeta de datos", () => SystemTools.OpenFolder(AurevixPaths.UserRoot)))));
 
+        body.Children.Add(Ui.Card(Ui.H2("Copia del registro (.reg)"),
+            Ui.Muted("Crea un archivo .reg en Documentos con los valores originales que AUREVIX guardó antes de cambiar nada, para que puedas restaurarlos a mano."),
+            Ui.Muted("Las copias de sistema las guarda AUREVIX Core Service y se restauran desde Optimización."),
+            Ui.Row(Ui.Button("Exportar copia del registro (.reg)", ExportRegistry))));
+
         var backups = AppServices.Tweaks.ListBackups().Take(15).ToList();
         var list = new StackPanel();
         if (backups.Count == 0) list.Children.Add(Ui.Muted("No hay cambios registrados."));
@@ -49,6 +54,19 @@ public sealed class RecoveryPage : UserControl
         body.Children.Add(Ui.Card(Ui.H2("Historial de cambios"), Ui.Muted("Cada cambio de AUREVIX guarda los valores anteriores."), list));
 
         Content = root;
+    }
+
+    private static void ExportRegistry()
+    {
+        try
+        {
+            var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            var (path, count) = RegistryExport.ExportOriginals(AppServices.Tweaks.ListBackups(), docs);
+            if (count == 0) { MessageBox.Show("Todavía no hay valores guardados: AUREVIX aún no ha cambiado nada en el registro.", "Recuperación"); return; }
+            var open = MessageBox.Show($"Copia creada con {count} valor(es):\n{path}\n\n¿Quieres abrir la carpeta?", "Recuperación", MessageBoxButton.YesNo);
+            if (open == MessageBoxResult.Yes) SystemTools.OpenFolder(docs);
+        }
+        catch (Exception ex) { MessageBox.Show($"No se pudo exportar: {ex.Message}", "Recuperación"); }
     }
 
     private static void Export()

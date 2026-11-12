@@ -36,6 +36,22 @@ public sealed class AppsPage : UserControl
         new("Microsoft.VCRedist.2015+.x86", "Visual C++ 2015-2022 (x86)", "Componentes para juegos"),
         new("Microsoft.DirectX", "DirectX (runtime de usuario final)", "Componentes para juegos", "juegos antiguos"),
         new("Microsoft.DotNet.DesktopRuntime.8", ".NET Desktop Runtime 8", "Componentes para juegos"),
+        new("Microsoft.Sysinternals.Autoruns", "Autoruns", AdvancedGroup, "qué se inicia con Windows, a fondo"),
+        new("Microsoft.Sysinternals.ProcessExplorer", "Process Explorer", AdvancedGroup, "administrador de tareas avanzado"),
+        new("Microsoft.Sysinternals.ProcessMonitor", "Process Monitor", AdvancedGroup, "qué archivos y registro toca cada programa"),
+        new("REALiX.HWiNFO", "HWiNFO", AdvancedGroup, "temperaturas, frecuencias y sensores"),
+        new("CrystalDewWorld.CrystalDiskInfo", "CrystalDiskInfo", AdvancedGroup, "salud SMART de tus discos"),
+        new("Resplendence.LatencyMon", "LatencyMon", AdvancedGroup, "busca drivers que causan tirones o cortes de audio"),
+        new("OCBase.OCCT.Personal", "OCCT", AdvancedGroup, "prueba de estabilidad de CPU, GPU y RAM"),
+    ];
+
+    private const string AdvancedGroup = "Herramientas avanzadas";
+
+    /// <summary>Herramientas que no se instalan con winget: se abre su web oficial.</summary>
+    private static readonly (string Name, string Url, string Note)[] Links =
+    [
+        ("MemTest86", "https://www.memtest86.com/download.htm", "Prueba la RAM desde un USB (arranque)."),
+        ("Chris Titus WinUtil", "https://christitus.com/windows-tool/", "Herramienta de terceros muy completa. Úsala solo si sabes lo que haces: AUREVIX no controla sus cambios."),
     ];
 
     private readonly Dictionary<string, CheckBox> _checks = new();
@@ -54,6 +70,13 @@ public sealed class AppsPage : UserControl
                 _checks[a.Id] = cb;
                 wrap.Children.Add(cb);
             }
+            if (group.Key == AdvancedGroup)
+                foreach (var (name, url, note) in Links)
+                    wrap.Children.Add(new StackPanel
+                    {
+                        Width = 340, Margin = new Thickness(0, 0, 0, 8),
+                        Children = { Ui.Text(name), Ui.Muted(note), Ui.Button("Abrir web", () => Services.SystemTools.Start(url)) }
+                    });
             body.Children.Add(Ui.Card(Ui.H2(group.Key), wrap));
         }
         body.Children.Add(Ui.Card(
