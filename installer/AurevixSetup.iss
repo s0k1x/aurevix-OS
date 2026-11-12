@@ -83,11 +83,35 @@ Filename: "{sys}\sc.exe"; Parameters: "delete AurevixCoreService"; Flags: runhid
 [Code]
 function PrepareToInstall(var NeedsRestart: Boolean): String;
 var
-  Code: Integer;
+  Code, Waited: Integer;
+  TmpFile: String;
+  Output: AnsiString;
+  Stopped: Boolean;
 begin
   // Detener el servicio antes de reemplazar sus archivos (actualizaciones).
   Exec(ExpandConstant('{sys}\sc.exe'), 'stop AurevixCoreService', '', SW_HIDE, ewWaitUntilTerminated, Code);
-  Sleep(1500);
+  // Esperar (máx. 20 s, cada 500 ms) a que el servicio esté detenido o ya no exista.
+  TmpFile := ExpandConstant('{tmp}\aurevix-svc.txt');
+  Waited := 0;
+  Stopped := False;
+  while (Waited < 20000) and (not Stopped) do
+  begin
+    DeleteFile(TmpFile);
+    Exec(ExpandConstant('{cmd}'), '/C sc.exe query AurevixCoreService > "' + TmpFile + '" 2>&1', '', SW_HIDE, ewWaitUntilTerminated, Code);
+    if LoadStringFromFile(TmpFile, Output) then
+      Stopped := (Pos('STOPPED', Output) > 0) or (Pos('1060', Output) > 0);
+    if not Stopped then
+    begin
+      Sleep(500);
+      Waited := Waited + 500;
+    end;
+  end;
+  // Si sigue en marcha, forzar el cierre del ejecutable del servicio.
+  if not Stopped then
+  begin
+    Exec(ExpandConstant('{sys}\taskkill.exe'), '/F /IM AurevixCoreService.exe', '', SW_HIDE, ewWaitUntilTerminated, Code);
+    Sleep(1000);
+  end;
   Result := '';
 end;
 

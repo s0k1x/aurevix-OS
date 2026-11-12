@@ -153,7 +153,7 @@ public sealed class SystemActions(string root) : ISystemActions
     {
         if (Interlocked.Exchange(ref _installing, 1) == 1) return (false, "Ya se está instalando una actualización.");
         try { return InstallUpdateAsync(channel, installId).GetAwaiter().GetResult(); }
-        catch (Exception ex) { AurevixLog.Error("Actualización desde el servicio", ex); return (false, "No se pudo instalar la actualización: " + ex.Message); }
+        catch (Exception ex) { AurevixLog.Error("Actualización desde el servicio", ex); return (false, "No se pudo instalar la actualización. Inténtalo más tarde; el detalle está en los registros de AUREVIX."); }
         finally { Interlocked.Exchange(ref _installing, 0); }
     }
 
@@ -176,7 +176,26 @@ public sealed class SystemActions(string root) : ISystemActions
         if (result.Status != UpdateStatus.Available || result.Release is null) return (false, result.Message);
         if (result.Manifest is { } m && m.Sequence > state.LastSequence) { state.LastSequence = m.Sequence; JsonStore.Save(UpdateStateFile, state); }
 
-        var dir = Path.Combine(root, "updates", result.Release.Version);
+        var updatesDir = Path.Combine(root, "updates");
+        var dir = Path.Combine(updatesDir, result.Release.Version);
+        Directory.CreateDirectory(updatesDir);
+        PruneOldInstallers(updatesDir, dir);
+
+        // Espacio libre: paquete × 3 + 500 MB (descarga, copia de seguridad y margen para instalar).
+        var needed = result.Release.Packages.Sum(p => p.Size) * 3 + 500L * 1024 * 1024;
+        try
+        {
+            var drive = new DriveInfo(Path.GetPathRoot(Path.GetFullPath(updatesDir))!);
+            if (drive.AvailableFreeSpace < needed)
+            {
+                var gb = (long)Math.Ceiling(needed / (1024.0 * 1024 * 1024));
+                var letter = drive.Name.TrimEnd('\\', '/');
+                AurevixLog.Warn($"Actualización: espacio insuficiente en {letter} ({drive.AvailableFreeSpace} < {needed} bytes)");
+                return (false, $"No hay espacio suficiente para actualizar: libera al menos {gb} GB en {letter}");
+            }
+        }
+        catch (Exception ex) { AurevixLog.Warn($"No se pudo comprobar el espacio libre: {ex.Message}"); }
+
         string? installer = null;
         foreach (var p in result.Release.Packages)
         {
@@ -185,6 +204,17 @@ public sealed class SystemActions(string root) : ISystemActions
         }
         if (installer is null) return (false, "La versión no incluye instalador.");
 
+        // Historial: el servicio corre como SYSTEM y el historial normal es por usuario, así que se guarda en
+        // %ProgramData%\AUREVIX\update-history.json (mismo formato que UpdateHistory).
+        try
+        {
+            var historyPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "AUREVIX", "update-history.json");
+            var history = JsonStore.LoadOrDefault<UpdateHistory>(historyPath);
+            history.Add(new UpdateHistoryEntry(DateTime.UtcNow, current.ToString(), result.Release.Version, channel, "launched", installer));
+            JsonStore.Save(historyPath, history);
+        }
+        catch (Exception ex) { AurevixLog.Warn($"No se pudo escribir el historial de actualizaciones: {ex.Message}"); }
+
         File.WriteAllText(RelaunchMarker, DateTime.UtcNow.ToString("O"));
         AurevixLog.Info($"Instalando {result.Release.Version} desde el servicio");
         // Argumentos FIJOS. El instalador detiene este servicio, lo actualiza y lo vuelve a iniciar;
@@ -192,6 +222,21 @@ public sealed class SystemActions(string root) : ISystemActions
         Process.Start(new ProcessStartInfo(installer, "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /AUREVIXUPDATE /AUREVIXSERVICE")
         { UseShellExecute = false, CreateNoWindow = true });
         return (true, $"Instalando AUREVIX {result.Release.Version}…");
+    }
+
+    /// <summary>Borra instaladores viejos: conserva la carpeta de la versión nueva y la más reciente anterior (para volver atrás).</summary>
+    private static void PruneOldInstallers(string updatesDir, string keepDir)
+    {
+        try
+        {
+            var others = new DirectoryInfo(updatesDir).GetDirectories()
+                .Where(d => !string.Equals(d.FullName.TrimEnd('\\', '/'), keepDir.TrimEnd('\\', '/'), StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(d => d.LastWriteTimeUtc)
+                .Skip(1);
+            foreach (var d in others)
+                try { d.Delete(true); } catch (Exception ex) { AurevixLog.Warn($"No se pudo borrar {d.FullName}: {ex.Message}"); }
+        }
+        catch (Exception ex) { AurevixLog.Warn($"Limpieza de instaladores antiguos: {ex.Message}"); }
     }
 
     private static SemVersion CurrentVersion()
@@ -212,7 +257,7 @@ public sealed class SystemActions(string root) : ISystemActions
             if (!File.Exists(RelaunchMarker)) return;
             var when = File.GetLastWriteTimeUtc(RelaunchMarker);
             File.Delete(RelaunchMarker);
-            if (DateTime.UtcNow - when > TimeSpan.FromHours(2)) return;
+            if (DateTime.UtcNow - when > TimeSpan.FromHours(24)) return;
             var exe = Path.Combine(AppDir, AppExe);
             if (File.Exists(exe)) UserSession.Start(exe, "--background --after-update");
         }
