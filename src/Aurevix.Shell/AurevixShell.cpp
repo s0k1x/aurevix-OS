@@ -18,6 +18,9 @@
 #include <chrono>
 #include <limits>
 #include <atomic>
+#include <mutex>
+#include <vector>
+#include <algorithm>
 #include <cstdio>
 #include <share.h>
 
@@ -29,6 +32,7 @@
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.UI.h>
+#include <winrt/Windows.UI.Core.h>
 #include <winrt/Windows.UI.Xaml.h>
 #include <winrt/Windows.UI.Xaml.Media.h>
 #include <winrt/Windows.UI.Xaml.Shapes.h>
@@ -57,17 +61,45 @@ static Color Sheen{ 0x26, 0xFF, 0xFF, 0xFF };      // brillo superior del crista
 static Color Lime{ 0xFF, 0x8D, 0xE0, 0x3C };       // acento
 static Color Page{ 0xB8, 0x0B, 0x0B, 0x0E };       // fondo de Configuración (deja ver el Mica de Windows)
 
+// La paleta se recarga en vivo desde otro hilo: toda lectura/escritura pasa por este mutex.
+static std::mutex g_paletteMutex;
+static std::atomic<bool> g_lightTheme{ true };
+static Color CurLime() { std::lock_guard<std::mutex> l(g_paletteMutex); return Lime; }
+static Color CurPage() { std::lock_guard<std::mutex> l(g_paletteMutex); return Page; }
+static Color CurGraphite() { std::lock_guard<std::mutex> l(g_paletteMutex); return Graphite; }
+static Color CurSheen() { std::lock_guard<std::mutex> l(g_paletteMutex); return Sheen; }
+
 static void LoadPalette()
 {
     DWORD light = 1, size = sizeof(light);
     RegGetValueW(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize", L"SystemUsesLightTheme",
                  RRF_RT_REG_DWORD, nullptr, &light, &size);
+    // Color de acento de Windows: DWORD 0xAABBGGRR. Si no existe, se queda el verde AUREVIX.
+    DWORD accent = 0, asize = sizeof(accent);
+    bool hasAccent = RegGetValueW(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\DWM", L"AccentColor",
+                                  RRF_RT_REG_DWORD, nullptr, &accent, &asize) == ERROR_SUCCESS;
+    std::lock_guard<std::mutex> l(g_paletteMutex);
+    g_lightTheme = light != 0;
     if (light)
     {
         Graphite = { 0x9E, 0xF1, 0xF6, 0xEA };   // blanco translúcido con un toque verde AUREVIX
         Sheen = { 0x8C, 0xFF, 0xFF, 0xFF };
         Lime = { 0xFF, 0x4E, 0x9A, 0x1E };
         Page = { 0xB0, 0xF1, 0xF6, 0xEC };
+    }
+    else
+    {
+        Graphite = { 0xA6, 0x0B, 0x0B, 0x0E };
+        Sheen = { 0x26, 0xFF, 0xFF, 0xFF };
+        Lime = { 0xFF, 0x8D, 0xE0, 0x3C };
+        Page = { 0xB8, 0x0B, 0x0B, 0x0E };
+    }
+    if (hasAccent)
+    {
+        double r = accent & 0xFF, g = (accent >> 8) & 0xFF, b = (accent >> 16) & 0xFF;
+        // En tema claro, un acento muy claro se oscurece un 35 % para que contraste.
+        if (light && (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255.0 > 0.6) { r *= 0.65; g *= 0.65; b *= 0.65; }
+        Lime = { 0xFF, static_cast<uint8_t>(r), static_cast<uint8_t>(g), static_cast<uint8_t>(b) };
     }
 }
 
@@ -154,56 +186,221 @@ static bool SameColor(wuxm::Brush const& b, Color c)
     return x.A == c.A && x.R == c.R && x.G == c.G && x.B == c.B;
 }
 
-// Aplica el color y lo mantiene: si Windows lo cambia (por ejemplo, al maximizar una ventana), se vuelve a poner.
 static wuxm::Brush GlassBrush()
 {
     wuxm::LinearGradientBrush g;
     g.StartPoint({ 0, 0 }); g.EndPoint({ 0, 1 });
-    wuxm::GradientStop top; top.Color(Sheen); top.Offset(0);
-    wuxm::GradientStop mid; mid.Color(Graphite); mid.Offset(0.45);
-    wuxm::GradientStop bottom; bottom.Color(Graphite); bottom.Offset(1);
+    Color sheen = CurSheen(), graphite = CurGraphite();
+    wuxm::GradientStop top; top.Color(sheen); top.Offset(0);
+    wuxm::GradientStop mid; mid.Color(graphite); mid.Offset(0.45);
+    wuxm::GradientStop bottom; bottom.Color(graphite); bottom.Offset(1);
     g.GradientStops().Append(top); g.GradientStops().Append(mid); g.GradientStops().Append(bottom);
     return g;
 }
 
+// ------------------------------------------------------------------ elementos estilizados (para recargar la paleta en vivo)
+
+enum class Role { GlassFill, AppIndicator, StartOverlay, SettingsPage, SettingsSelection, StartBorder };
+
+struct StyledRef
+{
+    unsigned long long id;
+    Role role;
+    winrt::weak_ref<wux::DependencyObject> ref;
+    winrt::Windows::UI::Core::CoreDispatcher dispatcher{ nullptr };   // agile: se puede usar desde cualquier hilo
+};
+static std::mutex g_styledMutex;
+static std::vector<StyledRef> g_styledList;
+
+static void Register(Role role, wux::DependencyObject const& obj)
+{
+    try
+    {
+        static unsigned long long nextId = 0;
+        auto w = winrt::make_weak(obj);
+        auto d = obj.Dispatcher();   // Register se llama en el hilo de UI del elemento
+        std::lock_guard<std::mutex> l(g_styledMutex);
+        g_styledList.push_back({ ++nextId, role, w, d });
+    }
+    catch (...) {}
+}
+
+// Color actual (de la paleta global) de los roles que usan un color liso.
+static Color ColorFor(Role role)
+{
+    return role == Role::SettingsPage ? CurPage() : CurLime();
+}
+
+static bool EqColor(Color a, Color b) { return a.A == b.A && a.R == b.R && a.G == b.G && a.B == b.B; }
+
+// ¿El pincel es el cristal con la paleta actual?
+static bool IsCurrentGlass(wuxm::Brush const& b)
+{
+    auto g = b.try_as<wuxm::LinearGradientBrush>();
+    if (!g) return false;
+    auto stops = g.GradientStops();
+    if (stops.Size() != 3) return false;
+    return EqColor(stops.GetAt(0).Color(), CurSheen()) && EqColor(stops.GetAt(1).Color(), CurGraphite());
+}
+
+static bool SetPageBackground(wux::UIElement const& content)
+{
+    auto brush = wuxm::SolidColorBrush(CurPage());
+    if (auto panel = content.try_as<wuxc::Panel>()) { panel.Background(brush); return true; }
+    if (auto control = content.try_as<wuxc::Control>()) { control.Background(brush); return true; }
+    if (auto border = content.try_as<wuxc::Border>()) { border.Background(brush); return true; }
+    return false;
+}
+
+// Vuelve a aplicar el estilo a un elemento con la paleta actual (se ejecuta en el hilo de UI del elemento).
+static void ReapplyOne(Role role, wux::DependencyObject const& obj)
+{
+    switch (role)
+    {
+    case Role::GlassFill:
+        if (auto sh = obj.try_as<wuxs::Shape>()) sh.Fill(GlassBrush());
+        break;
+    case Role::AppIndicator:
+    case Role::SettingsSelection:
+        if (auto sh = obj.try_as<wuxs::Shape>()) sh.Fill(wuxm::SolidColorBrush(CurLime()));
+        break;
+    case Role::StartOverlay:
+        if (auto b = obj.try_as<wuxc::Border>()) b.Background(GlassBrush());
+        break;
+    case Role::SettingsPage:
+        if (auto ui = obj.try_as<wux::UIElement>()) SetPageBackground(ui);
+        break;
+    case Role::StartBorder:
+        if (auto b = obj.try_as<wuxc::Border>()) b.BorderBrush(wuxm::SolidColorBrush(CurLime()));
+        break;
+    }
+}
+
+static void ReapplyAll()
+{
+    std::vector<StyledRef> snap;
+    {
+        std::lock_guard<std::mutex> l(g_styledMutex);
+        snap = g_styledList;
+    }
+    for (auto const& item : snap)
+    {
+        try
+        {
+            // El weak_ref no se resuelve aquí: solo en el hilo de UI del elemento.
+            auto weak = item.ref;
+            auto role = item.role;
+            auto id = item.id;
+            item.dispatcher.RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Normal, [weak, role, id]()
+            {
+                try
+                {
+                    if (auto o = weak.get()) { ReapplyOne(role, o); return; }
+                    std::lock_guard<std::mutex> l(g_styledMutex);   // el elemento ya no existe: se quita de la lista
+                    g_styledList.erase(std::remove_if(g_styledList.begin(), g_styledList.end(),
+                        [id](StyledRef const& r) { return r.id == id; }), g_styledList.end());
+                }
+                catch (...) {}
+            });
+        }
+        catch (...) {}
+    }
+}
+
+// Hilo que vigila el tema claro/oscuro y el acento de Windows y recarga la paleta sin reiniciar nada.
+static DWORD WINAPI PaletteWatcher(LPVOID)
+{
+    const wchar_t* paths[2] = { L"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize", L"Software\\Microsoft\\Windows\\DWM" };
+    HKEY keys[2]{};
+    HANDLE events[2]{};
+    DWORD n = 0;
+    for (auto path : paths)
+    {
+        HKEY k = nullptr;
+        if (RegOpenKeyExW(HKEY_CURRENT_USER, path, 0, KEY_NOTIFY, &k) != ERROR_SUCCESS) continue; // en procesos restringidos puede fallar: sin recarga en vivo
+        HANDLE e = CreateEventW(nullptr, FALSE, FALSE, nullptr);
+        if (!e || RegNotifyChangeKeyValue(k, FALSE, REG_NOTIFY_CHANGE_LAST_SET, e, TRUE) != ERROR_SUCCESS)
+        {
+            if (e) CloseHandle(e);
+            RegCloseKey(k);
+            continue;
+        }
+        keys[n] = k; events[n] = e; n++;
+    }
+    if (!n) { Log(L"Paleta en vivo: sin claves que vigilar"); return 0; }
+    for (;;)
+    {
+        DWORD first = WaitForMultipleObjects(n, events, FALSE, INFINITE);
+        if (first >= WAIT_OBJECT_0 + n) return 0;
+        first -= WAIT_OBJECT_0;
+        Sleep(300); // agrupa varios cambios seguidos
+        for (DWORD i = 0; i < n; i++)
+        {
+            // El evento que despertó el hilo ya se restableció solo; los demás se comprueban sin esperar.
+            if (i == first || WaitForSingleObject(events[i], 0) == WAIT_OBJECT_0)
+                RegNotifyChangeKeyValue(keys[i], FALSE, REG_NOTIFY_CHANGE_LAST_SET, events[i], TRUE);
+        }
+        try
+        {
+            LoadPalette();
+            Color a = CurLime();
+            Log(L"Paleta recargada: %s, acento #%02X%02X%02X", g_lightTheme ? L"claro" : L"oscuro", a.R, a.G, a.B);
+            ReapplyAll();
+        }
+        catch (...) {}
+    }
+}
+
+static void StartPaletteWatcher()
+{
+    static std::atomic<bool> started{ false };
+    if (started.exchange(true)) return;
+    if (HANDLE t = CreateThread(nullptr, 0, PaletteWatcher, nullptr, 0, nullptr)) CloseHandle(t);
+}
+
+// Aplica el color y lo mantiene: si Windows lo cambia (por ejemplo, al maximizar una ventana), se vuelve a poner.
 static void KeepGlassFill(wuxs::Shape const& shape)
 {
-    auto brush = GlassBrush();
-    shape.Fill(brush);
-    shape.RegisterPropertyChangedCallback(wuxs::Shape::FillProperty(), [brush](wux::DependencyObject const& s, wux::DependencyProperty const&)
+    shape.Fill(GlassBrush());
+    shape.RegisterPropertyChangedCallback(wuxs::Shape::FillProperty(), [](wux::DependencyObject const& s, wux::DependencyProperty const&)
     {
-        try { auto sh = s.as<wuxs::Shape>(); if (sh.Fill() != brush) sh.Fill(brush); } catch (...) {}
+        try { auto sh = s.as<wuxs::Shape>(); if (!IsCurrentGlass(sh.Fill())) sh.Fill(GlassBrush()); } catch (...) {}
     });
+    Register(Role::GlassFill, shape);
     g_styled++;
 }
 
-static void KeepFill(wuxs::Shape const& shape, Color color)
+static void KeepFill(wuxs::Shape const& shape, Role role)
 {
-    if (!SameColor(shape.Fill(), color)) shape.Fill(wuxm::SolidColorBrush(color));
-    shape.RegisterPropertyChangedCallback(wuxs::Shape::FillProperty(), [color](wux::DependencyObject const& s, wux::DependencyProperty const&)
+    if (!SameColor(shape.Fill(), ColorFor(role))) shape.Fill(wuxm::SolidColorBrush(ColorFor(role)));
+    shape.RegisterPropertyChangedCallback(wuxs::Shape::FillProperty(), [role](wux::DependencyObject const& s, wux::DependencyProperty const&)
     {
         try
         {
             auto sh = s.as<wuxs::Shape>();
-            if (!SameColor(sh.Fill(), color)) sh.Fill(wuxm::SolidColorBrush(color));
+            auto c = ColorFor(role);
+            if (!SameColor(sh.Fill(), c)) sh.Fill(wuxm::SolidColorBrush(c));
         }
         catch (...) {}
     });
+    Register(role, shape);
     g_styled++;
 }
 
-static void KeepBorderBackground(wuxc::Border const& border, Color color)
+static void KeepBorderBackground(wuxc::Border const& border, Role role)
 {
-    if (!SameColor(border.Background(), color)) border.Background(wuxm::SolidColorBrush(color));
-    border.RegisterPropertyChangedCallback(wuxc::Border::BackgroundProperty(), [color](wux::DependencyObject const& s, wux::DependencyProperty const&)
+    if (!SameColor(border.Background(), ColorFor(role))) border.Background(wuxm::SolidColorBrush(ColorFor(role)));
+    border.RegisterPropertyChangedCallback(wuxc::Border::BackgroundProperty(), [role](wux::DependencyObject const& s, wux::DependencyProperty const&)
     {
         try
         {
             auto b = s.as<wuxc::Border>();
-            if (!SameColor(b.Background(), color)) b.Background(wuxm::SolidColorBrush(color));
+            auto c = ColorFor(role);
+            if (!SameColor(b.Background(), c)) b.Background(wuxm::SolidColorBrush(c));
         }
         catch (...) {}
     });
+    Register(role, border);
     g_styled++;
 }
 
@@ -222,11 +419,12 @@ static void StyleSettingsContent()
         if (!window) return;
         auto content = window.Content();
         if (!content || s_settingsRoot.get() == content) return;
-        bool done = false;
-        if (auto panel = content.try_as<wuxc::Panel>()) { panel.Background(wuxm::SolidColorBrush(Page)); done = true; }
-        else if (auto control = content.try_as<wuxc::Control>()) { control.Background(wuxm::SolidColorBrush(Page)); done = true; }
-        else if (auto border = content.try_as<wuxc::Border>()) { border.Background(wuxm::SolidColorBrush(Page)); done = true; }
-        if (done) { s_settingsRoot = winrt::make_weak(content); g_styled++; Log(L"Configuración: fondo AUREVIX"); }
+        if (SetPageBackground(content))
+        {
+            s_settingsRoot = winrt::make_weak(content);
+            Register(Role::SettingsPage, content);
+            g_styled++; Log(L"Configuración: fondo AUREVIX");
+        }
     }
     catch (...) {}
 }
@@ -347,7 +545,7 @@ static void StyleElement(wux::DependencyObject const& obj, std::wstring_view nam
             }
             else if (name == L"BackgroundStroke" && HasAncestor(obj, L"Taskbar.TaskbarBackground"))
                 shape.Visibility(wux::Visibility::Collapsed); // la línea de Windows sobra con el borde redondeado
-            else if (name == L"RunningIndicator") KeepFill(shape, Lime);
+            else if (name == L"RunningIndicator") KeepFill(shape, Role::AppIndicator);
         }
         if (name == L"Icon" && HasNamedAncestor(obj, L"LaunchListButton"))
             if (auto ui = obj.try_as<wux::UIElement>()) { ui.Opacity(0); g_styled++; }
@@ -359,7 +557,7 @@ static void StyleElement(wux::DependencyObject const& obj, std::wstring_view nam
     {
         // Indicador de la sección seleccionada (barra lateral) en verde AUREVIX.
         if (name == L"SelectionIndicator" || name == L"ActiveIndicator")
-            if (auto shape = obj.try_as<wuxs::Shape>()) KeepFill(shape, Lime);
+            if (auto shape = obj.try_as<wuxs::Shape>()) KeepFill(shape, Role::SettingsSelection);
         return;
     }
     if (s_isStart)
@@ -394,7 +592,7 @@ static void StyleElement(wux::DependencyObject const& obj, std::wstring_view nam
                 border.CornerRadius(wux::CornerRadiusHelper::FromUniformRadius(16));
                 border.BorderThickness(wux::ThicknessHelper::FromUniformLength(0)); // sin borde, más limpio
             }
-            else if (name == L"AcrylicOverlay") { border.Background(GlassBrush()); g_styled++; }
+            else if (name == L"AcrylicOverlay") { border.Background(GlassBrush()); Register(Role::StartOverlay, border); g_styled++; }
             else if (name == L"TopLevelSuggestionsBackground") border.Visibility(wux::Visibility::Collapsed);
             else if (name == L"StartDropShadow" || name == L"RootGridDropShadow" || name == L"DropShadow")
                 border.CornerRadius(wux::CornerRadiusHelper::FromUniformRadius(16));
@@ -483,6 +681,7 @@ struct AurevixTap : winrt::implements<AurevixTap, IObjectWithSite, winrt::non_ag
             s_isStart = name == L"startmenuexperiencehost.exe";
             s_isSettings = name == L"systemsettings.exe";
             LoadPalette();
+            StartPaletteWatcher();
             Log(L"AUREVIX Shell cargado en %s", name.c_str());
             OpenDump(name);
             m_watcher = winrt::make_self<VisualTreeWatcher>(m_site);

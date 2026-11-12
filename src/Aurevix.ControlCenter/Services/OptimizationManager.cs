@@ -22,6 +22,9 @@ public sealed class OptimizationHistory
     public List<OptimizationRecord> Records { get; set; } = [];
 }
 
+/// <summary>Informe «Antes y después» de una aplicación de ajustes (se guarda como JSON en el estado).</summary>
+public sealed record OptimizationReport(string Label, SystemSnapshot? Before, SystemSnapshot? After, DateTime AtUtc);
+
 public sealed record OptimizationResult(bool Success, bool RequiresRestart, IReadOnlyList<string> Messages, OptimizationRecord? Record);
 
 /// <summary>
@@ -75,6 +78,18 @@ public static class OptimizationManager
         if (compatible.Any(t => t.HasMachinePart) && !await CoreServiceClient.IsAvailableAsync())
             return new(false, false, ["AUREVIX Core Service no está en ejecución. Reinstala AUREVIX o reinicia el equipo."], null);
 
+        // 0. Foto «antes» (solo si son 3 o más ajustes). Si tarda más de 20 s, se sigue sin ella.
+        SystemSnapshot? before = null;
+        if (compatible.Count >= ReportMinTweaks)
+        {
+            try
+            {
+                var cap = SystemSnapshot.CaptureAsync();
+                if (await Task.WhenAny(cap, Task.Delay(TimeSpan.FromSeconds(20))) == cap) before = await cap;
+            }
+            catch { /* sin foto previa */ }
+        }
+
         // 1. Parte de usuario.
         var user = compatible.Where(t => t.HasUserPart).ToList();
         if (user.Count > 0)
@@ -106,7 +121,69 @@ public static class OptimizationManager
         h.Records.Add(record);
         JsonStore.Save(HistoryFile, h);
         AurevixLog.Info($"Optimización aplicada: {label} ({record.TweakIds.Count} ajustes).");
+        if (before is not null) StartReport(label, before);
         return new(true, record.RequiresRestart, messages, record);
+    }
+
+    // ---------- Informe «Antes y después» ----------
+
+    private const int ReportMinTweaks = 3;
+    private static readonly System.Text.Json.JsonSerializerOptions ReportJson = new(System.Text.Json.JsonSerializerDefaults.Web);
+
+    /// <summary>Se dispara (desde un hilo en segundo plano) cuando el informe guardado cambia.</summary>
+    public static event Action? ReportReady;
+
+    /// <summary>Informe guardado de la última optimización, o null si no hay o está dañado.</summary>
+    public static OptimizationReport? LastReport
+    {
+        get
+        {
+            try
+            {
+                var s = AppServices.State.LastOptimizationReport;
+                return string.IsNullOrWhiteSpace(s) ? null : System.Text.Json.JsonSerializer.Deserialize<OptimizationReport>(s, ReportJson);
+            }
+            catch { return null; }
+        }
+    }
+
+    private static void SaveReport(OptimizationReport r)
+    {
+        AppServices.State.LastOptimizationReport = System.Text.Json.JsonSerializer.Serialize(r, ReportJson);
+        AppServices.SaveState();
+        try { ReportReady?.Invoke(); } catch { /* un suscriptor roto no debe afectar */ }
+    }
+
+    /// <summary>Guarda el informe con «antes» y, 20 s después y en segundo plano, mide el «después».</summary>
+    private static void StartReport(string label, SystemSnapshot before)
+    {
+        var report = new OptimizationReport(label, before, null, DateTime.UtcNow);
+        try { SaveReport(report); } catch (Exception ex) { AurevixLog.Info($"No se pudo guardar el informe: {ex.Message}"); return; }
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(TimeSpan.FromSeconds(20));
+                var after = await SystemSnapshot.CaptureAsync();
+                // Si mientras tanto hay otro informe más nuevo, este «después» ya no vale.
+                if (LastReport?.AtUtc != report.AtUtc) return;
+                SaveReport(report with { After = after });
+            }
+            catch (Exception ex) { AurevixLog.Info($"No se pudo medir el después: {ex.Message}"); }
+        });
+    }
+
+    /// <summary>Toma una foto nueva y la guarda como «después» del último informe.</summary>
+    public static async Task RemeasureAsync()
+    {
+        var r = LastReport;
+        if (r is null) return;
+        try
+        {
+            var after = await SystemSnapshot.CaptureAsync();
+            SaveReport(r with { After = after });
+        }
+        catch (Exception ex) { AurevixLog.Info($"No se pudo medir de nuevo: {ex.Message}"); ReportReady?.Invoke(); }
     }
 
     public static async Task<OptimizationResult> RevertAsync(OptimizationRecord rec)
