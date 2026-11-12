@@ -16,7 +16,7 @@ public sealed class SettingsPage : UserControl
 
         body.Children.Add(Ui.Card(Ui.H2("General"),
             Check("Iniciar AUREVIX con Windows (en la bandeja del sistema)", s.StartWithWindows, v => s.StartWithWindows = v),
-            Check("Buscar actualizaciones automáticamente", s.CheckUpdatesAutomatically, v => s.CheckUpdatesAutomatically = v),
+            Check("Buscar actualizaciones automáticamente", s.CheckUpdatesAutomatically, v => { s.CheckUpdatesAutomatically = v; AppServices.Updates.RestartChecks(); }),
             Check("Mostrar notificaciones", s.Notifications, v => s.Notifications = v),
             Check("Reducir movimiento (sin animaciones)", s.ReduceMotion, v => { s.ReduceMotion = v; Ui.ReduceMotion = v; })));
 

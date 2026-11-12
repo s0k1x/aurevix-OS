@@ -24,6 +24,12 @@ public sealed class TrayIcon : IDisposable
             Visible = true
         };
         _icon.DoubleClick += (_, _) => open();
+        _icon.BalloonTipClicked += (_, _) =>
+        {
+            var click = _onBalloonClick;
+            _onBalloonClick = null;
+            click?.Invoke();
+        };
     }
 
     private static System.Drawing.Icon LoadIcon()
@@ -37,8 +43,14 @@ public sealed class TrayIcon : IDisposable
         return System.Drawing.SystemIcons.Application;
     }
 
-    public void ShowBalloon(string title, string text) =>
+    private Action? _onBalloonClick;
+
+    /// <summary>Muestra una notificación; si se indica <paramref name="onClick"/>, se ejecuta al pulsarla.</summary>
+    public void ShowBalloon(string title, string text, Action? onClick = null)
+    {
+        _onBalloonClick = onClick;
         _icon.ShowBalloonTip(5000, title, text, WinForms.ToolTipIcon.Info);
+    }
 
     public void Dispose()
     {

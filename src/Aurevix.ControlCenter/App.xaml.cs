@@ -131,7 +131,17 @@ public partial class App : Application
             checkUpdates: () => _ = CheckUpdatesInteractiveAsync(),
             exit: ExitApp);
 
-        AppServices.Updates.UpdateAvailable += r => Dispatcher.Invoke(() => ShowUpdateWindow(r));
+        // En segundo plano no se abre una ventana de golpe: se avisa desde la bandeja y se abre al pulsar.
+        AppServices.Updates.UpdateAvailable += r => Dispatcher.Invoke(() =>
+        {
+            if (r.Release is null) return;
+            if (_tray is { } tray)
+                tray.ShowBalloon("AUREVIX Update",
+                    $"Hay una actualización de AUREVIX (versión {r.Release.Version}). Pulsa para verla.",
+                    () => Dispatcher.Invoke(() => ShowUpdateWindow(r)));
+            else
+                ShowUpdateWindow(r, topmost: false);
+        });
 
         // Tras una actualización silenciosa: pedir reinicio para aplicarlo todo (sin forzarlo).
         if (args.Contains("--after-update"))
@@ -174,15 +184,18 @@ public partial class App : Application
     }
 
     /// <summary>La "pantalla automática" que aparece al publicar una nueva versión.</summary>
-    public void ShowUpdateWindow(UpdateCheckResult result)
+    public void ShowUpdateWindow(UpdateCheckResult result, bool topmost = true)
     {
         if (_updateWindowOpen || result.Release is null) return;
         _updateWindowOpen = true;
-        var w = new UpdateWindow(result.Release);
+        var w = new UpdateWindow(result.Release) { Topmost = topmost };
         w.Closed += (_, _) => _updateWindowOpen = false;
         w.Show();
         w.Activate();
     }
+
+    /// <summary>Notificación en la bandeja, usable desde cualquier hilo.</summary>
+    public void Notify(string title, string text) => Dispatcher.Invoke(() => _tray?.ShowBalloon(title, text));
 
     private async Task CheckUpdatesInteractiveAsync()
     {
