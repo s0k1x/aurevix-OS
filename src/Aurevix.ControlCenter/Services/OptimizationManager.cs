@@ -131,6 +131,26 @@ public static class OptimizationManager
         return new(true, restart || rec.RequiresRestart, messages, rec);
     }
 
+    /// <summary>
+    /// Desactiva un solo ajuste. Si venía en un grupo (un nivel, por ejemplo), se deshace el grupo y se vuelven a
+    /// aplicar los demás ajustes del grupo: así se recuperan exactamente los valores originales de este ajuste.
+    /// </summary>
+    public static async Task<OptimizationResult> DisableTweakAsync(TweakDefinition tweak, IReadOnlyList<TweakDefinition> catalog)
+    {
+        var rec = History.Records.Where(r => r.TweakIds.Contains(tweak.Id)).OrderByDescending(r => r.AtUtc).FirstOrDefault();
+        if (rec is null) return new(false, false, ["Este ajuste no lo aplicó AUREVIX (o ya se deshizo)."], null);
+        var rest = rec.TweakIds.Where(id => id != tweak.Id).ToList();
+        var undo = await RevertAsync(rec);
+        if (!undo.Success) return undo;
+        if (rest.Count == 0) return undo;
+        var restDefs = catalog.Where(t => rest.Contains(t.Id)).ToList();
+        var again = await ApplyAsync(restDefs, rec.Label);
+        if (!again.Success)
+            return new(false, undo.RequiresRestart || again.RequiresRestart,
+                [$"Se desactivó «{tweak.Title}», pero no se pudieron volver a aplicar: " + string.Join(", ", restDefs.Select(t => t.Title)), .. again.Messages], again.Record);
+        return new(again.Success, undo.RequiresRestart || again.RequiresRestart, [$"Desactivado: {tweak.Title}", .. again.Messages], again.Record);
+    }
+
     /// <summary>Deshace todas las optimizaciones (de la más reciente a la más antigua).</summary>
     public static async Task<OptimizationResult> RevertAllAsync()
     {

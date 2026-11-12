@@ -93,7 +93,7 @@ public sealed class MainWindow : Window
         Kit.OptionCard("\uE777", "INSTALACIÓN LIMPIA  ·  UNOS 45-90 MIN", "Reinstalar este PC con AUREVIX OS",
             "Descarga Windows 11 oficial de Microsoft, reinstala Windows desde cero y deja AUREVIX listo. Borra programas y archivos de la unidad del sistema.", CleanInstallIntro),
         Kit.OptionCard("\uE88E", "PARA OTRO PC O PARA GUARDAR  ·  UNOS 15-40 MIN", "Crear un USB o una ISO de AUREVIX OS",
-            "Enchufa un pendrive de 8 GB o más y AUREVIX monta dentro Windows 11 oficial con todo preparado. También puedes crear solo la ISO.", MediaIntro));
+            "Enchufa un pendrive de 8 GB o más y AUREVIX monta dentro Windows 11 oficial con todo preparado. También puedes crear solo la ISO.", () => MediaIntro()));
 
     // ------------------------------------------------------------------ Progreso común
 
@@ -285,7 +285,7 @@ public sealed class MainWindow : Window
 
     // ------------------------------------------------------------------ 3. USB / ISO
 
-    private void MediaIntro()
+    private void MediaIntro(bool isoSelected = false)
     {
         var kind = new ChoiceGroup();   // 0 = USB, 1 = ISO
         var src = new ChoiceGroup();    // 0 = descargar, 1 = ISO propia
@@ -295,6 +295,42 @@ public sealed class MainWindow : Window
 
         var summary = Ui.Muted("");
         var create = Ui.Button("Crear USB", () => { }, primary: true);
+
+        // Dónde se guarda la ISO: Descargas por defecto; «Cambiar…» abre el diálogo de Windows.
+        var isoOutput = DefaultIsoPath();
+        Action? refresh = null; // se asigna a Update() más abajo
+        var destPath = new TextBlock { Text = isoOutput, TextTrimming = TextTrimming.CharacterEllipsis, Foreground = Ui.Brush("Text") };
+        var destFree = Ui.Muted("");
+        void UpdateDest()
+        {
+            destPath.Text = isoOutput;
+            var free = MediaEngine.FreeBytes(Path.GetDirectoryName(isoOutput)!);
+            var enough = free >= MediaEngine.WindowsIsoBytes + 1_000_000_000;
+            destFree.Text = free < 0 ? "No se pudo leer el espacio libre de esa unidad." :
+                $"{Eta.Bytes(free)} libres en {Path.GetPathRoot(isoOutput)}" + (enough ? " · suficiente" : " · hacen falta unos 9 GB: elige otra unidad");
+            destFree.Foreground = Ui.Brush(enough ? "TextMuted" : "Attention");
+        }
+        var destPanel = new StackPanel
+        {
+            Children =
+            {
+                Spaced(Ui.Eyebrow("GUARDAR LA ISO EN"), 8),
+                new Border
+                {
+                    Padding = new Thickness(18, 14, 14, 14), CornerRadius = new CornerRadius(14), BorderBrush = Ui.Brush("BorderBrushAx"), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 0, 10),
+                    Child = Ui.Columns(new StackPanel { Children = { destPath, destFree } }, Ui.Button("Cambiar…", () =>
+                    {
+                        var dlg = new Microsoft.Win32.SaveFileDialog
+                        {
+                            Title = "Dónde guardar la ISO de AUREVIX OS", Filter = "Imagen ISO|*.iso", DefaultExt = ".iso",
+                            FileName = Path.GetFileName(isoOutput), InitialDirectory = Path.GetDirectoryName(isoOutput), OverwritePrompt = true
+                        };
+                        if (dlg.ShowDialog(this) == true) { isoOutput = dlg.FileName; UpdateDest(); refresh?.Invoke(); }
+                    }))
+                }
+            }
+        };
+        UpdateDest();
 
         var kindGrid = new UniformGrid { Columns = 2 };
         var tUsb = kind.Add("USB de instalación", "Para instalar en otro PC. Listo para arrancar.");
@@ -320,6 +356,7 @@ public sealed class MainWindow : Window
         {
             var usb = kind.Selected == 0;
             usbPanel.Visibility = usb ? Visibility.Visible : Visibility.Collapsed;
+            destPanel.Visibility = usb ? Visibility.Collapsed : Visibility.Visible;
             create.Content = usb ? "Crear USB" : "Crear ISO";
             var haveIso = src.Selected == 1 || _engine.IsoCached;
             var time = (usb, haveIso) switch
@@ -330,9 +367,10 @@ public sealed class MainWindow : Window
                 _ => "entre 15 y 35 min, según tu conexión"
             };
             summary.Text = $"Tiempo aproximado: {time}." + (haveIso ? "" : " Descarga unos 7 GB de Windows desde Microsoft.") +
-                           (usb ? " Se borrará el contenido del pendrive." : $" Necesita unos 9 GB libres en Descargas.");
+                           (usb ? " Se borrará el contenido del pendrive." : $" Necesita unos 9 GB libres en {Path.GetPathRoot(isoOutput)}.");
             create.IsEnabled = !usb || (disks.Selected >= 0 && disks.Selected < diskList.Length);
         }
+        refresh = Update;
         kind.Changed += _ => Update();
         disks.Changed += _ => Update();
         src.Changed += i =>
@@ -345,7 +383,7 @@ public sealed class MainWindow : Window
             }
             Update();
         };
-        kind.Select(0, raise: false);
+        kind.Select(isoSelected ? 1 : 0, raise: false);
         src.Select(0, raise: false);
 
         create.Click += (_, _) =>
@@ -360,14 +398,14 @@ public sealed class MainWindow : Window
                         "Crear USB", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
                 _ = CreateUsb(d, iso);
             }
-            else _ = CreateIso(iso);
+            else _ = CreateIso(iso, isoOutput);
         };
 
         Present(Ui.Eyebrow("USB O ISO"),
             Heading("Crear AUREVIX OS"),
             Spaced(Ui.Muted("Instalación en español casi automática: solo elegirás el disco, aceptarás la licencia de Microsoft y crearás tu cuenta."), 26),
             Spaced(Ui.Eyebrow("QUÉ QUIERES CREAR"), 8), kindGrid,
-            usbPanel,
+            usbPanel, destPanel,
             Spaced(Ui.Eyebrow("WINDOWS 11"), 8), tAuto, tOwn,
             Spaced(summary, 14),
             Ui.Row(create, Ui.Button("Volver", Home)));
@@ -429,11 +467,16 @@ public sealed class MainWindow : Window
                                    "arranca desde el USB (F12, F11 o Esc al encender, según la marca) y sigue los pasos.", ok: true, CleanupRow()));
     }
 
-    private Task CreateIso(string? ownIso)
+    private static string DefaultIsoPath()
     {
         var downloads = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
         var output = Path.Combine(downloads, $"AUREVIX_OS_{DateTime.Now:yyyyMMdd}.iso");
-        if (File.Exists(output)) output = Path.Combine(downloads, $"AUREVIX_OS_{DateTime.Now:yyyyMMdd_HHmm}.iso");
+        return File.Exists(output) ? Path.Combine(downloads, $"AUREVIX_OS_{DateTime.Now:yyyyMMdd_HHmm}.iso") : output;
+    }
+
+    private Task CreateIso(string? ownIso, string output)
+    {
+        var downloads = Path.GetDirectoryName(output)!;
         string? hash = null;
         var v = Progress("Creando la ISO de AUREVIX OS", $"Se guardará en {output}",
             new StageSpec("Descargar AUREVIX", 15),
@@ -472,6 +515,7 @@ public sealed class MainWindow : Window
         Ui.ReduceMotion = true;
         Home(); await Task.Delay(1200); Save(Path.Combine(dir, "inst-01-inicio.png"));
         MediaIntro(); await Task.Delay(5000); Save(Path.Combine(dir, "inst-02-usb-iso.png"));
+        MediaIntro(isoSelected: true); await Task.Delay(3000); Save(Path.Combine(dir, "inst-02b-iso-destino.png"));
         CleanInstallIntro(); await Task.Delay(9000); Save(Path.Combine(dir, "inst-03-reinstalar.png"));
 
         var v = Progress("Creando el USB de AUREVIX OS", "No desenchufes el pendrive ni apagues el equipo hasta que termine.",

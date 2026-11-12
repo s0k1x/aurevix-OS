@@ -28,7 +28,22 @@ public sealed class ToolsPage : UserControl
             Svc("Comprobar archivos de sistema (SFC)", "Busca y repara archivos de Windows dañados. Tarda unos 10-15 minutos.", "sfc"),
             Svc("Reparar la imagen de Windows (DISM)", "Repara el almacén de componentes desde Windows Update. Ejecútalo antes de SFC si SFC no puede reparar.", "dism-restorehealth"),
             Svc("Buscar errores en el disco (CHKDSK)", "Analiza el disco del sistema en línea, sin reiniciar.", "chkdsk-scan"),
-            Svc("Limpiar componentes antiguos (DISM)", "Libera espacio de actualizaciones antiguas de Windows.", "dism-cleanup")));
+            Svc("Limpiar componentes antiguos (DISM)", "Libera espacio de actualizaciones antiguas de Windows.", "dism-cleanup"),
+            Svc("Comprobar la imagen de Windows (rápido)", "Mira si Windows ha marcado la imagen como dañada. Tarda unos segundos.", "dism-checkhealth"),
+            Svc("Analizar la imagen de Windows a fondo", "Busca daños en la imagen de Windows sin repararlos. Puede tardar varios minutos.", "dism-scanhealth"),
+            Svc("Ver si TRIM está activado", "Muestra si Windows envía TRIM a tus unidades SSD (0 = activado).", "trim-query"),
+            Svc("Renovar la dirección IP", "Suelta y vuelve a pedir la dirección de red. La conexión se interrumpe unos segundos.", "ip-renew"),
+            Svc("Informe de energía (30 s)", "Analiza 30 segundos el consumo y los problemas de energía y abre el informe.", "energy-report")));
+
+        body.Children.Add(Ui.Card(Ui.H2("Informes del sistema"),
+            Ui.Muted("Solo muestran información; no cambian nada en tu equipo."),
+            Ui.Wrap(
+                Report("Configuración de red (ipconfig /all)", "ipconfig.exe", "/all", false),
+                Report("Conexiones activas (netstat -ano)", "netstat.exe", "-ano", false),
+                Report("Ajustes TCP (netsh)", "netsh.exe", "int tcp show global", false),
+                Report("Planes de energía (powercfg /list)", "powercfg.exe", "/list", false),
+                Report("Servicios en ejecución", "powershell.exe", "-NoProfile -Command \"[Console]::OutputEncoding=[Text.Encoding]::UTF8; Get-Service | Where-Object Status -eq Running | Sort-Object DisplayName | Format-Table -AutoSize Name,DisplayName | Out-String -Width 200\"", true),
+                Report("Tareas programadas activas", "powershell.exe", "-NoProfile -Command \"[Console]::OutputEncoding=[Text.Encoding]::UTF8; Get-ScheduledTask | Where-Object State -ne Disabled | Sort-Object TaskPath | Format-Table -AutoSize TaskPath,TaskName,State | Out-String -Width 220\"", true))));
 
         body.Children.Add(Section("Discos y memoria",
             Svc("Optimizar unidades", "TRIM en SSD y desfragmentación en discos duros, como hace Windows.", "optimize-drives"),
@@ -98,6 +113,61 @@ public sealed class ToolsPage : UserControl
         if (!Confirm($"{title}\n\nPuede tardar varios minutos. Puedes seguir usando el equipo. ¿Continuar?")) return;
         var r = await CoreServiceClient.SendAsync(new CoreRequest { Op = "maintenance", Action = action }, TimeSpan.FromMinutes(90));
         MessageBox.Show(r.Ok ? string.Join("\n", r.Messages) : r.Error ?? "Error", title);
+        if (r.Ok && action == "energy-report")
+        {
+            var html = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "AUREVIX", "informe-energia.html");
+            if (File.Exists(html)) { try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(html) { UseShellExecute = true }); } catch { } }
+        }
+    }
+
+    // ------------------------------------------------------------------ Informes (solo lectura, sin servicio)
+
+    private UIElement Report(string title, string file, string args, bool utf8) =>
+        Ui.Button(title, () => _ = ShowReportAsync(title, file, args, utf8));
+
+    private async Task ShowReportAsync(string title, string file, string args, bool utf8)
+    {
+        string output;
+        try { output = await Task.Run(() => RunReadOnly(file, args, utf8)); }
+        catch (Exception ex) { output = "No se pudo obtener el informe: " + ex.Message; }
+
+        var box = new TextBox
+        {
+            Text = output, IsReadOnly = true, FontFamily = new System.Windows.Media.FontFamily("Consolas"), FontSize = 12,
+            TextWrapping = TextWrapping.NoWrap, AcceptsReturn = true,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Auto, VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            Margin = new Thickness(0, 0, 0, 10),
+        };
+        var copy = Ui.Button("Copiar", () => { try { Clipboard.SetText(output); } catch { } });
+        copy.HorizontalAlignment = HorizontalAlignment.Right;
+        var grid = new Grid { Margin = new Thickness(16) };
+        grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        Grid.SetRow(copy, 1);
+        grid.Children.Add(box);
+        grid.Children.Add(copy);
+        new Window
+        {
+            Title = title, Width = 900, Height = 600, Background = Ui.Brush("Bg"), Content = grid,
+            Owner = Window.GetWindow(this), WindowStartupLocation = WindowStartupLocation.CenterOwner,
+        }.Show();
+    }
+
+    private static string RunReadOnly(string file, string args, bool utf8)
+    {
+        System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+        var enc = utf8 ? System.Text.Encoding.UTF8 : System.Text.Encoding.GetEncoding(850);
+        using var p = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(file, args)
+        {
+            UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, StandardOutputEncoding = enc,
+        })!;
+        var read = p.StandardOutput.ReadToEndAsync();
+        if (!p.WaitForExit(60_000))
+        {
+            try { p.Kill(true); } catch { }
+            return "El informe tardó más de 60 segundos y se canceló.";
+        }
+        return read.Wait(5000) ? read.Result : "";
     }
 
     private static async Task MsiAsync(bool on)

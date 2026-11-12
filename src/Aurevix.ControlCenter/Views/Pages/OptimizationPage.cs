@@ -6,7 +6,7 @@ using Aurevix.Performance;
 namespace Aurevix.ControlCenter.Views.Pages;
 
 /// <summary>
-/// Optimización: niveles predefinidos (Recomendado, Rendimiento, Máximo), modo Personalizado con cada ajuste,
+/// Optimización: niveles predefinidos (Recomendado, Rendimiento, Máximo), un interruptor por ajuste con recomendación,
 /// "Más FPS de verdad" (funciones del driver), mantenimiento e historial con deshacer.
 /// </summary>
 public sealed class OptimizationPage : UserControl
@@ -32,6 +32,10 @@ public sealed class OptimizationPage : UserControl
     private Dictionary<string, TweakState> _states = new();
     private readonly Dictionary<string, CheckBox> _checks = new();
     private bool _serviceOk;
+    private string _filter = "all";   // all | recommended | applied
+    private string _query = "";
+    private StackPanel? _catalogHost;
+    private bool _busy;
 
     public OptimizationPage()
     {
@@ -68,16 +72,22 @@ public sealed class OptimizationPage : UserControl
         levels.Children.Add(LevelCard(OptimizationLevel.Maximum, "Máximo", "Competitivo: plan Máximo rendimiento, temporizador global, sin animaciones. Más consumo."));
         _body.Children.Add(levels);
 
-        // Personalizado
-        _body.Children.Add(Section("Personalizado", "Marca los ajustes que quieras y pulsa «Aplicar selección». Los ya aplicados aparecen marcados; para quitarlos usa el historial."));
-        foreach (var group in AppServices.Catalog.GroupBy(t => t.Category).OrderBy(g => g.Key))
+        // Cada ajuste, con su interruptor
+        _body.Children.Add(Section("Todos los ajustes", "Activa o desactiva cada ajuste al momento. Cada uno indica si AUREVIX lo recomienda, para qué sirve y qué inconvenientes tiene. Al desactivarlo vuelve exactamente el valor que tenías."));
+        var search = new TextBox { Width = 220, Padding = new Thickness(6, 4, 6, 4), Margin = new Thickness(0, 0, 18, 0), VerticalAlignment = VerticalAlignment.Center, ToolTip = "Buscar un ajuste", Text = _query };
+        search.TextChanged += (_, _) => { _query = search.Text.Trim(); BuildCatalog(); };
+        var bar = Ui.Wrap(Ui.Muted("Buscar:"), search);
+        foreach (var (id, name) in new[] { ("all", "Todos"), ("recommended", "Recomendados"), ("applied", "Activados") })
         {
-            var card = Ui.Card(Ui.H2(CategoryNames.GetValueOrDefault(group.Key, group.Key.ToString())));
-            var sp = (StackPanel)card.Child;
-            foreach (var t in group) sp.Children.Add(TweakRow(t));
-            _body.Children.Add(card);
+            var rb = new RadioButton { Content = name, GroupName = "tweakfilter", IsChecked = _filter == id, Margin = new Thickness(0, 0, 14, 0), VerticalAlignment = VerticalAlignment.Center };
+            rb.Checked += (_, _) => { _filter = id; BuildCatalog(); };
+            bar.Children.Add(rb);
         }
-        _body.Children.Add(Ui.Row(Ui.Button("Aplicar selección", () => _ = ApplyCustomAsync(), primary: true)));
+        ((TextBlock)bar.Children[0]).Margin = new Thickness(0, 4, 8, 0);
+        _body.Children.Add(Ui.Card(bar));
+        _catalogHost = new StackPanel();
+        _body.Children.Add(_catalogHost);
+        BuildCatalog();
 
         // Mantenimiento
         _body.Children.Add(Section("Mantenimiento", "Tareas puntuales con herramientas oficiales de Windows."));
@@ -107,6 +117,82 @@ public sealed class OptimizationPage : UserControl
             _body.Children.Add(Ui.Card(list, Ui.Row(Ui.Button("Deshacer todo y volver a Windows original", () => _ = RevertAllAsync()))));
         }
         Ui.Stagger(_body);
+    }
+
+    private void BuildCatalog()
+    {
+        if (_catalogHost is null) return;
+        _catalogHost.Children.Clear();
+        _checks.Clear();
+        var shown = 0;
+        foreach (var group in AppServices.Catalog.GroupBy(t => t.Category).OrderBy(g => g.Key))
+        {
+            var items = group.Where(Matches).ToList();
+            if (items.Count == 0) continue;
+            var on = group.Count(t => _states.GetValueOrDefault(t.Id) == TweakState.Applied);
+            var head = Ui.Columns(new StackPanel { Children = { Ui.H2(CategoryNames.GetValueOrDefault(group.Key, group.Key.ToString())), Ui.Muted($"{on} de {group.Count()} activados") } },
+                Ui.Button("Activar recomendados", () => _ = EnableRecommendedAsync(group.ToList())));
+            var card = Ui.Card(head);
+            var sp = (StackPanel)card.Child;
+            foreach (var t in items) { sp.Children.Add(TweakRow(t)); shown++; }
+            _catalogHost.Children.Add(card);
+        }
+        if (shown == 0) _catalogHost.Children.Add(Ui.Card(Ui.Muted("Ningún ajuste coincide con la búsqueda.")));
+    }
+
+    private bool Matches(TweakDefinition t)
+    {
+        if (_filter == "recommended" && !t.Levels.Contains(OptimizationLevel.Recommended)) return false;
+        if (_filter == "applied" && _states.GetValueOrDefault(t.Id) != TweakState.Applied) return false;
+        return _query.Length == 0 || t.Title.Contains(_query, StringComparison.CurrentCultureIgnoreCase) ||
+               t.Description.Contains(_query, StringComparison.CurrentCultureIgnoreCase);
+    }
+
+    /// <summary>Recomendación de AUREVIX según los niveles en los que aparece el ajuste.</summary>
+    private static (string Text, string Brush) Advice(TweakDefinition t)
+    {
+        if (t.OptIn) return ("Solo si sabes lo que haces", "Attention");
+        if (t.Levels.Contains(OptimizationLevel.Recommended)) return ("Recomendado", "Ok");
+        if (t.Levels.Contains(OptimizationLevel.Performance)) return ("Para jugar", "Accent");
+        if (t.Levels.Contains(OptimizationLevel.Maximum)) return ("Competitivo", "Review");
+        return ("Opcional", "Unavailable");
+    }
+
+    private async Task EnableRecommendedAsync(IReadOnlyList<TweakDefinition> group)
+    {
+        var list = group.Where(t => t.Levels.Contains(OptimizationLevel.Recommended) && _states.GetValueOrDefault(t.Id) != TweakState.Applied &&
+                                    AppServices.Tweaks.CompatibilityProblem(t) is null && (!t.HasMachinePart || _serviceOk)).ToList();
+        if (list.Count == 0) { MessageBox.Show("Los ajustes recomendados de esta sección ya están activados.", "Optimización"); return; }
+        await ApplyAsync(list, "Recomendados");
+    }
+
+    private async Task ToggleAsync(TweakDefinition t, CheckBox cb)
+    {
+        if (_busy) return;
+        var turnOn = cb.IsChecked == true;
+        if (turnOn && (t.OptIn || t.Risk != RiskLevel.Low))
+        {
+            var warn = t.OptIn ? t.Warning : t.PossibleImpact;
+            if (MessageBox.Show($"{t.Title}\n\n{warn}\n\n¿Activarlo?", "Ajuste avanzado", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+            { cb.IsChecked = false; return; }
+        }
+        _busy = true;
+        cb.IsEnabled = false;
+        try
+        {
+            var r = turnOn ? await OptimizationManager.ApplyAsync([t], t.Title) : await OptimizationManager.DisableTweakAsync(t, AppServices.Catalog);
+            if (!r.Success) MessageBox.Show(string.Join("\n", r.Messages), t.Title, MessageBoxButton.OK, MessageBoxImage.Warning);
+            else if (r.RequiresRestart) RestartPrompt.Ask("Reinicia para completar el cambio", $"«{t.Title}» se termina de aplicar al reiniciar.");
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"No se pudo cambiar «{t.Title}»:\n{ex.Message}", t.Title, MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+        finally
+        {
+            _busy = false;
+            await ReloadAsync();
+        }
     }
 
     private static StackPanel Section(string title, string subtitle)
@@ -158,44 +244,38 @@ public sealed class OptimizationPage : UserControl
         var state = _states.GetValueOrDefault(t.Id, TweakState.Unknown);
         var problem = AppServices.Tweaks.CompatibilityProblem(t);
         var needsService = t.HasMachinePart && !_serviceOk;
-        var cb = new CheckBox
+        var applied = state == TweakState.Applied;
+        var sw = new CheckBox
         {
-            IsChecked = state == TweakState.Applied,
-            IsEnabled = state != TweakState.Applied && problem is null && !needsService,
-            VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 3, 10, 0)
+            Style = Ui.Res<Style>("Switch"), IsChecked = applied,
+            IsEnabled = problem is null && !needsService && (!applied || OptimizationManager.History.Records.Any(r => r.TweakIds.Contains(t.Id))),
+            VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(14, 2, 0, 0),
+            ToolTip = applied ? "Desactivar (vuelve el valor original)" : "Activar"
         };
-        _checks[t.Id] = cb;
+        sw.Click += (_, _) => _ = ToggleAsync(t, sw);
+        _checks[t.Id] = sw;
 
         var head = new WrapPanel();
         head.Children.Add(Ui.Text(t.Title, 14, FontWeights.SemiBold));
         void AddTag(string text, string brush) { var p = Ui.Pill(text, Ui.Brush(brush)); p.Margin = new Thickness(8, 1, 0, 0); head.Children.Add(p); }
-        if (state == TweakState.Applied) AddTag("Aplicado", "Ok");
+        var (advice, adviceBrush) = Advice(t);
+        AddTag(advice, adviceBrush);
         if (t.Risk != RiskLevel.Low) AddTag(t.Risk == RiskLevel.Medium ? "Riesgo medio" : "Riesgo alto", "Review");
         if (t.RequiresRestart) AddTag("Reinicio", "Unavailable");
-        if (t.OptIn) AddTag("Reduce seguridad", "Attention");
 
         var info = new StackPanel();
         info.Children.Add(head);
         info.Children.Add(Ui.Muted(t.Description));
         info.Children.Add(Ui.Muted($"Efecto: {t.ExpectedEffect}  ·  Inconvenientes: {t.PossibleImpact}"));
-        if (problem is not null) info.Children.Add(Ui.Muted("No aplicable: " + problem));
+        if (problem is not null) info.Children.Add(Ui.Muted("No aplicable en este equipo: " + problem));
         else if (needsService) info.Children.Add(Ui.Muted("Requiere AUREVIX Core Service."));
+        else if (applied && !sw.IsEnabled) info.Children.Add(Ui.Muted("Ya estaba así en Windows (no lo cambió AUREVIX)."));
 
-        var row = new DockPanel { Margin = new Thickness(0, 8, 0, 8) };
-        DockPanel.SetDock(cb, Dock.Left);
-        row.Children.Add(cb);
+        var row = new DockPanel { Margin = new Thickness(0, 10, 0, 10) };
+        DockPanel.SetDock(sw, Dock.Right);
+        row.Children.Add(sw);
         row.Children.Add(info);
         return row;
-    }
-
-    private async Task ApplyCustomAsync()
-    {
-        var selected = AppServices.Catalog.Where(t => _checks.TryGetValue(t.Id, out var c) && c.IsEnabled && c.IsChecked == true).ToList();
-        if (selected.Count == 0) { MessageBox.Show("Marca al menos un ajuste nuevo.", "Optimización"); return; }
-        foreach (var t in selected.Where(t => t.OptIn))
-            if (MessageBox.Show($"{t.Title}\n\n{t.Warning}\n\n¿Seguro que quieres activarlo?", "Aviso de seguridad",
-                    MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
-        await ApplyAsync(selected, "Personalizado");
     }
 
     private async Task ApplyAsync(IReadOnlyList<TweakDefinition> tweaks, string label)

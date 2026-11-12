@@ -11,6 +11,7 @@ public sealed class MaintenanceRunner : IMaintenanceRunner
     {
         ["dism-cleanup"] = ("dism.exe", "/Online /Cleanup-Image /StartComponentCleanup /NoRestart"),
         ["retrim"] = ("powershell.exe", "-NoProfile -NonInteractive -Command \"Optimize-Volume -DriveLetter $env:SystemDrive[0] -ReTrim\""),
+        ["trim-on"] = ("fsutil.exe", "behavior set DisableDeleteNotify NTFS 0"),
         ["flush-dns"] = ("ipconfig.exe", "/flushdns"),
         ["tcp-defaults"] = ("netsh.exe", "int tcp set global autotuninglevel=normal rss=enabled"),
         ["network-repair"] = ("cmd.exe", "/c netsh winsock reset && netsh int ip reset"),
@@ -19,7 +20,15 @@ public sealed class MaintenanceRunner : IMaintenanceRunner
         ["chkdsk-scan"] = ("chkdsk.exe", "C: /scan"),
         ["power-defaults"] = ("powercfg.exe", "-restoredefaultschemes"),
         ["optimize-drives"] = ("powershell.exe", "-NoProfile -NonInteractive -Command \"Get-Volume | Where-Object { $_.DriveLetter -and $_.DriveType -eq 'Fixed' } | ForEach-Object { Optimize-Volume -DriveLetter $_.DriveLetter }\""),
+        ["dism-checkhealth"] = ("dism.exe", "/Online /Cleanup-Image /CheckHealth"),
+        ["dism-scanhealth"] = ("dism.exe", "/Online /Cleanup-Image /ScanHealth"),
+        ["trim-query"] = ("fsutil.exe", "behavior query DisableDeleteNotify"),
+        ["ip-renew"] = ("cmd.exe", "/c ipconfig /release && ipconfig /renew"),
+        ["energy-report"] = ("powercfg.exe", "/energy /output \"%ProgramData%\\AUREVIX\\informe-energia.html\" /duration 30"),
     };
+
+    /// <summary>Acciones cuya salida se devuelve al usuario (últimas líneas).</summary>
+    private static readonly HashSet<string> WithOutput = ["dism-checkhealth", "dism-scanhealth", "trim-query", "ip-renew"];
 
     public (bool ok, string message) Run(string action)
     {
@@ -27,13 +36,34 @@ public sealed class MaintenanceRunner : IMaintenanceRunner
         if (!Commands.TryGetValue(action, out var c)) return (false, "No permitido.");
         try
         {
-            using var p = Process.Start(new ProcessStartInfo(c.file, c.args) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true })!;
-            p.StandardOutput.ReadToEnd();
-            p.WaitForExit(30 * 60 * 1000);
+            var args = c.args;
+            if (action == "energy-report")
+            {
+                Directory.CreateDirectory(Environment.ExpandEnvironmentVariables(@"%ProgramData%\AUREVIX"));
+                args = Environment.ExpandEnvironmentVariables(args);
+            }
+            using var p = Process.Start(new ProcessStartInfo(c.file, args) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true })!;
+            // Se leen stdout y stderr a la vez para que ninguno bloquee al proceso
+            var outTask = p.StandardOutput.ReadToEndAsync();
+            var errTask = p.StandardError.ReadToEndAsync();
+            if (!p.WaitForExit(30 * 60 * 1000))
+            {
+                try { p.Kill(entireProcessTree: true); } catch { }
+                return (false, "Tardó demasiado y se ha detenido.");
+            }
+            var stdout = outTask.GetAwaiter().GetResult();
+            var stderr = errTask.GetAwaiter().GetResult();
             AurevixLog.Info($"Mantenimiento {action}: código {p.ExitCode}");
-            return p.ExitCode == 0
-                ? (true, $"{CoreServiceProtocol.MaintenanceActions[action]}: completado.")
-                : (false, $"{CoreServiceProtocol.MaintenanceActions[action]}: terminó con código {p.ExitCode}.");
+            var text = p.ExitCode == 0
+                ? $"{CoreServiceProtocol.MaintenanceActions[action]}: completado."
+                : $"{CoreServiceProtocol.MaintenanceActions[action]}: terminó con código {p.ExitCode}.";
+            if (WithOutput.Contains(action))
+            {
+                var source = stdout.Trim().Length == 0 && stderr.Trim().Length > 0 ? stderr : stdout;
+                var tail = string.Join("\n", source.Split('\n').Select(l => l.TrimEnd('\r')).Where(l => l.Length > 0).TakeLast(60));
+                if (tail.Length > 0) text += "\n\n" + tail;
+            }
+            return (p.ExitCode == 0, text);
         }
         catch (Exception ex) { return (false, ex.Message); }
     }

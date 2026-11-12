@@ -46,3 +46,8 @@
    Do instead: reuse `Assets/aurevix.ico` / `web/logo.png`; never redraw it.
 4. **[2026-11-11] Kit s0k1x-skill is mandatory (design skills optional)**
    Do instead: investigar → parche/construir → verificar; keep this runbook curated.
+5. **[2026-11-12] El usuario quiere reparto por modelos y menos tokens, siempre**
+   Do instead: usar la skill `enrutador` y los subagentes `aurevix-explorador` (Haiku), `aurevix-constructor`/`aurevix-revisor` (Sonnet), `aurevix-arquitecto` (Opus); esperas de CI siempre en segundo plano.
+6. **[2026-11-12] Iconos: el usuario quiere los de Windows; cursores también los de Windows**
+   Do instead: no aplicar iconos ni cursores AUREVIX; el estilo es barra flotante con cristal, logo en Inicio, Inicio sin «Recomendado», Configuración y Explorador con cristal.
+

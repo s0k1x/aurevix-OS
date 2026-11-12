@@ -2191,5 +2191,347 @@
         "value": "0"
       }
     ]
+  },
+  {
+    "id": "system.shutdown-faster",
+    "category": "startup",
+    "levels": [
+      "recommended",
+      "performance",
+      "maximum"
+    ],
+    "title": "Apagado y reinicio más rápidos",
+    "description": "Windows espera 2 segundos (en lugar de 5) a que las aplicaciones colgadas respondan antes de ofrecer cerrarlas al apagar o reiniciar.",
+    "expectedEffect": "Apagados y reinicios más ágiles cuando una app no responde.",
+    "possibleImpact": "Ninguno: Windows sigue preguntando antes de cerrar apps con trabajo sin guardar.",
+    "registry": [
+      {
+        "hive": "currentUser",
+        "key": "Control Panel\\Desktop",
+        "name": "WaitToKillAppTimeout",
+        "kind": "string",
+        "value": "2000"
+      },
+      {
+        "hive": "currentUser",
+        "key": "Control Panel\\Desktop",
+        "name": "HungAppTimeout",
+        "kind": "string",
+        "value": "2000"
+      }
+    ]
+  },
+  {
+    "id": "system.service-shutdown",
+    "category": "startup",
+    "levels": [
+      "recommended",
+      "performance",
+      "maximum"
+    ],
+    "title": "Espera razonable al cerrar servicios",
+    "description": "Fija en 5 segundos el tiempo que Windows espera a que los servicios se detengan al apagar (algunos programas lo suben mucho más).",
+    "expectedEffect": "El apagado no se queda esperando a servicios lentos.",
+    "possibleImpact": "Ninguno: es el valor de fábrica de Windows 11.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Control",
+        "name": "WaitToKillServiceTimeout",
+        "kind": "string",
+        "value": "5000"
+      }
+    ]
+  },
+  {
+    "id": "system.auto-end-tasks",
+    "category": "startup",
+    "levels": [],
+    "risk": "medium",
+    "title": "Cerrar apps automáticamente al apagar",
+    "description": "Al apagar, Windows cierra las aplicaciones que siguen abiertas sin preguntar.",
+    "expectedEffect": "El apagado nunca se queda parado en la pantalla de «Cerrando aplicaciones».",
+    "possibleImpact": "Puedes perder trabajo sin guardar. Solo si siempre guardas antes de apagar.",
+    "registry": [
+      {
+        "hive": "currentUser",
+        "key": "Control Panel\\Desktop",
+        "name": "AutoEndTasks",
+        "kind": "string",
+        "value": "1"
+      }
+    ]
+  },
+  {
+    "id": "interface.menu-delay.instant",
+    "category": "interface",
+    "levels": [],
+    "title": "Menús instantáneos (0 ms)",
+    "description": "Los submenús se abren sin ningún retraso (AUREVIX usa 100 ms por defecto, que evita aperturas accidentales al mover el ratón).",
+    "expectedEffect": "Máxima rapidez en menús.",
+    "possibleImpact": "Los submenús pueden abrirse al pasar el ratón por encima sin querer.",
+    "registry": [
+      {
+        "hive": "currentUser",
+        "key": "Control Panel\\Desktop",
+        "name": "MenuShowDelay",
+        "kind": "string",
+        "value": "0"
+      }
+    ]
+  },
+  {
+    "id": "privacy.activity-history.off",
+    "category": "privacy",
+    "levels": [
+      "recommended",
+      "performance",
+      "maximum"
+    ],
+    "title": "Sin historial de actividad",
+    "description": "Aplica las directivas oficiales para que Windows no guarde ni suba el historial de apps y documentos que usas.",
+    "expectedEffect": "Más privacidad y menos escrituras en segundo plano.",
+    "possibleImpact": "La línea de tiempo y «continuar en otro PC» no tendrán tu actividad.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\System",
+        "name": "EnableActivityFeed",
+        "kind": "dword",
+        "value": "0"
+      },
+      {
+        "hive": "localMachine",
+        "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\System",
+        "name": "PublishUserActivities",
+        "kind": "dword",
+        "value": "0"
+      },
+      {
+        "hive": "localMachine",
+        "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\System",
+        "name": "UploadUserActivities",
+        "kind": "dword",
+        "value": "0"
+      }
+    ]
+  },
+  {
+    "id": "gaming.gamebar-startup-panel.off",
+    "category": "gaming",
+    "levels": [
+      "recommended",
+      "performance",
+      "maximum"
+    ],
+    "title": "Sin panel de bienvenida de Game Bar",
+    "description": "Evita que Game Bar muestre su panel al abrir un juego.",
+    "expectedEffect": "Sin ventanas emergentes al empezar a jugar.",
+    "possibleImpact": "Ninguno: Win+G sigue funcionando.",
+    "registry": [
+      {
+        "hive": "currentUser",
+        "key": "Software\\Microsoft\\GameBar",
+        "name": "ShowStartupPanel",
+        "kind": "dword",
+        "value": "0"
+      }
+    ]
+  },
+  {
+    "id": "gaming.gamedvr-policy.off",
+    "category": "gaming",
+    "levels": [
+      "maximum"
+    ],
+    "title": "Game DVR desactivado por directiva",
+    "description": "Directiva oficial que desactiva la grabación de partidas de Windows para todos los usuarios.",
+    "expectedEffect": "Ninguna grabación en segundo plano, ni siquiera si otra app la reactiva.",
+    "possibleImpact": "No podrás grabar con Win+Alt+G ni con Game Bar. Programas como OBS siguen funcionando.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR",
+        "name": "AllowGameDVR",
+        "kind": "dword",
+        "value": "0"
+      }
+    ]
+  },
+  {
+    "id": "privacy.location.off",
+    "category": "privacy",
+    "levels": [],
+    "title": "Sin acceso a la ubicación para las apps",
+    "description": "Deniega a todas las aplicaciones el acceso a tu ubicación.",
+    "expectedEffect": "Las apps dejan de saber dónde estás.",
+    "possibleImpact": "Mapas, tiempo local y «Buscar mi dispositivo» no sabrán dónde estás.",
+    "registry": [
+      {
+        "hive": "currentUser",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\location",
+        "name": "Value",
+        "kind": "string",
+        "value": "Deny"
+      }
+    ]
+  },
+  {
+    "id": "privacy.camera.off",
+    "category": "privacy",
+    "levels": [],
+    "risk": "medium",
+    "title": "Sin acceso a la cámara para las apps",
+    "description": "Deniega a todas las aplicaciones el acceso a la cámara.",
+    "expectedEffect": "Ninguna app podrá activar la cámara a escondidas.",
+    "possibleImpact": "Ninguna app podrá usar la cámara (videollamadas incluidas) hasta que lo desactives.",
+    "registry": [
+      {
+        "hive": "currentUser",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\webcam",
+        "name": "Value",
+        "kind": "string",
+        "value": "Deny"
+      }
+    ]
+  },
+  {
+    "id": "privacy.microphone.off",
+    "category": "privacy",
+    "levels": [],
+    "risk": "medium",
+    "title": "Sin acceso al micrófono para las apps",
+    "description": "Deniega a todas las aplicaciones el acceso al micrófono.",
+    "expectedEffect": "Ninguna app podrá escucharte sin que lo sepas.",
+    "possibleImpact": "Ninguna app podrá usar el micrófono (llamadas, Discord, juegos con voz).",
+    "registry": [
+      {
+        "hive": "currentUser",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\microphone",
+        "name": "Value",
+        "kind": "string",
+        "value": "Deny"
+      }
+    ]
+  },
+  {
+    "id": "interface.windows-tips.off",
+    "category": "interface",
+    "levels": [
+      "recommended",
+      "performance",
+      "maximum"
+    ],
+    "title": "Sin consejos ni sugerencias en notificaciones",
+    "description": "Quita los consejos, trucos y sugerencias de Windows que aparecen como avisos.",
+    "expectedEffect": "Menos avisos molestos mientras trabajas o juegas.",
+    "possibleImpact": "Ninguno.",
+    "registry": [
+      {
+        "hive": "currentUser",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+        "name": "SubscribedContent-310093Enabled",
+        "kind": "dword",
+        "value": "0"
+      },
+      {
+        "hive": "currentUser",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+        "name": "SubscribedContent-338388Enabled",
+        "kind": "dword",
+        "value": "0"
+      },
+      {
+        "hive": "currentUser",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\UserProfileEngagement",
+        "name": "ScoobeSystemSettingEnabled",
+        "kind": "dword",
+        "value": "0"
+      }
+    ]
+  },
+  {
+    "id": "interface.notifications.off",
+    "category": "interface",
+    "levels": [],
+    "title": "Desactivar todas las notificaciones",
+    "description": "Apaga los avisos emergentes de todas las aplicaciones y del sistema.",
+    "expectedEffect": "Cero interrupciones en pantalla.",
+    "possibleImpact": "No verás avisos de ninguna app (correo, mensajes, Windows Update).",
+    "registry": [
+      {
+        "hive": "currentUser",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\PushNotifications",
+        "name": "ToastEnabled",
+        "kind": "dword",
+        "value": "0"
+      }
+    ]
+  },
+  {
+    "id": "privacy.settings-sync.off",
+    "category": "privacy",
+    "levels": [],
+    "title": "Sin sincronizar la configuración entre equipos",
+    "description": "Impide que Windows copie tu configuración a la nube y a tus otros equipos.",
+    "expectedEffect": "Menos datos personales enviados a la nube.",
+    "possibleImpact": "Tu tema, contraseñas de Wi-Fi e idioma no se copian a tus otros PCs.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\SettingSync",
+        "name": "DisableSettingSync",
+        "kind": "dword",
+        "value": "2"
+      },
+      {
+        "hive": "localMachine",
+        "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\SettingSync",
+        "name": "DisableSettingSyncUserOverride",
+        "kind": "dword",
+        "value": "1"
+      }
+    ]
+  },
+  {
+    "id": "services.xbox.off",
+    "category": "startup",
+    "levels": [],
+    "requiresRestart": true,
+    "risk": "medium",
+    "title": "Desactivar servicios de Xbox (si no los usas)",
+    "description": "Desactiva los servicios de Xbox que se ejecutan en segundo plano.",
+    "expectedEffect": "Algunos servicios menos en segundo plano.",
+    "possibleImpact": "Juegos de Xbox/Game Pass, logros y mandos de Xbox por cable/inalámbrico pueden dejar de funcionar.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Services\\XblAuthManager",
+        "name": "Start",
+        "kind": "dword",
+        "value": "4"
+      },
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Services\\XblGameSave",
+        "name": "Start",
+        "kind": "dword",
+        "value": "4"
+      },
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Services\\XboxNetApiSvc",
+        "name": "Start",
+        "kind": "dword",
+        "value": "4"
+      },
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Services\\XboxGipSvc",
+        "name": "Start",
+        "kind": "dword",
+        "value": "4"
+      }
+    ]
   }
 ]
