@@ -36,6 +36,18 @@ public static class Screenshotter
                 await Task.Delay(800);
                 Save(main, Path.Combine(outDir, "cc-03b-optimization-ajustes.png"));
             }
+            if (p == "diagnostics")
+            {
+                ScrollToText(main, "Drivers", 1600);
+                await Task.Delay(3000);
+                Save(main, Path.Combine(outDir, "cc-02b-diagnostics-drivers.png"));
+            }
+            if (p == "appearance")
+            {
+                ScrollToText(main, "Pantalla de bloqueo e inicio de sesión", 1800);
+                await Task.Delay(800);
+                Save(main, Path.Combine(outDir, "cc-10b-appearance-bloqueo.png"));
+            }
         }
         main.Close();
 

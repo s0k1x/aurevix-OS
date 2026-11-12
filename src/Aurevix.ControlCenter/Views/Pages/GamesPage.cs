@@ -30,7 +30,7 @@ public sealed class GamesPage : UserControl
         _search.TextChanged += (_, _) => ApplyFilter();
         _filter.SelectionChanged += (_, _) => ApplyFilter();
 
-        body.Children.Add(Ui.Card(Ui.H2("Tus juegos"), _count, Ui.Row(_search, _filter), _status));
+        body.Children.Add(Ui.Card(Ui.H2("Tus juegos"), _count, Ui.Row(SearchBox(), _filter), _status));
         body.Children.Add(_grid);
         Content = root;
         _ = LoadAsync();
@@ -169,4 +169,18 @@ public sealed class GamesPage : UserControl
         }
         catch { return null; }
     }
+
+    /// <summary>Buscador con texto de ayuda que desaparece al escribir.</summary>
+    private Grid SearchBox()
+    {
+        var hint = new TextBlock { Text = "Buscar un juego…", Foreground = Ui.Brush("TextMuted"), IsHitTestVisible = false,
+            VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(10, 0, 0, 0) };
+        _search.TextChanged += (_, _) => hint.Visibility = _search.Text.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
+        var g = new Grid { Margin = _search.Margin };
+        _search.Margin = new Thickness(0);
+        g.Children.Add(_search);
+        g.Children.Add(hint);
+        return g;
+    }
+
 }

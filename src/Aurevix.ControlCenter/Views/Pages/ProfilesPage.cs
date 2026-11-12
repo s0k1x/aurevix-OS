@@ -63,9 +63,9 @@ public sealed class ProfilesPage : UserControl
         AutoProfiles.Changed += onChanged;
         Unloaded += (_, _) => AutoProfiles.Changed -= onChanged;
 
-        return Ui.Card(Ui.H2("Perfiles automáticos"),
+        return Ui.Card(Header("Perfiles automáticos", master),
             Ui.Muted("AUREVIX elige el perfil por ti según lo que estés haciendo. Espera unos segundos antes de cambiar y, cuando termina, vuelve al perfil que tenías elegido."),
-            master, rules, status);
+            rules, status);
     }
 
     private static UIElement Rule(string title, string help, bool value, Action<bool> set)
@@ -109,4 +109,20 @@ public sealed class ProfilesPage : UserControl
         AppServices.SaveState();
         Build();
     }
+
+    /// <summary>Título de tarjeta con su interruptor a la derecha.</summary>
+    private static Grid Header(string title, CheckBox sw)
+    {
+        var g = new Grid();
+        g.ColumnDefinitions.Add(new ColumnDefinition());
+        g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        var h = Ui.H2(title);
+        sw.HorizontalAlignment = HorizontalAlignment.Right;
+        sw.VerticalAlignment = VerticalAlignment.Center;
+        Grid.SetColumn(sw, 1);
+        g.Children.Add(h);
+        g.Children.Add(sw);
+        return g;
+    }
+
 }

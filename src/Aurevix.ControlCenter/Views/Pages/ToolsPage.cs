@@ -106,9 +106,24 @@ public sealed class ToolsPage : UserControl
         AutoMaintenance.Changed += onChanged;
         Unloaded += (_, _) => AutoMaintenance.Changed -= onChanged;
 
-        return Ui.Card(Ui.H2("Mantenimiento automático"), sw,
+        return Ui.Card(Header("Mantenimiento automático", sw),
             Ui.Muted("Una vez por semana, cuando no estás usando el PC: limpia temporales, optimiza los discos y comprueba Windows. No toca tus archivos."),
             last, Ui.Row(now));
+    }
+
+    /// <summary>Título de tarjeta con su interruptor a la derecha.</summary>
+    private static Grid Header(string title, CheckBox sw)
+    {
+        var g = new Grid();
+        g.ColumnDefinitions.Add(new ColumnDefinition());
+        g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        var h = Ui.H2(title);
+        sw.HorizontalAlignment = HorizontalAlignment.Right;
+        sw.VerticalAlignment = VerticalAlignment.Center;
+        Grid.SetColumn(sw, 1);
+        g.Children.Add(h);
+        g.Children.Add(sw);
+        return g;
     }
 
     private static UIElement Pair(string title, string text, string opA, string opB, string labelA, string labelB, bool restart = false)
