@@ -130,6 +130,11 @@ public sealed class MediaEngine
         {
             try { File.Delete(partial + ".parts.json"); File.Delete(partial); } catch { }
         }
+        // Un .partial que ya mide el total (o más) no se puede reanudar: se empieza de cero.
+        if (total0 > 0 && File.Exists(partial) && new FileInfo(partial).Length >= total0)
+        {
+            try { File.Delete(partial); } catch { }
+        }
 
         for (var attempt = 1; ; attempt++)
         {
@@ -139,6 +144,14 @@ public sealed class MediaEngine
                 using var req = new HttpRequestMessage(HttpMethod.Get, url);
                 if (have > 0) req.Headers.Range = new System.Net.Http.Headers.RangeHeaderValue(have, null);
                 using var resp = await _http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
+                if (have > 0 && (resp.StatusCode == System.Net.HttpStatusCode.RequestedRangeNotSatisfiable ||
+                                 (resp.Content.Headers.ContentRange?.Length is { } rangeTotal && have >= rangeTotal)))
+                {
+                    // El resto ya mide lo mismo o más que el archivo: no sirve, se empieza de cero.
+                    AurevixLog.Warn("El archivo parcial de Windows ya medía el total; se descarga de nuevo desde el principio.");
+                    try { File.Delete(partial); } catch { }
+                    continue;
+                }
                 resp.EnsureSuccessStatusCode();
                 if (have > 0 && resp.StatusCode != System.Net.HttpStatusCode.PartialContent) have = 0; // el servidor no reanuda
                 var total = (resp.Content.Headers.ContentLength ?? 0) + have;
@@ -162,6 +175,7 @@ public sealed class MediaEngine
                     }
                 }
                 if (total > 0 && done < total) throw new IOException("La descarga terminó antes de tiempo.");
+                dst.Flush(true); // a disco antes del Move final
                 break;
             }
             catch (Exception ex) when (ex is HttpRequestException or IOException && attempt < 5 && !ct.IsCancellationRequested)
@@ -219,7 +233,7 @@ public sealed class MediaEngine
                 File.WriteAllText(tmp, json);
                 File.Move(tmp, partsFile, overwrite: true);
             }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { AurevixLog.Warn($"No se pudo guardar el avance de la descarga: {ex.Message}"); }
         }
     }
 
@@ -248,9 +262,25 @@ public sealed class MediaEngine
         if (parts.Count == 0)
         {
             var size = (total + ParallelParts - 1) / ParallelParts;
+            // Un .partial de la descarga con una sola conexión (sin .parts.json) y más corto que el total es avance válido
+            // desde el principio del archivo: se aprovecha como avance de los primeros trozos en vez de truncarlo.
+            long existing = 0;
+            try
+            {
+                if (!File.Exists(partsFile) && File.Exists(partial))
+                {
+                    var len = new FileInfo(partial).Length;
+                    if (len > 0 && len < total) existing = len;
+                }
+            }
+            catch (IOException) { existing = 0; }
             for (long s = 0; s < total; s += size)
-                parts.Add(new DownloadPart { Start = s, End = Math.Min(s + size, total) - 1 });
-            await using var pre = new FileStream(partial, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
+            {
+                var np = new DownloadPart { Start = s, End = Math.Min(s + size, total) - 1 };
+                if (existing > 0) np.Done = Math.Clamp(existing - np.Start, 0, np.End - np.Start + 1);
+                parts.Add(np);
+            }
+            await using var pre = new FileStream(partial, existing > 0 ? FileMode.Open : FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
             pre.SetLength(total);
             SaveParts(partsFile, parts);
         }
@@ -344,6 +374,7 @@ public sealed class MediaEngine
         }
         if (parts.Sum(p => p.Done) != total || new FileInfo(partial).Length != total)
             throw new IOException("La descarga de Windows no se completó correctamente.");
+        try { RandomAccess.FlushToDisk(handle); } catch (IOException) { } // todo a disco antes de borrar el avance y de renombrar
         handle.Dispose();
         try { File.Delete(partsFile); } catch { }
     }
@@ -520,7 +551,7 @@ public sealed class MediaEngine
 
     public static long CacheBytes()
     {
-        try { return Directory.Exists(WorkRoot) ? Directory.EnumerateFiles(WorkRoot, "*", SearchOption.AllDirectories).Where(f => !f.Contains(@"\logs\")).Sum(f => new FileInfo(f).Length) : 0; }
+        try { return Directory.Exists(WorkRoot) ? Directory.EnumerateFiles(WorkRoot, "*", SearchOption.AllDirectories).Where(f => !f.Contains(@"\logs\") && !f.StartsWith(Path.Combine(WorkRoot, "prepared") + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)).Sum(f => new FileInfo(f).Length) : 0; }
         catch { return 0; }
     }
 

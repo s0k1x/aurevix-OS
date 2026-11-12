@@ -124,6 +124,9 @@ public static class ImapiIsoWriter
                 if (Environment.TickCount64 - last > 300) { last = Environment.TickCount64; progress?.Report((written, total)); }
             }
             progress?.Report((written, total));
+            fs.Flush(true); // a disco antes de dar el hash por bueno
+            if (fs.Length != written)
+                throw new IOException($"La ISO no se escribió completa en el disco ({fs.Length} de {written} bytes). Comprueba el espacio libre y vuelve a intentarlo.");
             return Convert.ToHexString(sha.GetHashAndReset()).ToLowerInvariant();
         }
         catch

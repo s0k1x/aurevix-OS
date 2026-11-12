@@ -1,10 +1,13 @@
 using System.IO;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Aurevix.Core.Logging;
 
 namespace Aurevix.Installer.Engine;
 
-public enum PrepState { Idle, Running, Paused, Ready, NoSpace, Failed }
+public enum PrepState { Idle, Running, Paused, Ready, NoSpace, Failed, Metered }
 
 /// <summary>Datos de la ISO preparada: versión de AUREVIX con la que se hizo, fecha, tamaño y SHA-256.</summary>
 public sealed class PreparedInfo
@@ -34,6 +37,11 @@ public sealed class IsoPreparer
     private bool _userPaused;
     private volatile bool _optimisticReady;
     private volatile bool _verified; // la versión de la ISO preparada ya se comprobó en esta sesión
+    private volatile bool _shuttingDown;
+    private volatile bool _held;          // tras «Liberar espacio» no se relanza sola hasta que el usuario lo pida
+    private volatile bool _allowMetered;  // el usuario ha aceptado preparar con una conexión de uso medido
+    private bool _restartQueued;
+    private volatile string? _mountedIso; // ISO de Windows montada ahora mismo por la preparación (para desmontarla al salir)
 
     private PrepState _state = PrepState.Idle;
     private double _fraction;
@@ -57,34 +65,89 @@ public sealed class IsoPreparer
 
     // ------------------------------------------------------------------ Ajuste
 
-    /// <summary>Casilla «Preparar la ISO automáticamente» (se guarda en un JSON en la carpeta de trabajo).</summary>
-    public bool AutoEnabled
+    private sealed class Settings
     {
-        get
+        [JsonPropertyName("auto")] public bool? Auto { get; set; }
+        [JsonPropertyName("LastBuiltVersion")] public string? LastBuiltVersion { get; set; }
+    }
+
+    private static readonly object SettingsLock = new();
+
+    private static Settings ReadSettings()
+    {
+        lock (SettingsLock)
         {
             try
             {
-                if (!File.Exists(SettingsPath)) return true;
-                using var doc = JsonDocument.Parse(File.ReadAllText(SettingsPath));
-                return !doc.RootElement.TryGetProperty("auto", out var v) || v.ValueKind != JsonValueKind.False;
+                if (!File.Exists(SettingsPath)) return new Settings();
+                return JsonSerializer.Deserialize<Settings>(File.ReadAllText(SettingsPath)) ?? new Settings();
             }
-            catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException) { return true; }
+            catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException) { return new Settings(); }
         }
-        set
+    }
+
+    private static void UpdateSettings(Action<Settings> change)
+    {
+        lock (SettingsLock)
         {
+            var st = ReadSettings();
+            change(st);
             try
             {
                 Directory.CreateDirectory(MediaEngine.WorkRoot);
-                File.WriteAllText(SettingsPath, JsonSerializer.Serialize(new { auto = value }));
+                File.WriteAllText(SettingsPath, JsonSerializer.Serialize(st));
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { AurevixLog.Warn($"No se pudo guardar el ajuste de preparación: {ex.Message}"); }
-            if (value) { _userPaused = false; Start(); }
+        }
+    }
+
+    /// <summary>Elección del usuario: true = preparar, false = no, null = aún no ha decidido (no se descarga nada).</summary>
+    public bool? AutoSetting => ReadSettings().Auto;
+
+    public bool AutoDecided => AutoSetting is not null;
+
+    /// <summary>Casilla «Preparar la ISO automáticamente» (se guarda en un JSON en la carpeta de trabajo). Sin decidir equivale a no.</summary>
+    public bool AutoEnabled
+    {
+        get => AutoSetting == true;
+        set
+        {
+            UpdateSettings(st => st.Auto = value);
+            if (value) { _userPaused = false; _held = false; Start(); }
             else
             {
+                _userPaused = false; // si estaba en pausa, al desactivar no debe quedar «En pausa»
                 Cancel();
                 SetState(PrepState.Idle, 0, "");
             }
         }
+    }
+
+    /// <summary>Última versión de AUREVIX con la que el usuario ya creó una ISO: no se vuelve a preparar otra igual.</summary>
+    public static string? LastBuiltVersion => ReadSettings().LastBuiltVersion;
+
+    public static void RecordBuilt(string? aurevixVersion)
+    {
+        if (string.IsNullOrEmpty(aurevixVersion)) return;
+        UpdateSettings(st => st.LastBuiltVersion = aurevixVersion);
+    }
+
+    /// <summary>¿La conexión actual es de uso medido (datos limitados)? Ante la duda, false.</summary>
+    public static bool IsMetered()
+    {
+        try
+        {
+            var cost = global::Windows.Networking.Connectivity.NetworkInformation.GetInternetConnectionProfile()?.GetConnectionCost();
+            return cost is not null && cost.NetworkCostType != global::Windows.Networking.Connectivity.NetworkCostType.Unrestricted;
+        }
+        catch { return false; }
+    }
+
+    /// <summary>El usuario acepta preparar la ISO aunque la conexión sea de uso medido.</summary>
+    public void PrepareAnyway()
+    {
+        _allowMetered = true;
+        Resume();
     }
 
     // ------------------------------------------------------------------ Estado de la ISO preparada
@@ -120,15 +183,29 @@ public sealed class IsoPreparer
     /// <summary>Empieza (o continúa) la preparación si procede. No bloquea y se puede llamar las veces que haga falta.</summary>
     public void Start()
     {
-        if (!AutoEnabled || _userPaused) return;
+        if (_shuttingDown || _held || _userPaused || !AutoEnabled) return;
         lock (_gate)
         {
-            if (_task is { IsCompleted: false }) return;
+            if (_task is { IsCompleted: false } running)
+            {
+                // Pausar y reanudar enseguida: la tarea anterior aún se está cancelando; se relanza cuando termine.
+                if (_cts is { IsCancellationRequested: true } && !_restartQueued)
+                {
+                    _restartQueued = true;
+                    _ = running.ContinueWith(_ => { lock (_gate) _restartQueued = false; Start(); }, TaskScheduler.Default);
+                }
+                return;
+            }
             if (_verified && ReadMeta() is not null) return;
             var ready = ReadMeta() is not null;
             if (!ready)
             {
                 // Lo ya descargado de Windows cuenta como espacio disponible: no se vuelve a pedir.
+                if (!_allowMetered && IsMetered())
+                {
+                    SetStateLocked(PrepState.Metered, 0, "Tu conexión es de uso medido. No se descarga nada hasta que lo confirmes.");
+                    return;
+                }
                 var free = MediaEngine.FreeBytes(MediaEngine.WorkRoot);
                 var have = FileLength(_engine.IsoCachePath) + FileLength(_engine.IsoCachePath + ".partial");
                 if (free >= 0 && free + have < MinFreeBytes)
@@ -156,6 +233,7 @@ public sealed class IsoPreparer
     public void Resume()
     {
         _userPaused = false;
+        _held = false;
         Start();
     }
 
@@ -171,13 +249,30 @@ public sealed class IsoPreparer
         if (t is not null) { try { await t; } catch { } }
     }
 
+    /// <summary>Detiene la preparación y evita que se relance sola (hasta que el usuario la pida). Se usa tras «Liberar espacio».</summary>
+    public async Task HoldAsync()
+    {
+        _held = true;
+        await SuspendAsync();
+        SetState(PrepState.Idle, 0, "");
+    }
+
     /// <summary>Al cerrar la ventana: cancela y espera un instante para que quede guardado el avance de la descarga.</summary>
     public void Shutdown()
     {
+        _shuttingDown = true;
         Task? t;
         lock (_gate) t = _task;
         Cancel();
-        try { t?.Wait(2500); } catch { }
+        // Si hay una ISO de Windows montada (construcción en curso) se da más margen para que se desmonte sola.
+        try { t?.Wait(_mountedIso is not null ? 15000 : 2500); } catch { }
+        var mounted = _mountedIso;
+        if (mounted is not null)
+        {
+            // No bastó: se desmonta de forma síncrona para no dejar la ISO montada tras cerrar.
+            try { Task.Run(() => Shell.PowerShellAsync($"Dismount-DiskImage -ImagePath {Shell.Quote(mounted)} | Out-Null")).Wait(10000); } catch { }
+            _mountedIso = null;
+        }
     }
 
     private void Cancel()
@@ -212,6 +307,7 @@ public sealed class IsoPreparer
             // 1) AUREVIX (pequeño): da la versión actual.
             var setup = await _engine.DownloadAurevixAsync(new DirectProgress<Step>(s => { if (!_optimisticReady) OnStep(s, 0, 0.03); }), ct);
             var version = _engine.AurevixVersion ?? "";
+            ct.ThrowIfCancellationRequested();
 
             var meta = ReadMeta();
             if (meta is not null && meta.AurevixVersion == version)
@@ -220,6 +316,14 @@ public sealed class IsoPreparer
                 _verified = true;
                 SetState(PrepState.Ready, 1, "");
                 AurevixLog.Info($"ISO preparada ya lista (AUREVIX {version}).");
+                return;
+            }
+            if (version.Length > 0 && LastBuiltVersion == version && meta is null && !File.Exists(IsoPath))
+            {
+                // El usuario ya creó una ISO con esta versión: no se prepara otra igual hasta que salga una nueva.
+                _optimisticReady = false;
+                SetState(PrepState.Idle, 0, "");
+                AurevixLog.Info($"Ya se creó una ISO con AUREVIX {version}: no se prepara otra hasta que haya una versión nueva.");
                 return;
             }
             if (_optimisticReady || File.Exists(IsoPath) || File.Exists(MetaPath))
@@ -236,20 +340,28 @@ public sealed class IsoPreparer
             // 3) Construir la ISO (si no termina, se repite la próxima vez).
             SetState(PrepState.Running, 0.63, "Montando la ISO de Windows");
             try { File.Delete(BuildingPath); } catch { }
-            var root = await _engine.MountAsync(isoWin, ct);
             string hash;
+            _mountedIso = isoWin;
             try
             {
+                var root = await _engine.MountAsync(isoWin, ct);
                 hash = await _engine.BuildIsoAsync(root, setup, BuildingPath, new DirectProgress<Step>(s => OnStep(s, 0.63, 0.37)), ct);
             }
-            finally { await _engine.DismountAsync(isoWin); }
+            finally
+            {
+                // Se desmonta siempre, aunque se cancele o falle la comprobación de la ISO.
+                try { await _engine.DismountAsync(isoWin); } catch { }
+                _mountedIso = null;
+            }
 
+            // Desde aquí no se cancela: así una ISO ya construida nunca se queda sin sus metadatos.
+            ct.ThrowIfCancellationRequested();
             File.Move(BuildingPath, IsoPath, overwrite: true);
             try { File.Delete(BuildingPath + ".sha256"); } catch { }
-            await File.WriteAllTextAsync(ShaPath, $"{hash}  {Path.GetFileName(IsoPath)}", ct);
+            await File.WriteAllTextAsync(ShaPath, $"{hash}  {Path.GetFileName(IsoPath)}", CancellationToken.None);
             var info = new PreparedInfo { AurevixVersion = version, CreatedUtc = DateTime.UtcNow, Size = new FileInfo(IsoPath).Length, Sha256 = hash };
             // El JSON se escribe el último: si existe, la ISO está completa.
-            await File.WriteAllTextAsync(MetaPath, JsonSerializer.Serialize(info, JsonOpts), ct);
+            await File.WriteAllTextAsync(MetaPath, JsonSerializer.Serialize(info, JsonOpts), CancellationToken.None);
             _verified = true;
             SetState(PrepState.Ready, 1, "");
             AurevixLog.Info($"ISO preparada en segundo plano: {IsoPath}");
@@ -304,6 +416,40 @@ public sealed class IsoPreparer
     /// Copia (o mueve) la ISO preparada a <paramref name="output"/> y comprueba su SHA-256 con el guardado.
     /// Devuelve el SHA-256. Si no coincide, descarta la ISO preparada y avisa.
     /// </summary>
+    /// <summary>
+    /// ¿Están los dos sitios en el mismo volumen real (no UNC, no unidad subst, ni carpeta montada en otro disco)?
+    /// Ante cualquier duda devuelve false: entonces se copia con verificación en vez de mover.
+    /// </summary>
+    public static bool IsSameVolume(string a, string b)
+    {
+        try
+        {
+            var ra = Path.GetPathRoot(Path.GetFullPath(a));
+            var rb = Path.GetPathRoot(Path.GetFullPath(b));
+            if (string.IsNullOrEmpty(ra) || string.IsNullOrEmpty(rb) || ra.StartsWith(@"\\") || rb.StartsWith(@"\\")) return false;
+            if (!string.Equals(ra, rb, StringComparison.OrdinalIgnoreCase)) return false;
+            var va = VolumeGuid(Path.GetDirectoryName(Path.GetFullPath(a)) ?? ra);
+            var vb = VolumeGuid(Path.GetDirectoryName(Path.GetFullPath(b)) ?? rb);
+            return va is not null && string.Equals(va, vb, StringComparison.OrdinalIgnoreCase);
+        }
+        catch { return false; }
+    }
+
+    /// <summary>GUID del volumen que contiene la ruta (null si no se puede saber: unidades subst o de red).</summary>
+    private static string? VolumeGuid(string path)
+    {
+        var mount = new StringBuilder(1024);
+        if (!GetVolumePathName(path.EndsWith('\\') ? path : path + "\\", mount, (uint)mount.Capacity)) return null;
+        var name = new StringBuilder(64);
+        return GetVolumeNameForVolumeMountPoint(mount.ToString(), name, (uint)name.Capacity) ? name.ToString() : null;
+    }
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    private static extern bool GetVolumePathName(string lpszFileName, StringBuilder lpszVolumePathName, uint cchBufferLength);
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    private static extern bool GetVolumeNameForVolumeMountPoint(string lpszVolumeMountPoint, StringBuilder lpszVolumeName, uint cchBufferLength);
+
     public async Task<string> DeliverAsync(string output, bool move, IProgress<Step> progress, CancellationToken ct)
     {
         var meta = ReadMeta() ?? throw new InvalidOperationException("La ISO preparada ya no está disponible.");
@@ -318,8 +464,9 @@ public sealed class IsoPreparer
                     progress.Report(new Step("Verificando la ISO (SHA-256)", 0.9 * f))), ct);
                 if (!string.Equals(h, meta.Sha256, StringComparison.OrdinalIgnoreCase)) { Discard(); throw new InvalidOperationException(DamagedMessage); }
                 File.Move(IsoPath, output, overwrite: true);
-                await File.WriteAllTextAsync(output + ".sha256", $"{h}  {Path.GetFileName(output)}", ct);
-                try { File.Delete(MetaPath); File.Delete(ShaPath); } catch { }
+                await File.WriteAllTextAsync(output + ".sha256", $"{h}  {Path.GetFileName(output)}", CancellationToken.None);
+                try { File.Delete(MetaPath); } catch { }
+                try { File.Delete(ShaPath); } catch { }
                 SetState(PrepState.Idle, 0, "");
                 progress.Report(new Step("ISO lista.", 1));
                 return h;
@@ -353,7 +500,7 @@ public sealed class IsoPreparer
                 throw new InvalidOperationException(DamagedMessage);
             }
             File.Move(temp, output, overwrite: true);
-            await File.WriteAllTextAsync(output + ".sha256", $"{hash}  {Path.GetFileName(output)}", ct);
+            await File.WriteAllTextAsync(output + ".sha256", $"{hash}  {Path.GetFileName(output)}", CancellationToken.None);
             progress.Report(new Step("ISO lista.", 1));
             return hash;
         }

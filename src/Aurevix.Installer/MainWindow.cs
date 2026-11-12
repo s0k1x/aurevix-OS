@@ -29,6 +29,7 @@ public sealed class MainWindow : Window
     private CancellationTokenSource? _cts;
     private DispatcherTimer? _usbTimer;
     private Action? _prepDetach, _prepNext;
+    private ProgressView? _currentView; // la pantalla de progreso en curso (para avisos como «Deteniendo la preparación…»)
     private static readonly bool Screenshots = Environment.GetCommandLineArgs().Any(a => a.Equals("--render-screenshots", StringComparison.OrdinalIgnoreCase));
 
     public MainWindow()
@@ -120,6 +121,11 @@ public sealed class MainWindow : Window
         action.Margin = new Thickness(0, 10, 0, 0); action.HorizontalAlignment = HorizontalAlignment.Left;
         Action? onAction = null;
         action.Click += (_, _) => onAction?.Invoke();
+        var accept = Ui.Button("Preparar ahora", () => prep.AutoEnabled = true, primary: true);
+        accept.Margin = new Thickness(0, 10, 8, 0);
+        var decline = Ui.Button("No, gracias", () => prep.AutoEnabled = false);
+        decline.Margin = new Thickness(0, 10, 0, 0);
+        var choice = new StackPanel { Orientation = Orientation.Horizontal, Children = { accept, decline } };
         var auto = new CheckBox { Content = "Preparar la ISO automáticamente", IsChecked = prep.AutoEnabled, Margin = new Thickness(0, 10, 0, 0), Foreground = Ui.Brush("TextMuted") };
         auto.Click += (_, _) => prep.AutoEnabled = auto.IsChecked == true;
 
@@ -129,6 +135,19 @@ public sealed class MainWindow : Window
             var pct = (int)Math.Round(prep.Fraction * 100);
             title.Visibility = bar.Visibility = detail.Visibility = action.Visibility = Visibility.Visible;
             detail.Text = "";
+            var undecided = !prep.AutoDecided;
+            choice.Visibility = undecided ? Visibility.Visible : Visibility.Collapsed;
+            auto.Visibility = undecided ? Visibility.Collapsed : Visibility.Visible;
+            if (!undecided) auto.IsChecked = prep.AutoEnabled;
+            if (undecided)
+            {
+                // Sin descargas por sorpresa: hasta que el usuario decida no se descarga nada.
+                title.Text = "¿Preparamos ya la ISO de AUREVIX en segundo plano? Descarga unos 7 GB de Windows desde Microsoft y necesita 18 GB libres. Así estará lista cuando la necesites.";
+                detail.Text = IsoPreparer.IsMetered() ? "Tu conexión es de uso medido: te lo preguntaremos antes de descargar." : "";
+                bar.Visibility = action.Visibility = Visibility.Collapsed;
+                detail.Visibility = detail.Text.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+                return;
+            }
             switch (st)
             {
                 case PrepState.Running:
@@ -151,6 +170,12 @@ public sealed class MainWindow : Window
                     title.Text = "No se prepara la ISO en segundo plano";
                     detail.Text = prep.Detail;
                     bar.Visibility = action.Visibility = Visibility.Collapsed;
+                    break;
+                case PrepState.Metered:
+                    title.Text = "No se prepara la ISO en segundo plano";
+                    detail.Text = "Tu conexión es de uso medido y la preparación descarga unos 7 GB. No se descarga nada hasta que lo confirmes.";
+                    bar.Visibility = Visibility.Collapsed;
+                    action.Content = "Preparar igualmente"; onAction = prep.PrepareAnyway;
                     break;
                 case PrepState.Failed:
                     title.Text = "No se pudo preparar la ISO en segundo plano";
@@ -175,7 +200,7 @@ public sealed class MainWindow : Window
         prep.Changed += OnChanged;
         _prepNext = () => prep.Changed -= OnChanged;
 
-        var card = Ui.Card(title, detail, bar, action, auto);
+        var card = Ui.Card(title, detail, bar, action, choice, auto);
         card.Margin = new Thickness(0, 6, 0, 0);
         return card;
     }
@@ -185,6 +210,7 @@ public sealed class MainWindow : Window
     private ProgressView Progress(string title, string note, params StageSpec[] stages)
     {
         var view = new ProgressView(stages);
+        _currentView = view;
         Present(Ui.Eyebrow("EN CURSO"), Heading(title), Spaced(Ui.Muted(note), 34), view.Root,
             Ui.Row(Ui.Button("Cancelar", () =>
             {
@@ -201,7 +227,16 @@ public sealed class MainWindow : Window
         {
             // La preparación en segundo plano usa las mismas carpetas de trabajo: se detiene (y continúa luego), salvo
             // que esta operación sea «Crear ISO», que espera a que termine para no duplicar trabajo.
-            if (!waitForPreparer) await IsoPreparer.Instance.SuspendAsync();
+            if (!waitForPreparer)
+            {
+                var prep = IsoPreparer.Instance;
+                if (prep.IsBusy) _currentView?.Reporter.Report(new Step("Deteniendo la preparación…"));
+                // Esperar no debe impedir cancelar: si el usuario cancela, se sale sin esperar a que termine de detenerse.
+                using var wait = CancellationTokenSource.CreateLinkedTokenSource(_cts.Token);
+                await Task.WhenAny(prep.SuspendAsync(), Task.Delay(Timeout.Infinite, wait.Token));
+                wait.Cancel();
+                _cts.Token.ThrowIfCancellationRequested();
+            }
             await work(_cts.Token);
             _cts = null;
             onDone();
@@ -265,9 +300,12 @@ public sealed class MainWindow : Window
     {
         var size = MediaEngine.CacheBytes();
         if (size < 500_000_000) return new Border { Height = 0 };
-        var row = Ui.Row(Ui.Button($"Liberar espacio · borrar la ISO de Windows descargada ({Eta.Bytes(size)})", () =>
+        var row = Ui.Row(Ui.Button($"Liberar espacio · borrar la ISO de Windows descargada ({Eta.Bytes(size)}) y la ISO preparada", async () =>
         {
+            // Primero se detiene la preparación; después no se relanza sola.
+            await IsoPreparer.Instance.HoldAsync();
             MediaEngine.ClearCache();
+            IsoPreparer.Discard();
             Home();
         }));
         row.Margin = new Thickness(0, 0, 0, 14);
@@ -610,25 +648,23 @@ public sealed class MainWindow : Window
             var prep = IsoPreparer.Instance;
             if (ownIso is null && (prep.IsBusy || IsoPreparer.HasPrepared))
             {
-                // Hay una ISO preparada (o en preparación): se necesita la versión actual de AUREVIX para saber si sirve.
+                // Primero se espera al preparador y solo después se descarga AUREVIX: nunca dos descargas a la vez.
                 v.SetStage(0);
+                while (prep.IsBusy) await prep.WaitAsync(v.Reporter, ct);
+                // Con la versión actual de AUREVIX se sabe si la ISO preparada sirve.
                 knownSetup = await _engine.DownloadAurevixAsync(v.Reporter, ct);
-                if (prep.IsBusy)
-                {
-                    v.SetStage(1);
-                    await prep.WaitAsync(v.Reporter, ct);
-                }
                 if (IsoPreparer.IsReadyFor(_engine.AurevixVersion))
                 {
                     v.SetStage(3);
                     v.Reporter.Report(new Step("Usando la ISO ya preparada", 0));
-                    var sameDrive = string.Equals(Path.GetPathRoot(Path.GetFullPath(IsoPreparer.IsoPath)), Path.GetPathRoot(Path.GetFullPath(output)), StringComparison.OrdinalIgnoreCase);
+                    var sameDrive = IsoPreparer.IsSameVolume(IsoPreparer.IsoPath, output);
                     var move = sameDrive && MessageBox.Show(
                         "La ISO ya preparada está en la misma unidad que el destino.\n\n¿Quieres moverla (es instantáneo y no ocupa el doble)? " +
-                        "Si la mueves, AUREVIX tendrá que prepararla de nuevo otra vez.\n\nSí = mover   ·   No = copiar", "AUREVIX Installer",
-                        MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
+                        "Si la mueves, AUREVIX tendrá que prepararla de nuevo más adelante.\n\nSí = mover   ·   No = copiar", "AUREVIX Installer",
+                        MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) == MessageBoxResult.Yes;
                     hash = await prep.DeliverAsync(output, move, v.Reporter, ct);
                     usedPrepared = true;
+                    IsoPreparer.RecordBuilt(_engine.AurevixVersion); // esta versión ya está creada: no se prepara otra igual
                     v.Complete();
                     return;
                 }
@@ -644,6 +680,7 @@ public sealed class MainWindow : Window
                 hash = await _engine.BuildIsoAsync(root, setup, output, v.Reporter, ct);
             }
             finally { await _engine.DismountAsync(iso); }
+            if (ownIso is null) IsoPreparer.RecordBuilt(_engine.AurevixVersion);
             v.Complete();
         }, waitForPreparer: ownIso is null, onDone: () => Done("ISO lista", (usedPrepared ? "Usando la ISO ya preparada: no hizo falta volver a construirla. " : "") +
             "Es para tu uso: no la compartas, la licencia de Windows no lo permite.", ok: true,
