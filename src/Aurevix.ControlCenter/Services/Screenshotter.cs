@@ -29,8 +29,14 @@ public static class Screenshotter
             main.Navigate(p);
             await Task.Delay(p is "optimization" or "network" or "cleanup" or "diagnostics" or "tools" ? 6000 : 2500);
             Save(main, Path.Combine(outDir, $"cc-{i++:00}-{p}.png"));
+            if (p == "optimization")
+            {
+                // Página larga: también la sección «Todos los ajustes».
+                ScrollToText(main, "Todos los ajustes", 1400);
+                await Task.Delay(800);
+                Save(main, Path.Combine(outDir, "cc-03b-optimization-ajustes.png"));
+            }
         }
-        // Página larga: también la parte inferior de Optimización.
         main.Close();
 
         var wizard = new FirstRunWindow { ShowActivated = false };
@@ -191,6 +197,37 @@ public static class Screenshotter
             foreach (dynamic w in sh.Windows()) { try { w.Quit(); } catch { } }
         }
         catch { }
+    }
+
+    /// <summary>Desplaza el ScrollViewer que contiene el texto indicado hasta ese texto (o a un offset fijo si no lo encuentra).</summary>
+    private static void ScrollToText(Window w, string text, double fallback)
+    {
+        w.UpdateLayout();
+        var tb = FindText(w.Content as DependencyObject, text);
+        DependencyObject? cur = tb;
+        while (cur is not null && cur is not System.Windows.Controls.ScrollViewer) cur = VisualTreeHelper.GetParent(cur);
+        if (cur is not System.Windows.Controls.ScrollViewer sv) return;
+        var offset = fallback;
+        if (tb is not null)
+        {
+            try { offset = Math.Max(0, tb.TransformToAncestor(sv).Transform(new Point(0, 0)).Y + sv.VerticalOffset - 20); }
+            catch { }
+        }
+        sv.ScrollToVerticalOffset(offset);
+        sv.UpdateLayout();
+    }
+
+    private static System.Windows.Controls.TextBlock? FindText(DependencyObject? root, string text)
+    {
+        if (root is null) return null;
+        if (root is System.Windows.Controls.TextBlock t && t.Text == text) return t;
+        var n = VisualTreeHelper.GetChildrenCount(root);
+        for (var k = 0; k < n; k++)
+        {
+            var r = FindText(VisualTreeHelper.GetChild(root, k), text);
+            if (r is not null) return r;
+        }
+        return null;
     }
 
     public static void Save(Window w, string path)

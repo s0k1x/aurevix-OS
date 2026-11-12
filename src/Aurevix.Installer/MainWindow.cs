@@ -93,7 +93,7 @@ public sealed class MainWindow : Window
         Kit.OptionCard("\uE777", "INSTALACIÓN LIMPIA  ·  UNOS 45-90 MIN", "Reinstalar este PC con AUREVIX OS",
             "Descarga Windows 11 oficial de Microsoft, reinstala Windows desde cero y deja AUREVIX listo. Borra programas y archivos de la unidad del sistema.", CleanInstallIntro),
         Kit.OptionCard("\uE88E", "PARA OTRO PC O PARA GUARDAR  ·  UNOS 15-40 MIN", "Crear un USB o una ISO de AUREVIX OS",
-            "Enchufa un pendrive de 8 GB o más y AUREVIX monta dentro Windows 11 oficial con todo preparado. También puedes crear solo la ISO.", MediaIntro));
+            "Enchufa un pendrive de 8 GB o más y AUREVIX monta dentro Windows 11 oficial con todo preparado. También puedes crear solo la ISO.", () => MediaIntro()));
 
     // ------------------------------------------------------------------ Progreso común
 
@@ -285,7 +285,7 @@ public sealed class MainWindow : Window
 
     // ------------------------------------------------------------------ 3. USB / ISO
 
-    private void MediaIntro()
+    private void MediaIntro(bool isoSelected = false)
     {
         var kind = new ChoiceGroup();   // 0 = USB, 1 = ISO
         var src = new ChoiceGroup();    // 0 = descargar, 1 = ISO propia
@@ -383,7 +383,7 @@ public sealed class MainWindow : Window
             }
             Update();
         };
-        kind.Select(0, raise: false);
+        kind.Select(isoSelected ? 1 : 0, raise: false);
         src.Select(0, raise: false);
 
         create.Click += (_, _) =>
@@ -515,6 +515,7 @@ public sealed class MainWindow : Window
         Ui.ReduceMotion = true;
         Home(); await Task.Delay(1200); Save(Path.Combine(dir, "inst-01-inicio.png"));
         MediaIntro(); await Task.Delay(5000); Save(Path.Combine(dir, "inst-02-usb-iso.png"));
+        MediaIntro(isoSelected: true); await Task.Delay(3000); Save(Path.Combine(dir, "inst-02b-iso-destino.png"));
         CleanInstallIntro(); await Task.Delay(9000); Save(Path.Combine(dir, "inst-03-reinstalar.png"));
 
         var v = Progress("Creando el USB de AUREVIX OS", "No desenchufes el pendrive ni apagues el equipo hasta que termine.",
