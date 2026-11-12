@@ -25,6 +25,8 @@ public static class AutoMaintenance
     private static System.Threading.Timer? _timer;
     private static int _busy;
     private static readonly DateTime StartedUtc = DateTime.UtcNow;
+    /// <summary>Hora del último intento (si todo falló, no se reintenta hasta pasadas 24 h).</summary>
+    private static DateTime? _lastAttemptUtc;
 
     public static void Start()
     {
@@ -48,6 +50,7 @@ public static class AutoMaintenance
         var now = DateTime.UtcNow;
         var last = AppServices.State.LastAutoMaintenanceUtc;
         if (last is null ? now - StartedUtc < FirstRunGrace : now - last.Value < Weekly) return false;
+        if (_lastAttemptUtc is { } att && now - att < TimeSpan.FromHours(24)) return false;
         if (s.AutoMaintenanceDay is >= 1 and <= 7)
         {
             var today = DateTime.Now.DayOfWeek == DayOfWeek.Sunday ? 7 : (int)DateTime.Now.DayOfWeek;
@@ -69,18 +72,26 @@ public static class AutoMaintenance
 
             var freed = await Task.Run(CleanTemp);
             parts.Add($"Liberados {FormatSize(freed)}");
+            var anyOk = freed > 0;
 
             var trim = await CoreServiceClient.SendAsync(new CoreRequest { Op = "maintenance", Action = "optimize-drives" }, TimeSpan.FromMinutes(40));
             parts.Add(trim.Ok ? "TRIM hecho" : "TRIM no disponible");
+            anyOk |= trim.Ok;
 
             var dism = await CoreServiceClient.SendAsync(new CoreRequest { Op = "maintenance", Action = "dism-checkhealth" }, TimeSpan.FromMinutes(10));
             parts.Add(dism.Ok ? "Windows sano" : "Windows sin comprobar");
+            anyOk |= dism.Ok;
 
             var summary = string.Join(" · ", parts);
             var st = AppServices.State;
-            st.LastAutoMaintenanceUtc = DateTime.UtcNow;
-            st.LastAutoMaintenanceSummary = summary;
-            try { AppServices.SaveState(); } catch { /* no es crítico */ }
+            _lastAttemptUtc = DateTime.UtcNow;
+            // Solo cuenta como hecho si al menos un paso fue bien.
+            if (anyOk)
+            {
+                st.LastAutoMaintenanceUtc = DateTime.UtcNow;
+                st.LastAutoMaintenanceSummary = summary;
+                try { AppServices.SaveState(); } catch { /* no es crítico */ }
+            }
             AurevixLog.Info("Mantenimiento automático: " + summary);
             if (AppServices.Settings.Notifications) Notify?.Invoke(summary);
             Changed?.Invoke();
@@ -100,21 +111,42 @@ public static class AutoMaintenance
         long freed = 0;
         try
         {
-            var dir = Path.GetTempPath();
-            foreach (var f in Directory.EnumerateFiles(dir, "*", new EnumerationOptions { RecurseSubdirectories = true, IgnoreInaccessible = true }))
+            freed = CleanDir(Path.GetTempPath(), DateTime.UtcNow.AddDays(-7));
+        }
+        catch (Exception ex) { AurevixLog.Warn("Mantenimiento automático (temporales): " + ex.Message); }
+        return freed;
+    }
+
+    /// <summary>Borra archivos con escritura y acceso anteriores al límite; no entra en carpetas recientes.</summary>
+    private static long CleanDir(string dir, DateTime limitUtc)
+    {
+        long freed = 0;
+        var opts = new EnumerationOptions { IgnoreInaccessible = true };
+        try
+        {
+            foreach (var f in Directory.EnumerateFiles(dir, "*", opts))
             {
                 try
                 {
                     var info = new FileInfo(f);
-                    if (info.LastWriteTimeUtc > DateTime.UtcNow.AddHours(-2)) continue;
+                    if (info.LastWriteTimeUtc > limitUtc || info.LastAccessTimeUtc > limitUtc) continue;
                     var len = info.Length;
                     info.Delete();
                     freed += len;
                 }
+                catch { /* en uso o sin permiso */ }
+            }
+            foreach (var d in Directory.EnumerateDirectories(dir, "*", opts))
+            {
+                try
+                {
+                    if (Directory.GetLastWriteTimeUtc(d) > limitUtc) continue;
+                    freed += CleanDir(d, limitUtc);
+                }
                 catch { }
             }
         }
-        catch (Exception ex) { AurevixLog.Warn("Mantenimiento automático (temporales): " + ex.Message); }
+        catch { }
         return freed;
     }
 

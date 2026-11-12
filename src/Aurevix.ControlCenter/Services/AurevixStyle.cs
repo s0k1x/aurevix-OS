@@ -487,8 +487,17 @@ public static class AurevixStyle
     {
         try
         {
+            // Si ya hay un original guardado, ese manda.
+            if (File.Exists(OriginalLockScreenFile))
+            {
+                var saved = File.ReadAllText(OriginalLockScreenFile).Trim();
+                if (saved.Length > 0) return saved;
+            }
             var uri = Windows.System.UserProfile.LockScreen.OriginalImageFile;
-            return uri is { IsFile: true } ? uri.LocalPath : null;
+            if (uri is not { IsFile: true }) return null;
+            // Ignora las pantallas propias de AUREVIX: no son el original de Windows.
+            var local = uri.LocalPath;
+            return local.StartsWith(LockScreenDirectory, StringComparison.OrdinalIgnoreCase) ? null : local;
         }
         catch { return null; }
     }
@@ -534,11 +543,13 @@ public static class AurevixStyle
     {
         try
         {
-            string? original = null;
+            // Prueba los dos orígenes y usa el primero cuyo archivo exista.
             var state = Path.Combine(AurevixPaths.Backups, "style-original.json");
-            if (File.Exists(state)) original = JsonStore.LoadOrDefault<OriginalStyle>(state).LockScreen;
-            if (string.IsNullOrEmpty(original) && File.Exists(OriginalLockScreenFile)) original = File.ReadAllText(OriginalLockScreenFile).Trim();
-            if (string.IsNullOrEmpty(original) || !File.Exists(original)) return false;
+            var candidates = new List<string?>();
+            if (File.Exists(state)) candidates.Add(JsonStore.LoadOrDefault<OriginalStyle>(state).LockScreen);
+            if (File.Exists(OriginalLockScreenFile)) candidates.Add(File.ReadAllText(OriginalLockScreenFile).Trim());
+            var original = candidates.FirstOrDefault(c => !string.IsNullOrEmpty(c) && File.Exists(c));
+            if (original is null) return false;
             if (!await TrySetLockScreenAsync(original)) return false;
             try { File.Delete(OriginalLockScreenFile); } catch { }
             return true;

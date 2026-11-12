@@ -91,8 +91,15 @@ public sealed class ToolsPage : UserControl
         {
             now!.IsEnabled = false;
             last.Text = "Haciendo el mantenimiento…";
-            try { await AutoMaintenance.RunNowAsync(); }
-            finally { now.IsEnabled = true; last.Text = Last(); }
+            string? res = null;
+            try { res = await AutoMaintenance.RunNowAsync(); }
+            finally
+            {
+                now.IsEnabled = true;
+                last.Text = res is null
+                    ? "Ya hay un mantenimiento en marcha o no se ha podido hacer. Mira el registro en Ajustes."
+                    : Last();
+            }
         });
 
         Action onChanged = () => Dispatcher.BeginInvoke(() => last.Text = Last());
