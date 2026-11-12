@@ -32,6 +32,10 @@ public sealed class GameBoostSettings
     public List<string> Streaming { get; set; } = ["obs64.exe", "obs32.exe", "Streamlabs OBS.exe", "Medal.exe"];
     /// <summary>Ruta completa de cada juego (para los ajustes por juego de Windows).</summary>
     public Dictionary<string, string> GamePaths { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>Usar la gráfica de alto rendimiento en los juegos detectados (portátiles con dos gráficas).</summary>
+    public bool AutoHighPerfGpu { get; set; } = true;
+    /// <summary>Rutas que ha añadido AUREVIX a las preferencias de gráfica de Windows (solo estas se pueden quitar).</summary>
+    public List<string> AutoGpuPaths { get; set; } = [];
 }
 
 /// <summary>
@@ -117,11 +121,58 @@ public static class GameBoost
         finally { Interlocked.Exchange(ref _busy, 0); }
     }
 
+    /// <summary>
+    /// Pone la gráfica de alto rendimiento al juego (Configuración > Pantalla > Gráficos) solo si el usuario no eligió ya otra cosa.
+    /// </summary>
+    private static void EnsureHighPerfGpu(string exePath)
+    {
+        try
+        {
+            using var k = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\DirectX\UserGpuPreferences", true);
+            if (k.GetValue(exePath) is not null) return; // elección del usuario: se respeta
+            k.SetValue(exePath, "GpuPreference=2;", Microsoft.Win32.RegistryValueKind.String);
+            if (!Settings.AutoGpuPaths.Contains(exePath, StringComparer.OrdinalIgnoreCase))
+            {
+                Settings.AutoGpuPaths.Add(exePath);
+                Save();
+            }
+            AurevixLog.Info($"Game Boost: gráfica de alto rendimiento para {exePath}.");
+        }
+        catch (Exception ex) { AurevixLog.Warn($"Game Boost: preferencia de gráfica: {ex.Message}"); }
+    }
+
+    /// <summary>Quita solo las preferencias de gráfica que añadió AUREVIX. Devuelve cuántas quitó.</summary>
+    public static int RemoveAutoGpuPreferences()
+    {
+        var removed = 0;
+        try
+        {
+            using var k = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\DirectX\UserGpuPreferences", true);
+            foreach (var path in Settings.AutoGpuPaths.ToList())
+            {
+                try { k.DeleteValue(path, false); removed++; }
+                catch (Exception ex) { AurevixLog.Warn($"Game Boost: quitar preferencia de gráfica: {ex.Message}"); }
+            }
+            Settings.AutoGpuPaths.Clear();
+            Save();
+        }
+        catch (Exception ex) { AurevixLog.Warn($"Game Boost: quitar preferencias de gráfica: {ex.Message}"); }
+        return removed;
+    }
+
     private static void Boost(string game, Process[] gameProcs)
     {
         ActiveGame = game;
         foreach (var p in gameProcs)
             try { p.PriorityClass = ProcessPriorityClass.High; } catch { }
+
+        if (Settings.AutoHighPerfGpu)
+        {
+            string? exePath = null;
+            foreach (var p in gameProcs)
+                try { exePath = p.MainModule?.FileName; if (exePath is not null) break; } catch { }
+            if (exePath is not null) EnsureHighPerfGpu(exePath);
+        }
 
         var me = Environment.ProcessId;
         foreach (var name in Settings.Background.Except(Settings.Streaming, StringComparer.OrdinalIgnoreCase))

@@ -48,6 +48,13 @@ public sealed class GameBoostPage : UserControl
             Check("Vaciar la memoria en espera (como ISLC)", s.PurgeStandby, v => s.PurgeStandby = v),
             Check("Temporizador del sistema a 0,5 ms mientras juegas", s.TimerResolution, v => s.TimerResolution = v),
             Check("Reservar la mitad de los núcleos para el juego (las apps de fondo usan el resto; 8+ núcleos)", s.ReserveCores, v => s.ReserveCores = v),
+            Check("Usar la gráfica de alto rendimiento en los juegos (útil en portátiles con dos gráficas)", s.AutoHighPerfGpu, v => s.AutoHighPerfGpu = v),
+            Ui.Row(Ui.Button("Quitar preferencias de gráfica añadidas por AUREVIX", () =>
+            {
+                var n = GameBoost.RemoveAutoGpuPreferences();
+                MessageBox.Show(n > 0 ? $"Se han quitado {n} preferencias de gráfica." : "No había preferencias añadidas por AUREVIX.", "Game Boost");
+                Build();
+            })),
             Ui.Muted("Memoria en espera: lo hace AUREVIX Core Service; útil si notas tirones con poca RAM libre. Temporizador: afecta a todo el sistema solo con «Resolución de temporizador global» (Optimización). " +
                      "Núcleos: compruébalo con Benchmark; en algunos juegos no cambia nada. Todo se restaura al cerrar el juego.")));
         body.Children.Add(ListCard("Apps de streaming y grabación", "Nunca se apartan: suben a prioridad «por encima de lo normal» mientras juegas (OBS, Streamlabs…).", s.Streaming));
