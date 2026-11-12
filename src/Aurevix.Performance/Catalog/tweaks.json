@@ -2191,5 +2191,171 @@
         "value": "0"
       }
     ]
+  },
+  {
+    "id": "system.shutdown-faster",
+    "category": "startup",
+    "levels": [
+      "recommended",
+      "performance",
+      "maximum"
+    ],
+    "title": "Apagado y reinicio más rápidos",
+    "description": "Windows espera 2 segundos (en lugar de 5) a que las aplicaciones colgadas respondan antes de ofrecer cerrarlas al apagar o reiniciar.",
+    "expectedEffect": "Apagados y reinicios más ágiles cuando una app no responde.",
+    "possibleImpact": "Ninguno: Windows sigue preguntando antes de cerrar apps con trabajo sin guardar.",
+    "registry": [
+      {
+        "hive": "currentUser",
+        "key": "Control Panel\\Desktop",
+        "name": "WaitToKillAppTimeout",
+        "kind": "string",
+        "value": "2000"
+      },
+      {
+        "hive": "currentUser",
+        "key": "Control Panel\\Desktop",
+        "name": "HungAppTimeout",
+        "kind": "string",
+        "value": "2000"
+      }
+    ]
+  },
+  {
+    "id": "system.service-shutdown",
+    "category": "startup",
+    "levels": [
+      "recommended",
+      "performance",
+      "maximum"
+    ],
+    "title": "Espera razonable al cerrar servicios",
+    "description": "Fija en 5 segundos el tiempo que Windows espera a que los servicios se detengan al apagar (algunos programas lo suben mucho más).",
+    "expectedEffect": "El apagado no se queda esperando a servicios lentos.",
+    "possibleImpact": "Ninguno: es el valor de fábrica de Windows 11.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SYSTEM\\CurrentControlSet\\Control",
+        "name": "WaitToKillServiceTimeout",
+        "kind": "string",
+        "value": "5000"
+      }
+    ]
+  },
+  {
+    "id": "system.auto-end-tasks",
+    "category": "startup",
+    "levels": [],
+    "risk": "medium",
+    "title": "Cerrar apps automáticamente al apagar",
+    "description": "Al apagar, Windows cierra las aplicaciones que siguen abiertas sin preguntar.",
+    "expectedEffect": "El apagado nunca se queda parado en la pantalla de «Cerrando aplicaciones».",
+    "possibleImpact": "Puedes perder trabajo sin guardar. Solo si siempre guardas antes de apagar.",
+    "registry": [
+      {
+        "hive": "currentUser",
+        "key": "Control Panel\\Desktop",
+        "name": "AutoEndTasks",
+        "kind": "string",
+        "value": "1"
+      }
+    ]
+  },
+  {
+    "id": "interface.menu-delay.instant",
+    "category": "interface",
+    "levels": [],
+    "title": "Menús instantáneos (0 ms)",
+    "description": "Los submenús se abren sin ningún retraso (AUREVIX usa 100 ms por defecto, que evita aperturas accidentales al mover el ratón).",
+    "expectedEffect": "Máxima rapidez en menús.",
+    "possibleImpact": "Los submenús pueden abrirse al pasar el ratón por encima sin querer.",
+    "registry": [
+      {
+        "hive": "currentUser",
+        "key": "Control Panel\\Desktop",
+        "name": "MenuShowDelay",
+        "kind": "string",
+        "value": "0"
+      }
+    ]
+  },
+  {
+    "id": "privacy.activity-history.off",
+    "category": "privacy",
+    "levels": [
+      "recommended",
+      "performance",
+      "maximum"
+    ],
+    "title": "Sin historial de actividad",
+    "description": "Aplica las directivas oficiales para que Windows no guarde ni suba el historial de apps y documentos que usas.",
+    "expectedEffect": "Más privacidad y menos escrituras en segundo plano.",
+    "possibleImpact": "La línea de tiempo y «continuar en otro PC» no tendrán tu actividad.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\System",
+        "name": "EnableActivityFeed",
+        "kind": "dword",
+        "value": "0"
+      },
+      {
+        "hive": "localMachine",
+        "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\System",
+        "name": "PublishUserActivities",
+        "kind": "dword",
+        "value": "0"
+      },
+      {
+        "hive": "localMachine",
+        "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\System",
+        "name": "UploadUserActivities",
+        "kind": "dword",
+        "value": "0"
+      }
+    ]
+  },
+  {
+    "id": "gaming.gamebar-startup-panel.off",
+    "category": "gaming",
+    "levels": [
+      "recommended",
+      "performance",
+      "maximum"
+    ],
+    "title": "Sin panel de bienvenida de Game Bar",
+    "description": "Evita que Game Bar muestre su panel al abrir un juego.",
+    "expectedEffect": "Sin ventanas emergentes al empezar a jugar.",
+    "possibleImpact": "Ninguno: Win+G sigue funcionando.",
+    "registry": [
+      {
+        "hive": "currentUser",
+        "key": "Software\\Microsoft\\GameBar",
+        "name": "ShowStartupPanel",
+        "kind": "dword",
+        "value": "0"
+      }
+    ]
+  },
+  {
+    "id": "gaming.gamedvr-policy.off",
+    "category": "gaming",
+    "levels": [
+      "maximum"
+    ],
+    "title": "Game DVR desactivado por directiva",
+    "description": "Directiva oficial que desactiva la grabación de partidas de Windows para todos los usuarios.",
+    "expectedEffect": "Ninguna grabación en segundo plano, ni siquiera si otra app la reactiva.",
+    "possibleImpact": "No podrás grabar con Win+Alt+G ni con Game Bar. Programas como OBS siguen funcionando.",
+    "registry": [
+      {
+        "hive": "localMachine",
+        "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR",
+        "name": "AllowGameDVR",
+        "kind": "dword",
+        "value": "0"
+      }
+    ]
   }
 ]
