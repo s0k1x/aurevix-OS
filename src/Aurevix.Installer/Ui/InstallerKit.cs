@@ -9,6 +9,71 @@ using Aurevix.Installer.Engine;
 
 namespace Aurevix.Installer.Controls;
 
+/// <summary>
+/// Colores propios del Installer que no vienen del tema XAML. Claro por defecto; oscuro si Windows usa el tema oscuro
+/// (HKCU\...\Themes\Personalize · AppsUseLightTheme = 0). Los mismos valores que AurevixLight.xaml / Aurevix.xaml.
+/// </summary>
+public static class Palette
+{
+    public static bool IsLight { get; } = ReadIsLight();
+
+    private static bool ReadIsLight()
+    {
+        try { return Microsoft.Win32.Registry.GetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize", "AppsUseLightTheme", 1) is not int v || v != 0; }
+        catch { return true; }
+    }
+
+    public static Color Accent { get; } = IsLight ? Color.FromRgb(0x4E, 0x9A, 0x1E) : Color.FromRgb(0x8D, 0xE0, 0x3C);
+    public static Color AccentHover { get; } = IsLight ? Color.FromRgb(0x5D, 0xB0, 0x2A) : Color.FromRgb(0xA6, 0xEE, 0x5E);
+    /// <summary>Texto sobre el acento verde: blanco en claro, casi negro en oscuro.</summary>
+    public static Color OnAccent { get; } = IsLight ? Colors.White : Color.FromRgb(0x10, 0x12, 0x16);
+    /// <summary>Fondo de las tarjetas (algo translúcido).</summary>
+    public static Color Card { get; } = IsLight ? Color.FromArgb(0xF2, 0xFF, 0xFF, 0xFF) : Color.FromArgb(0xE6, 0x0E, 0x0E, 0x11);
+    /// <summary>Fondo de la tarjeta elegida / del resultado correcto.</summary>
+    public static Color AccentSoft { get; } = IsLight ? Color.FromArgb(0x24, 0x4E, 0x9A, 0x1E) : Color.FromArgb(0x1C, 0x8D, 0xE0, 0x3C);
+    /// <summary>Fondo del resultado con aviso.</summary>
+    public static Color ReviewSoft { get; } = IsLight ? Color.FromArgb(0x26, 0xC2, 0x7C, 0x10) : Color.FromArgb(0x1C, 0xE8, 0xA3, 0x3D);
+    /// <summary>Pista de las barras de progreso.</summary>
+    public static Color Track { get; } = IsLight ? Color.FromRgb(0xD3, 0xDA, 0xC9) : Color.FromRgb(0x22, 0x22, 0x28);
+    /// <summary>Texto y círculos de lo que aún está pendiente (con contraste suficiente sobre fondo claro).</summary>
+    public static Color Pending { get; } = IsLight ? Color.FromRgb(0x6F, 0x76, 0x81) : Color.FromRgb(0x5C, 0x5C, 0x66);
+    public static Color Glow { get; } = IsLight ? Color.FromArgb(0x2E, 0x7B, 0xD1, 0x3A) : Color.FromArgb(0x22, 0x8D, 0xE0, 0x3C);
+
+    public static SolidColorBrush Brush(Color c) { var b = new SolidColorBrush(c); b.Freeze(); return b; }
+
+    [System.Runtime.InteropServices.DllImport("dwmapi.dll")]
+    private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
+
+    /// <summary>Aplica el tema claro (si toca) y deja la barra de título de cada ventana a juego con él.</summary>
+    public static void Apply()
+    {
+        if (IsLight)
+        {
+            var dicts = Application.Current.Resources.MergedDictionaries;
+            dicts.Clear();
+            dicts.Add(new ResourceDictionary { Source = new Uri("pack://application:,,,/Themes/AurevixLight.xaml") });
+        }
+        EventManager.RegisterClassHandler(typeof(Window), FrameworkElement.LoadedEvent, new RoutedEventHandler((s, _) =>
+        {
+            if (s is not Window w) return;
+            var hwnd = new System.Windows.Interop.WindowInteropHelper(w).Handle;
+            if (hwnd == IntPtr.Zero) return;
+            int dark = IsLight ? 0 : 1;                                                                      // DWMWA_USE_IMMERSIVE_DARK_MODE
+            int caption = IsLight ? 0x00F0F5F3 : 0x00060505, border = IsLight ? 0x00D4E2DC : 0x00282222;     // COLORREF 0x00BBGGRR
+            DwmSetWindowAttribute(hwnd, 20, ref dark, sizeof(int));
+            DwmSetWindowAttribute(hwnd, 35, ref caption, sizeof(int));  // DWMWA_CAPTION_COLOR
+            DwmSetWindowAttribute(hwnd, 34, ref border, sizeof(int));   // DWMWA_BORDER_COLOR
+        }));
+    }
+
+    /// <summary>Etiqueta redondeada con texto legible sobre el color dado.</summary>
+    public static Border Pill(string text, Brush background) => new()
+    {
+        Background = background, CornerRadius = new CornerRadius(10), Padding = new Thickness(9, 2, 9, 3),
+        Child = new TextBlock { Text = text, FontSize = 12, FontWeight = FontWeights.SemiBold, Foreground = Brush(OnAccent) }
+    };
+}
+
 /// <summary>Barra de progreso fina y redondeada, con animación suave y modo indeterminado.</summary>
 public sealed class ThinProgress : Grid
 {
@@ -21,7 +86,7 @@ public sealed class ThinProgress : Grid
     {
         Height = 6;
         ClipToBounds = true;
-        Children.Add(new Border { Background = Ui.Brush("SurfaceAlt"), CornerRadius = new CornerRadius(3) });
+        Children.Add(new Border { Background = Palette.Brush(Palette.Track), CornerRadius = new CornerRadius(3) });
         Children.Add(_fill);
         SizeChanged += (_, _) => { if (_indeterminate) StartSlide(); else Apply(false); };
     }
@@ -161,8 +226,8 @@ public sealed class ProgressView
                 _details[i].Visibility = Visibility.Visible;
                 break;
             default:
-                _icons[i].Content = new Ellipse { Width = 9, Height = 9, Stroke = Ui.Brush("Unavailable"), StrokeThickness = 1.5, HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(2, 5, 0, 0) };
-                _labels[i].Foreground = Ui.Brush("Unavailable");
+                _icons[i].Content = new Ellipse { Width = 9, Height = 9, Stroke = Palette.Brush(Palette.Pending), StrokeThickness = 1.5, HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(2, 5, 0, 0) };
+                _labels[i].Foreground = Palette.Brush(Palette.Pending);
                 _labels[i].FontWeight = FontWeights.Normal;
                 _details[i].Visibility = Visibility.Collapsed;
                 break;
@@ -247,12 +312,12 @@ public sealed class ChoiceGroup
         if (!string.IsNullOrEmpty(text)) { var m = Ui.Muted(text); m.Margin = new Thickness(0, 3, 0, 0); texts.Children.Add(m); }
         if (badgeText is not null)
         {
-            var pill = Ui.Pill(badgeText, Ui.Brush("Accent"));
+            var pill = Palette.Pill(badgeText, Ui.Brush("Accent"));
             pill.HorizontalAlignment = HorizontalAlignment.Left;
             pill.Margin = new Thickness(0, 8, 0, 0);
             texts.Children.Add(pill);
         }
-        var outer = new Ellipse { Width = 18, Height = 18, StrokeThickness = 1.5, Stroke = Ui.Brush("Unavailable") };
+        var outer = new Ellipse { Width = 18, Height = 18, StrokeThickness = 1.5, Stroke = Palette.Brush(Palette.Pending) };
         var inner = new Ellipse { Width = 8, Height = 8, Fill = Ui.Brush("Accent"), Visibility = Visibility.Collapsed };
         var radio = new Grid { Width = 18, Height = 18, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 1, 14, 0), Children = { outer, inner } };
         var row = new DockPanel();
@@ -262,7 +327,7 @@ public sealed class ChoiceGroup
         var tile = new Border
         {
             Child = row, Padding = new Thickness(18, 15, 18, 15), CornerRadius = new CornerRadius(14), BorderThickness = new Thickness(1),
-            BorderBrush = Ui.Brush("BorderBrushAx"), Background = new SolidColorBrush(Color.FromArgb(0xE6, 0x0E, 0x0E, 0x11)),
+            BorderBrush = Ui.Brush("BorderBrushAx"), Background = Palette.Brush(Palette.Card),
             Cursor = Cursors.Hand, Focusable = true, Margin = new Thickness(0, 0, 0, 10), Tag = (outer, inner), FocusVisualStyle = null
         };
         tile.MouseLeftButtonUp += (_, _) => Select(index);
@@ -284,8 +349,8 @@ public sealed class ChoiceGroup
             var on = i == index;
             var (outer, inner) = ((Ellipse, Ellipse))_tiles[i].Tag;
             _tiles[i].BorderBrush = on ? Ui.Brush("Accent") : Ui.Brush("BorderBrushAx");
-            _tiles[i].Background = new SolidColorBrush(on ? Color.FromArgb(0x18, 0x8D, 0xE0, 0x3C) : Color.FromArgb(0xE6, 0x0E, 0x0E, 0x11));
-            outer.Stroke = on ? Ui.Brush("Accent") : Ui.Brush("Unavailable");
+            _tiles[i].Background = Palette.Brush(on ? Palette.AccentSoft : Palette.Card);
+            outer.Stroke = on ? Ui.Brush("Accent") : Palette.Brush(Palette.Pending);
             inner.Visibility = on ? Visibility.Visible : Visibility.Collapsed;
         }
         if (raise) Changed?.Invoke(index);
@@ -330,7 +395,7 @@ public static class Kit
         var card = new Border
         {
             Child = grid, Padding = new Thickness(22, 17, 22, 17), CornerRadius = new CornerRadius(18), BorderThickness = new Thickness(1),
-            BorderBrush = Ui.Brush("BorderBrushAx"), Background = new SolidColorBrush(Color.FromArgb(0xE6, 0x0E, 0x0E, 0x11)),
+            BorderBrush = Ui.Brush("BorderBrushAx"), Background = Palette.Brush(Palette.Card),
             Cursor = Cursors.Hand, Focusable = true, Margin = new Thickness(0, 0, 0, 12), FocusVisualStyle = null
         };
         card.MouseLeftButtonUp += (_, _) => onClick();
@@ -357,7 +422,7 @@ public static class Kit
         var ring = new Border
         {
             Width = 72, Height = 72, CornerRadius = new CornerRadius(36), BorderThickness = new Thickness(2), BorderBrush = brush,
-            Background = new SolidColorBrush(ok ? Color.FromArgb(0x1C, 0x8D, 0xE0, 0x3C) : Color.FromArgb(0x1C, 0xE8, 0xA3, 0x3D)),
+            Background = Palette.Brush(ok ? Palette.AccentSoft : Palette.ReviewSoft),
             HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 0, 0, 22),
             Child = Glyph(ok ? "" : "", 28, brush), RenderTransformOrigin = new Point(.5, .5), RenderTransform = new ScaleTransform(1, 1)
         };

@@ -26,6 +26,7 @@
   <ItemGroup>
     <!-- Mismo tema y kit de UI que el Control Center -->
     <Page Include="..\Aurevix.ControlCenter\Themes\Aurevix.xaml" Link="Themes\Aurevix.xaml" />
+    <Page Include="..\Aurevix.ControlCenter\Themes\AurevixLight.xaml" Link="Themes\AurevixLight.xaml" />
     <Compile Include="..\Aurevix.ControlCenter\Views\Ui.cs" Link="Views\Ui.cs" />
     <Resource Include="..\Aurevix.ControlCenter\Assets\aurevix.ico" Link="Assets\aurevix.ico" />
     <EmbeddedResource Include="..\..\iso-builder\autounattend.xml" LogicalName="autounattend.xml" />

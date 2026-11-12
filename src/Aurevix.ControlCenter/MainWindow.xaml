@@ -38,6 +38,7 @@
 
                         <TextBlock Text="RENDIMIENTO" Style="{StaticResource Eyebrow}" Margin="26,16,0,4" FontSize="11" />
                         <RadioButton Style="{StaticResource NavItem}" Tag="&#xE713;" Content="Optimización" x:Name="NavOptimization" Checked="OnNav" />
+                        <RadioButton Style="{StaticResource NavItem}" Tag="&#xE990;" Content="Juegos" x:Name="NavGames" Checked="OnNav" />
                         <RadioButton Style="{StaticResource NavItem}" Tag="&#xE7FC;" Content="Game Boost" x:Name="NavGameBoost" Checked="OnNav" />
                         <RadioButton Style="{StaticResource NavItem}" Tag="&#xEC4A;" Content="Benchmark" x:Name="NavBenchmark" Checked="OnNav" />
                         <RadioButton Style="{StaticResource NavItem}" Tag="&#xE968;" Content="Red" x:Name="NavNetwork" Checked="OnNav" />

@@ -5,6 +5,12 @@
 - **Perfiles automáticos** (desactivados por defecto, se activan en Perfiles): Gaming al abrir un juego, Eficiencia con batería y Productividad en horario de trabajo; al terminar vuelve tu perfil.
 - **Antes y después**: tras optimizar, el Control Center muestra cuánto ha cambiado el arranque, los procesos, la memoria en uso y el espacio libre.
 - **Avisos de salud en la bandeja**: disco casi lleno, disco con problemas SMART, temperatura alta, driver de gráfica muy antiguo o reinicio pendiente. Un clic te lleva a la solución.
+- **Pantalla de bloqueo e inicio de sesión a tu gusto** (Apariencia): un fondo AUREVIX, tu propia imagen, el mismo fondo del escritorio o volver a la de Windows.
+- **Biblioteca de juegos**: nueva página «Juegos» con tus juegos de Steam, Epic y GOG, buscador y botón «Jugar» con Game Boost y gráfica de alto rendimiento.
+- **Mantenimiento automático semanal** (Herramientas): cuando no usas el PC limpia temporales, optimiza los discos y comprueba Windows. Con interruptor y botón «Hacer ahora».
+- **Asistente de drivers** (Diagnóstico): antigüedad de los drivers de gráfica, red, audio y chipset, con enlace a la descarga oficial (y a la web de la marca en portátiles).
+- **Installer en tema claro**, siguiendo el tema de Windows.
+- **Web**: novedades de cada versión y preguntas frecuentes.
 - **Estilo AUREVIX**: ya no colorea las barras de título de las ventanas. Si lo tenías de una versión anterior, «Restablecer aspecto de Windows 11» lo quita.
 
 ## AUREVIX OS 0.9.0 — ISO más rápida y preparada, actualizaciones a prueba de cortes

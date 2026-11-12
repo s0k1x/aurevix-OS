@@ -34,6 +34,9 @@ public static class Ui
     }
 
     private const string DefaultAccent = "#8DE03C";
+
+    /// <summary>De dónde sale el acento elegido. El Control Center lo enlaza a sus ajustes; el Installer (que comparte este archivo) no.</summary>
+    public static Func<string?> AccentSource { get; set; } = () => null;
     private static readonly Color DarkHover = Color.FromRgb(0xA6, 0xEE, 0x5E); // AccentHoverColor del tema oscuro
 
     /// <summary>
@@ -44,7 +47,7 @@ public static class Ui
     {
         try
         {
-            var hex = Aurevix.ControlCenter.Services.AppServices.Settings.AccentColor;
+            var hex = AccentSource();
             if (string.IsNullOrWhiteSpace(hex) || ColorConverter.ConvertFromString(hex) is not Color c) return;
             var isDefault = string.Equals(hex, DefaultAccent, StringComparison.OrdinalIgnoreCase);
             // Verde AUREVIX: se restablece al tono propio de cada tema (por si antes había otro acento).

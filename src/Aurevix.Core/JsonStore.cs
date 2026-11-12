@@ -74,6 +74,10 @@ public sealed class AurevixSettings
     public bool AutoProfileWork { get; set; }
     /// <summary>Avisos de salud en la bandeja (disco lleno o con fallos, temperatura alta, driver de gráfica antiguo).</summary>
     public bool HealthAlerts { get; set; } = true;
+    /// <summary>Mantenimiento semanal automático (temporales, optimizar unidades, comprobar Windows) cuando el PC está en reposo.</summary>
+    public bool AutoMaintenance { get; set; } = true;
+    /// <summary>Día preferido (1 = lunes … 7 = domingo); 0 = cualquier día, cuando toque.</summary>
+    public int AutoMaintenanceDay { get; set; }
 }
 
 /// <summary>Estado de la instalación (primer inicio, perfil activo, versión omitida…).</summary>
@@ -93,4 +97,7 @@ public sealed class AurevixState
     public Dictionary<string, DateTime> HealthAlertLastUtc { get; set; } = new();
     /// <summary>Último «antes y después» de una optimización (JSON de SystemSnapshot), para mostrarlo en Inicio y Optimización.</summary>
     public string? LastOptimizationReport { get; set; }
+    /// <summary>Última vez que se hizo el mantenimiento automático y su resumen corto.</summary>
+    public DateTime? LastAutoMaintenanceUtc { get; set; }
+    public string? LastAutoMaintenanceSummary { get; set; }
 }

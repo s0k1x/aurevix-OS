@@ -50,6 +50,7 @@ public partial class App : Application
             ex.Handled = true;
         };
 
+        Views.Ui.AccentSource = () => AppServices.Settings.AccentColor;
         Views.Ui.ApplyTheme();
         Views.Ui.EnableDarkTitleBars();
         AppServices.Initialize();
@@ -162,6 +163,8 @@ public partial class App : Application
         HealthMonitor.Notify = (title, text, page) => Dispatcher.Invoke(() =>
             _tray?.ShowBalloon(title, text, page is null ? null : () => Dispatcher.Invoke(() => ShowMain(page))));
         HealthMonitor.Start();
+        AutoMaintenance.Notify = msg => Dispatcher.Invoke(() => _tray?.ShowBalloon("AUREVIX · Mantenimiento", msg));
+        AutoMaintenance.Start();
 
         if (!AppServices.State.FirstRunCompleted || args.Contains("--first-run"))
         {
