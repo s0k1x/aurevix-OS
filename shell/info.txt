@@ -1,0 +1,2 @@
+explorer: 1
+Microsoft Windows NT 10.0.26100.0

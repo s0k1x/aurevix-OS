@@ -1,0 +1,3 @@
+aplicado: Tema claro AUREVIX y transparencias, Barra de tareas limpia, Sin icono de Chat/Teams en la barra de tareas, Ocultar widgets de la barra de tareas, Menú Inicio sin recomendaciones ni sugerencias, Explorador de archivos limpio, Pantalla de bloqueo sin anuncios ni sugerencias, Animaciones de Windows activadas, Tema AUREVIX (colores, acento y fondo), Color de acento
+omitido: 
+shell: Configuración pid 8264: dentro
